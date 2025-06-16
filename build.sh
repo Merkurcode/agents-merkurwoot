@@ -18,3 +18,4 @@ time bundle exec rake assets:precompile
 time bundle exec rake assets:clean
 
 time POSTGRES_STATEMENT_TIMEOUT=600s bundle exec rails db:chatwoot_prepare
+1

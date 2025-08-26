@@ -49,6 +49,7 @@ class User < ApplicationRecord
   include Reportable
   include SsoAuthenticatable
   include UserAttributeHelpers
+  include OutOfOffisable
 
   devise :database_authenticatable,
          :registerable,

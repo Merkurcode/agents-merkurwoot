@@ -8,6 +8,7 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Auth from '../../../../api/auth';
 import wootConstants from 'dashboard/constants/globals';
+import WeeklyAvailability from './WeeklyAvailability.vue';
 
 const props = defineProps({
   id: {
@@ -34,9 +35,15 @@ const props = defineProps({
     type: Number,
     default: null,
   },
+  agent: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 const emit = defineEmits(['close']);
+
+const childRef = ref(null);
 
 const { AVAILABILITY_STATUS_KEYS } = wootConstants;
 
@@ -118,10 +125,13 @@ const editAgent = async () => {
   if (v$.value.$invalid) return;
 
   try {
+    const dtos = childRef.value.updateInbox();
+
     const payload = {
       id: props.id,
       name: agentName.value,
       availability: agentAvailability.value,
+      working_hours: dtos,
     };
 
     if (selectedRole.value.name.startsWith('custom_')) {
@@ -198,6 +208,10 @@ const resetPassword = async () => {
             {{ $t('AGENT_MGMT.EDIT.FORM.AGENT_AVAILABILITY.ERROR') }}
           </span>
         </label>
+      </div>
+
+      <div>
+        <WeeklyAvailability ref="childRef" :inbox="agent" />
       </div>
 
       <div class="flex flex-row justify-start w-full gap-2 px-0 py-2">

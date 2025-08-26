@@ -218,7 +218,7 @@ const addAgent = async () => {
       </div>
 
       <div>
-        <WeeklyAvailabilitySection ref="childRef" :user="agent" />
+        <WeeklyAvailabilitySection ref="childRef" :user="{}" />
       </div>
 
       <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">

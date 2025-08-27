@@ -131,7 +131,7 @@ const editAgent = async () => {
       id: props.id,
       name: agentName.value,
       availability: agentAvailability.value,
-      working_hours: dtos,
+      ...dtos,
     };
 
     if (selectedRole.value.name.startsWith('custom_')) {

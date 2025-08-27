@@ -9,7 +9,6 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import WeeklyAvailabilitySection from '../components/WeeklyAvailabilitySection.vue';
 import { isPhoneNumberValid } from 'shared/helpers/Validators';
 import parsePhoneNumber from 'libphonenumber-js';
-
 const emit = defineEmits(['close']);
 
 const store = useStore();

@@ -22,6 +22,8 @@ import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import AccessToken from './AccessToken.vue';
 import MfaSettingsCard from './MfaSettingsCard.vue';
 import Policy from 'dashboard/components/policy.vue';
+import UserWorkingHours from './UserWorkingHours.vue';
+
 import {
   ROLES,
   CONVERSATION_PERMISSIONS,

@@ -17,6 +17,7 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
       auto_offline: new_agent_params['auto_offline'],
       timezone: new_agent_params['timezone'],
       phone_number: new_agent_params['phone_number'],
+
       inviter: current_user,
       account: Current.account
     )

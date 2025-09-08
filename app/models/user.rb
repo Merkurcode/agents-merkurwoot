@@ -156,7 +156,7 @@ class User < ApplicationRecord
     find_by(email: email&.downcase)
   end
 
-  def webhook_data
+  def webhook_create_data
     {
       name: name,
       email: email,

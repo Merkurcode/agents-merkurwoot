@@ -6,6 +6,7 @@ import { useAlert } from 'dashboard/composables';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email } from '@vuelidate/validators';
 import Button from 'dashboard/components-next/button/Button.vue';
+import WeeklyAvailabilitySection from '../components/WeeklyAvailabilitySection.vue';
 
 const emit = defineEmits(['close']);
 
@@ -61,14 +62,19 @@ const selectedRole = computed(() =>
   )
 );
 
+const childRef = ref(null);
+
 const addAgent = async () => {
   v$.value.$touch();
   if (v$.value.$invalid) return;
 
   try {
+    const availability = childRef.value.updateWeeklyAvailability();
+
     const payload = {
       name: agentName.value,
       email: agentEmail.value,
+      ...availability,
     };
 
     if (selectedRole.value.name.startsWith('custom_')) {
@@ -145,6 +151,10 @@ const addAgent = async () => {
             @input="v$.agentEmail.$touch"
           />
         </label>
+      </div>
+
+      <div>
+        <WeeklyAvailabilitySection ref="childRef" :user="agent" />
       </div>
 
       <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">

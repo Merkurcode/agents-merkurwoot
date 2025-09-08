@@ -15,16 +15,19 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
       role: new_agent_params['role'],
       availability: new_agent_params['availability'],
       auto_offline: new_agent_params['auto_offline'],
+      timezone: new_agent_params['timezone'],
       inviter: current_user,
       account: Current.account
     )
 
     @agent = builder.perform
+    update_agent_working_hours
   end
 
   def update
     @agent.update!(agent_params.slice(:name).compact)
     @agent.current_account_user.update!(agent_params.slice(*account_user_attributes).compact)
+    update_agent_working_hours
   end
 
   def destroy
@@ -68,11 +71,11 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   end
 
   def account_user_attributes
-    [:role, :availability, :auto_offline]
+    [:role, :availability, :auto_offline, :timezone]
   end
 
   def allowed_agent_params
-    [:name, :email, :role, :availability, :auto_offline]
+    [:name, :email, :role, :availability, :auto_offline, :timezone]
   end
 
   def agent_params
@@ -80,7 +83,7 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   end
 
   def new_agent_params
-    params.require(:agent).permit(:email, :name, :role, :availability, :auto_offline)
+    params.require(:agent).permit(:email, :name, :role, :availability, :auto_offline, :timezone, working_hours: Inbox::OFFISABLE_ATTRS)
   end
 
   def agents
@@ -107,6 +110,10 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
 
   def delete_user_record(agent)
     DeleteObjectJob.perform_later(agent) if agent.reload.account_users.blank?
+  end
+
+  def update_agent_working_hours
+    @agent.current_account_user.update_working_hours(params.permit(working_hours: Inbox::OFFISABLE_ATTRS)[:working_hours]) if params[:working_hours]
   end
 end
 

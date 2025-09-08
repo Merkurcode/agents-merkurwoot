@@ -18,6 +18,8 @@ import AudioNotifications from './AudioNotifications.vue';
 import FormSection from 'dashboard/components/FormSection.vue';
 import AccessToken from './AccessToken.vue';
 import Policy from 'dashboard/components/policy.vue';
+import UserWorkingHours from './UserWorkingHours.vue';
+
 import {
   ROLES,
   CONVERSATION_PERMISSIONS,
@@ -36,6 +38,7 @@ export default {
     NotificationPreferences,
     AudioNotifications,
     AccessToken,
+    UserWorkingHours,
   },
   setup() {
     const { isEditorHotKeyEnabled, updateUISettings } = useUISettings();
@@ -275,6 +278,14 @@ export default {
     >
       <ChangePassword />
     </FormSection>
+
+    <FormSection
+      :title="$t('PROFILE_SETTINGS.FORM.WORKING_HOURS_SECTION.TITLE')"
+      :description="$t('PROFILE_SETTINGS.FORM.WORKING_HOURS_SECTION.NOTE')"
+    >
+      <UserWorkingHours :user="currentUser" />
+    </FormSection>
+
     <Policy :permissions="audioNotificationPermissions">
       <FormSection
         :title="$t('PROFILE_SETTINGS.FORM.AUDIO_NOTIFICATIONS_SECTION.TITLE')"

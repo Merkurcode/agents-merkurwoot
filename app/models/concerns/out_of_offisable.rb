@@ -6,7 +6,7 @@ module OutOfOffisable
   OFFISABLE_ATTRS = %w[day_of_week closed_all_day open_hour open_minutes close_hour close_minutes open_all_day].freeze
 
   included do
-    has_many :working_hours, dependent: :destroy_async
+    has_many :working_hours, as: :workable, dependent: :destroy_async
     after_create :create_default_working_hours
   end
 

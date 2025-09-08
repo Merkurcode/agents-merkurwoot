@@ -211,7 +211,7 @@ class User < ApplicationRecord
     super
   end
 
-  def webhook_data
+  def webhook_create_data
     {
       name: name,
       email: email,

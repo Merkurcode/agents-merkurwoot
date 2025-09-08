@@ -156,6 +156,16 @@ class User < ApplicationRecord
     find_by(email: email&.downcase)
   end
 
+  def webhook_create_data
+    {
+      name: name,
+      email: email,
+      role: current_account_user&.role,
+      account_name: current_account_user&.account&.name,
+      created_at: created_at
+    }
+  end
+
   private
 
   def remove_macros

@@ -110,4 +110,15 @@ RSpec.describe User do
       expect(new_user.email).to eq('test123@test.com')
     end
   end
+
+  context 'get weebhook data' do
+    it 'returns the required fields' do
+      webhook_data = user.webhook_create_data
+      expect(webhook_data[:name]).to eq(user.name)
+      expect(webhook_data[:email]).to eq(user.email)
+      expect(webhook_data[:role]).to eq(user.current_account_user&.role)
+      expect(webhook_data[:account_name]).to eq(user.current_account_user&.account&.name)
+      expect(webhook_data[:created_at]).to eq(user.created_at)
+    end
+  end
 end

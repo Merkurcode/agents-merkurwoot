@@ -983,6 +983,11 @@
           "LABEL": "Answer",
           "PLACEHOLDER": "Enter the answer here",
           "ERROR": "Please provide a valid answer."
+        },
+        "ASSISTANT": {
+          "LABEL": "Assistant",
+          "PLACEHOLDER": "Select an assistant",
+          "ERROR": "Please select an assistant."
         }
       },
       "EDIT": {

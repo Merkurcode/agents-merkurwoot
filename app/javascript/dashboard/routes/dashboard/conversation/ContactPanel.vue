@@ -28,6 +28,10 @@ const props = defineProps({
     type: [Number, String],
     required: true,
   },
+  conversationSummary: {
+    type: String,
+    default: '',
+  },
   inboxId: {
     type: Number,
     default: undefined,
@@ -137,6 +141,18 @@ onMounted(() => {
       @close="closeContactPanel"
     />
     <ContactInfo :contact="contact" :channel-type="channelType" />
+
+    <div
+      class="rounded-lg bg-n-slate-2 outline outline-1 outline-n-weak cursor-grab py-2 px-4 drag-handle mb-3 mx-2"
+    >
+      <h5 class="text-n-slate-12 text-sm mb-1">
+        {{ $t('CONVERSATION_SIDEBAR.SUMMARY.TITLE') }}
+      </h5>
+      <p class="flex items-center select-none justify-between">
+        {{ conversationSummary }}
+      </p>
+    </div>
+
     <div class="pb-8 list-group px-2">
       <Draggable
         :list="conversationSidebarItems"

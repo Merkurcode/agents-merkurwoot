@@ -1,0 +1,4 @@
+id,first_name,last_name,email,gender,ip_address,identifier,phone_number,tags
+1,Clarice,Uzzell,cuzzell0@mozilla.org,Genderfluid,70.61.11.201,,,ruby
+2,Marieann,Creegan,,Genderfluid,168.186.4.241,e60bab4c-9fbb-47eb-8f75-42025b789c47,,rails
+3,Nancey,Windibank,,Agender,73.44.41.59,,+918080808082,"ruby, rails"

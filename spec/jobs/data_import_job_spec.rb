@@ -32,6 +32,7 @@ RSpec.describe DataImportJob do
   describe 'importing data' do
     context 'when the data is valid' do
       before do
+        ActsAsTaggableOn::Tag.find_or_create_by!(name: 'label_test')
         create(:label, title: 'label_test', account: data_import.account)
       end
 
@@ -172,6 +173,45 @@ RSpec.describe DataImportJob do
       it 'does not import any data and handles the MalformedCSVError' do
         expect { described_class.perform_now(data_import) }
           .to change { data_import.reload.status }.from('pending').to('failed')
+      end
+    end
+  end
+
+  describe 'when missing columns on data file' do
+    let!(:data_import) do
+      file_path = Rails.root.join('spec/assets/contact_without_columns.csv')
+      create(
+        :data_import,
+        import_file: Rack::Test::UploadedFile.new(file_path, 'text/csv')
+      )
+    end
+
+    before do
+      create(:label, title: 'ruby', account: data_import.account)
+      create(:label, title: 'rails', account: data_import.account)
+      ActsAsTaggableOn::Tag.find_or_create_by!(name: 'ruby')
+      ActsAsTaggableOn::Tag.find_or_create_by!(name: 'rails')
+      described_class.perform_now(data_import)
+    end
+
+    context 'when send only phone' do
+      it 'should see contact with correct tags' do
+        contact = Contact.find_by(phone_number: '+918080808082')
+        expect(contact.reload.label_list).to eq(%w[ruby rails])
+      end
+    end
+
+    context 'when send only identifier' do
+      it 'should see contact with correct tags' do
+        contact = Contact.find_by(identifier: 'e60bab4c-9fbb-47eb-8f75-42025b789c47')
+        expect(contact.reload.label_list).to eq(%w[rails])
+      end
+    end
+
+    context 'when send only email' do
+      it 'should see contact with correct tags' do
+        contact = Contact.from_email('cuzzell0@mozilla.org')
+        expect(contact.reload.label_list).to eq(%w[ruby])
       end
     end
   end

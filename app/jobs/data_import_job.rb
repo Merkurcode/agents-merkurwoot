@@ -32,9 +32,19 @@ class DataImportJob < ApplicationJob
   end
 
   def update_contact_tags
-    @csv.each do |row|
-      @tags_manager.build(row.to_h.with_indifferent_access)
-    end
+    tags =
+      @csv.each_with_object([]) do |row, acc|
+        acc.concat(@tags_manager.build(row.to_h.with_indifferent_access))
+      end
+
+    ActsAsTaggableOn::Tagging.import(
+      tags,
+      synchronize: tags,
+      on_duplicate_key_ignore: true,
+      track_validation_failures: true,
+      validate: true,
+      batch_size: 1000
+    )
   end
 
   def parse_csv_and_build_contacts

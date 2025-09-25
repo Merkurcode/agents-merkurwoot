@@ -3,10 +3,12 @@ require 'rails_helper'
 RSpec.describe DataImport::TagsManager do
   let!(:account) { create(:account) }
   let!(:contact) { create(:contact, account: account, identifier: '123') }
+  let(:ruby_tag) { ActsAsTaggableOn::Tag.find_or_create_by!(name: 'ruby') }
+  let(:rails_tag) { ActsAsTaggableOn::Tag.find_or_create_by!(name: 'rails') }
 
   before do
-    account.labels.create!(title: 'ruby')
-    account.labels.create!(title: 'rails')
+    account.labels.create!(title: ruby_tag.name)
+    account.labels.create!(title: rails_tag.name)
   end
 
   describe '#build' do
@@ -30,17 +32,20 @@ RSpec.describe DataImport::TagsManager do
 
     context 'when tags are valid' do
       it 'assigns only valid tags to the contact' do
-        manager.build(identifier: '123', tags: 'ruby, invalid_tag')
+        tag_instances = manager.build(identifier: '123', tags: 'ruby, invalid_tag')
 
-        expect(contact.reload.label_list).to contain_exactly('ruby')
+        expect(tag_instances.count).to eq(1)
+        expect(tag_instances.first.tag_id).to eq(ruby_tag.id)
       end
     end
 
     context 'when tags have spaces and case differences' do
       it 'normalizes tags before assignment' do
-        manager.build(identifier: '123', tags: ' Ruby ,  RAILS ')
+        tag_instances = manager.build(identifier: '123', tags: ' Ruby ,  RAILS ')
 
-        expect(contact.reload.label_list).to match_array(%w[ruby rails])
+        expect(tag_instances.count).to eq(2)
+        expect(tag_instances.first.tag_id).to eq(ruby_tag.id)
+        expect(tag_instances.last.tag_id).to eq(rails_tag.id)
       end
     end
   end

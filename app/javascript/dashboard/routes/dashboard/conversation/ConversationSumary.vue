@@ -17,5 +17,7 @@ const sumary = computed(() => {
 </script>
 
 <template>
-  <div v-html="sumary" />
+  <div class="px-3">
+    <div v-html="sumary" />
+  </div>
 </template>

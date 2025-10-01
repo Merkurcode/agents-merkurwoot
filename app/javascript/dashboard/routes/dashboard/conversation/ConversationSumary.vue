@@ -9,9 +9,9 @@ const props = defineProps({
   },
 });
 
-const sumary = computed(() => {
-  const md = new MarkdownIt();
+const md = new MarkdownIt();
 
+const sumary = computed(() => {
   return md.render(props.rawSumary);
 });
 </script>

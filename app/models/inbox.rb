@@ -55,6 +55,7 @@ class Inbox < ApplicationRecord
 
   belongs_to :account
   belongs_to :portal, optional: true
+  belongs_to :survey, optional: true
 
   belongs_to :channel, polymorphic: true, dependent: :destroy
 

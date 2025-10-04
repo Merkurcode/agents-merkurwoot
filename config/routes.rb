@@ -194,6 +194,7 @@ Rails.application.routes.draw do
             get :campaigns, on: :member
             get :agent_bot, on: :member
             post :set_agent_bot, on: :member
+            post :set_survey, on: :member
             delete :avatar, on: :member
             post :sync_templates, on: :member
             get :health, on: :member

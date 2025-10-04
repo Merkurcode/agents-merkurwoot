@@ -35,6 +35,9 @@ export const getters = {
   getQuestions: $state => surveyId => {
     return $state.questions[surveyId] || [];
   },
+  getActiveSurvey: $state => inboxId => {
+    return $state.records.find(survey => survey.inbox_id === inboxId);
+  },
 };
 
 export const actions = {

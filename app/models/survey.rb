@@ -24,6 +24,7 @@ class Survey < ApplicationRecord
   has_many :survey_questions, dependent: :destroy
   has_many :survey_question_options, through: :survey_questions
   has_many :inboxes, dependent: :nullify
+  has_many :contact_survey_completions, dependent: :destroy
 
   accepts_nested_attributes_for :survey_questions, allow_destroy: true
 

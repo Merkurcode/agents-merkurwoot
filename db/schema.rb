@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_04_130000) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_05_165141) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -567,6 +567,20 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_04_130000) do
     t.index ["source_id"], name: "index_contact_inboxes_on_source_id"
   end
 
+  create_table "contact_survey_completions", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "survey_id", null: false
+    t.bigint "account_id", null: false
+    t.datetime "completed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "completed_at"], name: "idx_on_account_id_completed_at_5f0c3174ed"
+    t.index ["account_id"], name: "index_contact_survey_completions_on_account_id"
+    t.index ["contact_id", "survey_id"], name: "index_contact_survey_completions_unique", unique: true
+    t.index ["contact_id"], name: "index_contact_survey_completions_on_contact_id"
+    t.index ["survey_id"], name: "index_contact_survey_completions_on_survey_id"
+  end
+
   create_table "contacts", id: :serial, force: :cascade do |t|
     t.string "name", default: ""
     t.string "email"
@@ -1105,6 +1119,22 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_04_130000) do
     t.index ["account_id"], name: "index_sla_policies_on_account_id"
   end
 
+  create_table "survey_answers", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "survey_question_id", null: false
+    t.bigint "survey_question_option_id"
+    t.bigint "account_id", null: false
+    t.text "answer_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_survey_answers_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_survey_answers_on_account_id"
+    t.index ["contact_id", "survey_question_id"], name: "index_survey_answers_on_contact_id_and_survey_question_id", unique: true
+    t.index ["contact_id"], name: "index_survey_answers_on_contact_id"
+    t.index ["survey_question_id"], name: "index_survey_answers_on_survey_question_id"
+    t.index ["survey_question_option_id"], name: "index_survey_answers_on_survey_question_option_id"
+  end
+
   create_table "survey_question_options", force: :cascade do |t|
     t.bigint "survey_question_id", null: false
     t.string "option_text", null: false
@@ -1217,6 +1247,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_04_130000) do
     t.integer "consumed_timestep"
     t.boolean "otp_required_for_login", default: false, null: false
     t.text "otp_backup_codes"
+    t.string "phone_number"
     t.index ["email"], name: "index_users_on_email"
     t.index ["otp_required_for_login"], name: "index_users_on_otp_required_for_login"
     t.index ["otp_secret"], name: "index_users_on_otp_secret", unique: true
@@ -1257,8 +1288,15 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_04_130000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "contact_survey_completions", "accounts"
+  add_foreign_key "contact_survey_completions", "contacts"
+  add_foreign_key "contact_survey_completions", "surveys"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "inboxes", "surveys"
+  add_foreign_key "survey_answers", "accounts"
+  add_foreign_key "survey_answers", "contacts"
+  add_foreign_key "survey_answers", "survey_question_options"
+  add_foreign_key "survey_answers", "survey_questions"
   add_foreign_key "survey_question_options", "survey_questions"
   add_foreign_key "survey_questions", "surveys"
   add_foreign_key "surveys", "accounts"

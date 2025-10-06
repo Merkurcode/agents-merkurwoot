@@ -5,7 +5,13 @@
     "LEARN_MORE": "Learn about surveys",
     "STATUS": {
       "ACTIVE": "Active",
-      "INACTIVE": "Inactive"
+      "INACTIVE": "Inactive",
+      "COMPLETED": "Completed"
+    },
+    "RESPONSES": {
+      "FETCH_ERROR": "Failed to load survey responses",
+      "EMPTY_STATE": "No survey responses found",
+      "MORE_ANSWERS": "+{count} more answers"
     },
     "QUESTION_TYPES": {
       "OPEN_ENDED": "Open Ended",

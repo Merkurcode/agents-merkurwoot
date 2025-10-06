@@ -77,6 +77,7 @@ Rails.application.routes.draw do
           resources :surveys, only: [:index, :create, :show, :update, :destroy] do
             resources :survey_questions, only: [:index, :create, :show, :update, :destroy]
           end
+          resources :survey_answers, only: [:create]
           resources :contact_inboxes, only: [] do
             collection do
               post :filter
@@ -173,6 +174,8 @@ Rails.application.routes.draw do
               resources :contact_inboxes, only: [:create]
               resources :labels, only: [:create, :index]
               resources :notes
+              resources :survey_answers, only: [:index]
+              resources :survey_completions, only: [:index]
             end
           end
           resources :csat_survey_responses, only: [:index] do

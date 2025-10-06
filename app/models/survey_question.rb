@@ -25,6 +25,7 @@
 class SurveyQuestion < ApplicationRecord
   belongs_to :survey
   has_many :survey_question_options, dependent: :destroy
+  has_many :survey_answers, dependent: :destroy
 
   enum question_type: { open_ended: 0, multiple_choice: 1 }
   enum input_type: { text: 0, number: 1 }

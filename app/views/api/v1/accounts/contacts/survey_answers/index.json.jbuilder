@@ -6,6 +6,11 @@ json.array! surveys_hash.keys do |survey|
   json.survey_name survey.name
   json.survey_description survey.description
 
+  # Check if survey is completed
+  completion = @contact.contact_survey_completions.find_by(survey: survey)
+  json.is_completed completion.present?
+  json.completed_at completion&.completed_at
+
   json.answers surveys_hash[survey] do |answer|
     json.id answer.id
     json.question_text answer.survey_question.question_text

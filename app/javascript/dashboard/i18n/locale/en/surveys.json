@@ -6,7 +6,8 @@
     "STATUS": {
       "ACTIVE": "Active",
       "INACTIVE": "Inactive",
-      "COMPLETED": "Completed"
+      "COMPLETED": "Completed",
+      "IN_PROGRESS": "In Progress"
     },
     "RESPONSES": {
       "FETCH_ERROR": "Failed to load survey responses",

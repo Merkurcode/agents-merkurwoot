@@ -21,7 +21,7 @@ const fetchSurveyAnswers = async () => {
     surveyAnswers.value = data;
   } catch (error) {
     showAlert({
-      message: t('SURVEY.RESPONSES.FETCH_ERROR'),
+      message: t('SURVEYS.RESPONSES.FETCH_ERROR'),
       variant: 'error',
     });
   } finally {
@@ -58,13 +58,29 @@ const formatDate = dateString => {
         :key="survey.survey_id"
         class="flex flex-col gap-4 p-4 border border-n-slate-6 rounded-lg bg-n-slate-2"
       >
-        <div class="flex flex-col gap-1">
-          <h4 class="text-sm font-semibold text-n-slate-12">
-            {{ survey.survey_name }}
-          </h4>
-          <p v-if="survey.survey_description" class="text-xs text-n-slate-11">
-            {{ survey.survey_description }}
-          </p>
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex flex-col gap-1">
+            <h4 class="text-sm font-semibold text-n-slate-12">
+              {{ survey.survey_name }}
+            </h4>
+            <p v-if="survey.survey_description" class="text-xs text-n-slate-11">
+              {{ survey.survey_description }}
+            </p>
+          </div>
+          <span
+            v-if="survey.is_completed"
+            class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded bg-n-green-2 text-n-green-11"
+          >
+            <span class="i-ph-check-circle text-n-green-9" />
+            {{ $t('SURVEYS.STATUS.COMPLETED') }}
+          </span>
+          <span
+            v-else
+            class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded bg-n-yellow-2 text-n-yellow-11"
+          >
+            <span class="i-ph-clock text-n-yellow-9" />
+            {{ $t('SURVEYS.STATUS.IN_PROGRESS') }}
+          </span>
         </div>
         <div class="flex flex-col gap-3">
           <div

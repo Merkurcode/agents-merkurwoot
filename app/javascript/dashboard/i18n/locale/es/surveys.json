@@ -5,7 +5,14 @@
     "LEARN_MORE": "Aprende sobre encuestas",
     "STATUS": {
       "ACTIVE": "Activa",
-      "INACTIVE": "Inactiva"
+      "INACTIVE": "Inactiva",
+      "COMPLETED": "Completada",
+      "IN_PROGRESS": "En Progreso"
+    },
+    "RESPONSES": {
+      "FETCH_ERROR": "Error al cargar las respuestas de la encuesta",
+      "EMPTY_STATE": "No se encontraron respuestas de encuesta",
+      "MORE_ANSWERS": "+{count} respuestas más"
     },
     "SURVEYS_CONFIGURATION": {
       "TITLE": "Seleccione una encuesta",

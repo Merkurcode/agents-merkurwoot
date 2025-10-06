@@ -52,10 +52,18 @@ onMounted(() => {
             {{ survey.survey_name }}
           </h5>
           <span
+            v-if="survey.is_completed"
             class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded bg-n-green-2 text-n-green-11"
           >
             <span class="i-ph-check-circle text-n-green-9" />
             {{ $t('SURVEYS.STATUS.COMPLETED') }}
+          </span>
+          <span
+            v-else
+            class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded bg-n-yellow-2 text-n-yellow-11"
+          >
+            <span class="i-ph-clock text-n-yellow-9" />
+            {{ $t('SURVEYS.STATUS.IN_PROGRESS') }}
           </span>
         </div>
         <div class="flex flex-col gap-1.5">

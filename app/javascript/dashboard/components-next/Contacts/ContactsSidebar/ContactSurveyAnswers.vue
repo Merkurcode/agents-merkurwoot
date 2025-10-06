@@ -9,7 +9,6 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 
 const { t } = useI18n();
 const route = useRoute();
-const { showAlert } = useAlert();
 
 const surveyAnswers = ref([]);
 const isLoading = ref(false);
@@ -20,10 +19,7 @@ const fetchSurveyAnswers = async () => {
     const { data } = await ContactsAPI.getSurveyAnswers(route.params.contactId);
     surveyAnswers.value = data;
   } catch (error) {
-    showAlert({
-      message: t('SURVEYS.RESPONSES.FETCH_ERROR'),
-      variant: 'error',
-    });
+    useAlert(t('SURVEYS.RESPONSES.FETCH_ERROR'));
   } finally {
     isLoading.value = false;
   }

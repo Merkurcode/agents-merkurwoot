@@ -122,6 +122,7 @@ watch(
   }
 );
 
+
 onMounted(async () => {
   await fetchCampaign();
   isLoading.value = false;

@@ -39,6 +39,12 @@ RSpec.describe DataImport::TagsManager do
         expect(taggings.map(&:taggable_id).uniq).to eq([contact.id])
         expect(taggings.first.tag_id).to eq(ActsAsTaggableOn::Tag.find_by(name: 'ruby').id)
       end
+
+      it 'assigns all tags to the contact' do
+        manager.build(identifier: '123', tags: 'ruby, invalid_tag')
+
+        expect(contact.reload.label_list).to match_array(%w[ruby invalid_tag])
+      end
     end
 
     context 'when tags have spaces and case differences' do

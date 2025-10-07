@@ -366,6 +366,26 @@ export const actions = {
     );
     return response.data;
   },
+  setSurvey: async ({ commit, rootState }, { inboxId, surveyId }) => {
+    try {
+      await InboxesAPI.setSurvey(inboxId, surveyId);
+
+      const updatedInboxes = rootState.records.map(inbox => {
+        if (inbox.id === Number(inboxId)) {
+          return {
+            ...inbox,
+            survey_id: surveyId,
+          };
+        }
+        return inbox;
+      });
+
+      commit(types.default.SET_INBOXES, updatedInboxes);
+      return true;
+    } catch (error) {
+      throw new Error(error);
+    }
+  },
 };
 
 export const mutations = {

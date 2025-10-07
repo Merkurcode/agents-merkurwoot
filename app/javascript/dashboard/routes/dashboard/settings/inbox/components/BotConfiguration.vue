@@ -22,29 +22,49 @@ export default {
   data() {
     return {
       selectedAgentBotId: null,
+      selectedSurveyId: null,
     };
   },
   computed: {
     ...mapGetters({
       agentBots: 'agentBots/getBots',
       uiFlags: 'agentBots/getUIFlags',
+      surveys: 'surveys/getSurveys',
+      isFetchingSurveys: 'surveys/getUIFlags',
     }),
     currentInboxId() {
       return this.inbox?.id || this.$route.params.inboxId;
+    },
+    activeInbox() {
+      return this.inbox;
     },
     activeAgentBot() {
       return this.$store.getters['agentBots/getActiveAgentBot'](
         this.currentInboxId
       );
     },
+    activeSurvey() {
+      return this.$store.getters['surveys/getSurvey'](
+        this.activeInbox?.survey_id
+      );
+    },
   },
   watch: {
     activeAgentBot() {
-      this.selectedAgentBotId = this.activeAgentBot.id;
+      this.selectedAgentBotId = this.activeAgentBot?.id || null;
+    },
+    'activeInbox.survey_id': {
+      immediate: true,
+      handler(surveyId) {
+        if (surveyId) {
+          this.selectedSurveyId = surveyId;
+        }
+      },
     },
   },
   mounted() {
     this.fetchBotData();
+    this.fetchSurveys();
   },
 
   methods: {
@@ -52,14 +72,31 @@ export default {
       this.$store.dispatch('agentBots/get');
       this.$store.dispatch('agentBots/fetchAgentBotInbox', this.currentInboxId);
     },
+    async fetchSurveys() {
+      try {
+        await this.$store.dispatch('surveys/get');
+      } catch (error) {
+        useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.ERROR_MESSAGE'));
+      }
+    },
     async updateActiveAgentBot() {
       try {
         await this.$store.dispatch('agentBots/setAgentBotInbox', {
           inboxId: this.inbox.id,
-          // Added this to make sure that empty values are not sent to the API
-          botId: this.selectedAgentBotId ? this.selectedAgentBotId : undefined,
+          botId: this.selectedAgentBotId || undefined,
         });
+
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.SUCCESS_MESSAGE'));
+      } catch (error) {
+        useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.ERROR_MESSAGE'));
+      }
+    },
+    async updateSurveyAssignment() {
+      try {
+        await this.$store.dispatch('inboxes/setSurvey', {
+          inboxId: this.inbox.id,
+          surveyId: this.selectedSurveyId,
+        });
       } catch (error) {
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.ERROR_MESSAGE'));
       }
@@ -85,7 +122,13 @@ export default {
 
 <template>
   <div class="mx-6 max-w-4xl">
-    <LoadingState v-if="uiFlags.isFetching || uiFlags.isFetchingAgentBot" />
+    <LoadingState
+      v-if="
+        uiFlags.isFetching ||
+        uiFlags.isFetchingAgentBot ||
+        isFetchingSurveys.isFetching
+      "
+    />
     <form v-else @submit.prevent="updateActiveAgentBot">
       <SettingsFieldSection
         :label="$t('AGENT_BOTS.BOT_CONFIGURATION.TITLE')"
@@ -119,6 +162,19 @@ export default {
             </div>
           </div>
         </template>
+      </SettingsFieldSection>
+
+      <SettingsFieldSection
+        :label="$t('AGENT_BOTS.SURVEY.TITLE')"
+        :help-text="$t('AGENT_BOTS.SURVEY.DESC')"
+        class="[&>div]:!items-start"
+      >
+        <SelectInput
+          v-model="selectedSurveyId"
+          :placeholder="$t('AGENT_BOTS.SURVEY.SELECT_PLACEHOLDER')"
+          :options="surveys.map(s => ({ value: s.id, label: s.name }))"
+          @change="updateSurveyAssignment"
+        />
       </SettingsFieldSection>
     </form>
   </div>

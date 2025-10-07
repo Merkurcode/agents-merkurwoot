@@ -48,6 +48,11 @@ export default {
         this.activeInbox?.survey_id
       );
     },
+    activeSurvey() {
+      return this.$store.getters['surveys/getSurvey'](
+        this.activeInbox?.survey_id
+      );
+    },
   },
   watch: {
     activeAgentBot() {

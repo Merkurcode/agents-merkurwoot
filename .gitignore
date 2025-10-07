@@ -104,3 +104,14 @@ CLAUDE.local.md
 .pnpm-store/*
 local/
 Procfile.worktree
+
+# Local Docker configuration changes
+docker-compose.yaml
+
+# Local documentation
+SERVICIOS.md
+CLAUDE.md
+
+# Husky git hooks (if installed locally)
+.husky/
+!.husky/.gitkeep

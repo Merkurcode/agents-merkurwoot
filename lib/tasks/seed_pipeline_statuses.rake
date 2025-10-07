@@ -5,10 +5,11 @@ namespace :db do
   desc 'Seed default pipeline statuses for all accounts'
   task seed_pipeline_statuses: :environment do
     puts '🌱 Seeding default pipeline statuses...'
+    default_statuses = %w[new contacted proposal_sent closed].freeze
 
     Account.includes(:conversations).find_each do |account|
-      PipelineStatus::DEFAULT_STATUSES.each do |status_name|
-        pipeline_status = account.pipeline_statuses.find_or_initialize_by(name: status_name)
+      default_statuses.each do |status_name|
+        pipeline_status = account.pipeline_statuses.find_or_initialize_by(name: I18n.t("pipeline_status.default_statuses.#{status_name}"))
         if pipeline_status.new_record?
           pipeline_status.save!
           puts "✅ Created '#{status_name}' for Account ##{account.id}"

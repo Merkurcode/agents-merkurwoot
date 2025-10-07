@@ -8,6 +8,5 @@ class CreatePipelineStatuse < ActiveRecord::Migration[7.1] # :nodoc:
 
       t.timestamps
     end
-    add_index :pipeline_statuses, [:account_id, :name], unique: true
   end
 end

@@ -10,17 +10,14 @@
 #
 # Indexes
 #
-#  index_pipeline_statuses_on_account_id           (account_id)
-#  index_pipeline_statuses_on_account_id_and_name  (account_id,name) UNIQUE
+#  index_pipeline_statuses_on_account_id  (account_id)
 #
 class PipelineStatus < ApplicationRecord
   # == Constants ============================================================
-  DEFAULT_STATUSES = %w[new contacted qualified 'proposal send' close].freeze
-
   # == Extensions ===========================================================
   # == Enums ================================================================
   # == Validations ===========================================================
-  validates :name, presence: true, uniqueness: { scope: :account_id }
+  validates :name, presence: true
 
   # == Callbacks =====================================================
   before_save :set_name
@@ -28,7 +25,6 @@ class PipelineStatus < ApplicationRecord
   # == Attributes ===========================================================
   # == Relationships ========================================================
   belongs_to :account
-  has_many :conversations, dependent: :nullify
 
   # == Instance Methods =====================================================
 

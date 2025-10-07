@@ -4,7 +4,7 @@ class Api::V1::Accounts::PipelineStatusesController < Api::V1::Accounts::BaseCon
   before_action :set_pipeline_params, only: %i[update destroy]
 
   def index
-    @pipeline_statuses = @current_account.pipeline_statuses
+    @pipeline_statuses = @current_account.pipeline_statuses.order(:created_at)
   end
 
   def create

@@ -125,6 +125,53 @@ const setPhoneNumber = computed(() => {
     : '';
 });
 
+const parsedPhoneNumber = computed(() => {
+  return parsePhoneNumber(agentPhoneNumber.value || '');
+});
+
+const isPhoneNumberNotValid = computed(() => {
+  if (agentPhoneNumber.value !== '') {
+    return (
+      !isPhoneNumberValid(agentPhoneNumber.value, activeDialCode.value) ||
+      (agentPhoneNumber.value !== '' ? activeDialCode.value === '' : false)
+    );
+  }
+  return false;
+});
+
+const setPhoneNumber = computed(() => {
+  if (parsedPhoneNumber.value && parsedPhoneNumber.value.countryCallingCode) {
+    return agentPhoneNumber.value;
+  }
+  if (agentPhoneNumber.value === '' && activeDialCode.value !== '') {
+    return '';
+  }
+  return activeDialCode.value
+    ? `${activeDialCode.value}${agentPhoneNumber.value}`
+    : '';
+});
+
+const setPhoneCode = code => {
+  activeDialCode.value = code;
+};
+
+// Initialize phone number from props
+if (props.phoneNumber) {
+  const parsed = parsePhoneNumber(props.phoneNumber);
+  if (parsed && parsed.countryCallingCode) {
+    // Set dial code
+    activeDialCode.value = `+${parsed.countryCallingCode}`;
+    // Extract number without country code for the input
+    agentPhoneNumber.value = props.phoneNumber.replace(
+      `+${parsed.countryCallingCode}`,
+      ''
+    );
+  } else {
+    // If not parseable, use the raw value
+    agentPhoneNumber.value = props.phoneNumber;
+  }
+}
+
 const rules = {
   agentName: { required, minLength: minLength(1) },
   selectedRoleId: { required },

@@ -207,6 +207,8 @@ Rails.application.routes.draw do
               resources :labels, only: [:create, :index]
               resources :notes
               post :call, on: :member, to: 'calls#create' if ChatwootApp.enterprise?
+              resources :survey_answers, only: [:index]
+              resources :survey_completions, only: [:index]
             end
           end
           resources :csat_survey_responses, only: [:index] do

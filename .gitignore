@@ -99,7 +99,10 @@ CLAUDE.local.md
 # Histoire deployment
 .netlify
 .histoire
-.pnpm-store/*
+
+# pnpm store (local cache)
+.pnpm-store/
+
 local/
 
 # pnpm store (local cache)

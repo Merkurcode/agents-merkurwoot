@@ -4870,11 +4870,6 @@
                     "type": "number",
                     "description": "The ID of the SLA policy (Available only in Enterprise edition)",
                     "example": 1
-                  },
-                  "summary": {
-                    "type": "string",
-                    "description": "The summary of the conversation",
-                    "example": "This is a sample summary"
                   }
                 }
               }
@@ -8610,10 +8605,6 @@
           "sla_policy_id": {
             "type": "number",
             "description": "The ID of the SLA policy"
-          },
-          "summary": {
-            "type": "string",
-            "description": "The summary of the conversation"
           },
           "applied_sla": {
             "type": "object",

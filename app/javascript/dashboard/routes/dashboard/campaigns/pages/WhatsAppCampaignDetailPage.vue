@@ -110,6 +110,7 @@ const handlePageChange = newPage => {
   fetchCampaign();
 };
 
+
 watch(
   () => route.params.campaignId,
   async () => {
@@ -121,6 +122,7 @@ watch(
     isLoading.value = false;
   }
 );
+
 
 
 onMounted(async () => {

@@ -69,7 +69,7 @@ RSpec.describe 'Profile API', type: :request do
         expect(response).to conform_schema(200)
         agent.reload
 
-        expect(agent.custom_attributes['phone_number']).to eq('+123456789')
+        expect(agent.phone_number).to eq('+123456789')
       end
 
       it 'updates the message_signature' do

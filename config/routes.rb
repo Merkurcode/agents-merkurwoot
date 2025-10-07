@@ -90,6 +90,10 @@ Rails.application.routes.draw do
             post :reset_access_token, on: :member
             post :reset_secret, on: :member
           end
+          resources :surveys, only: [:index, :create, :show, :update, :destroy] do
+            resources :survey_questions, only: [:index, :create, :show, :update, :destroy]
+          end
+          resources :survey_answers, only: [:create]
           resources :contact_inboxes, only: [] do
             collection do
               post :filter
@@ -218,6 +222,7 @@ Rails.application.routes.draw do
             get :campaigns, on: :member
             get :agent_bot, on: :member
             post :set_agent_bot, on: :member
+            post :set_survey, on: :member
             delete :avatar, on: :member
             post :sync_templates, on: :member
             get :health, on: :member

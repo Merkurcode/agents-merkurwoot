@@ -1012,6 +1012,28 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.index ["source_id"], name: "index_messages_on_source_id"
   end
 
+  create_table "meta_campaign_interactions", force: :cascade do |t|
+    t.bigint "inbox_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "message_id", null: false
+    t.string "source_id", null: false
+    t.string "source_type"
+    t.string "ctwa_clid"
+    t.jsonb "metadata", default: {}
+    t.string "interaction_type", default: "initial_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "source_id"], name: "index_meta_campaign_interactions_on_account_id_and_source_id"
+    t.index ["account_id"], name: "index_meta_campaign_interactions_on_account_id"
+    t.index ["conversation_id"], name: "index_meta_campaign_interactions_on_conversation_id"
+    t.index ["created_at"], name: "index_meta_campaign_interactions_on_created_at"
+    t.index ["inbox_id", "source_id"], name: "index_meta_campaign_interactions_on_inbox_id_and_source_id"
+    t.index ["inbox_id"], name: "index_meta_campaign_interactions_on_inbox_id"
+    t.index ["message_id"], name: "index_meta_campaign_interactions_on_message_id"
+    t.index ["source_id"], name: "index_meta_campaign_interactions_on_source_id"
+  end
+
   create_table "notes", force: :cascade do |t|
     t.text "content", null: false
     t.bigint "account_id", null: false
@@ -1348,6 +1370,10 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
   add_foreign_key "contact_survey_completions", "surveys"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "inboxes", "surveys"
+  add_foreign_key "meta_campaign_interactions", "accounts"
+  add_foreign_key "meta_campaign_interactions", "conversations"
+  add_foreign_key "meta_campaign_interactions", "inboxes"
+  add_foreign_key "meta_campaign_interactions", "messages"
   add_foreign_key "survey_answers", "accounts"
   add_foreign_key "survey_answers", "contacts"
   add_foreign_key "survey_answers", "survey_question_options"

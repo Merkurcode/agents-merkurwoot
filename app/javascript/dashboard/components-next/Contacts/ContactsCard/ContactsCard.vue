@@ -15,6 +15,7 @@ const props = defineProps({
   name: { type: String, default: '' },
   email: { type: String, default: '' },
   additionalAttributes: { type: Object, default: () => ({}) },
+  customAttributes: { type: Object, default: () => ({}) },
   phoneNumber: { type: String, default: '' },
   thumbnail: { type: String, default: '' },
   availabilityStatus: { type: String, default: null },
@@ -34,6 +35,7 @@ const getInitialContactData = () => ({
   email: props.email,
   phoneNumber: props.phoneNumber,
   additionalAttributes: props.additionalAttributes,
+  customAttributes: props.customAttributes,
 });
 
 const contactData = ref(getInitialContactData());

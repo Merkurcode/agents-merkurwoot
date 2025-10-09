@@ -3,7 +3,7 @@
 # Table name: marketing_campaigns
 #
 #  id          :bigint           not null, primary key
-#  active      :boolean          default(FALSE), not null
+#  active      :boolean          default(TRUE), not null
 #  description :text             default("")
 #  end_date    :date             not null
 #  start_date  :date             not null

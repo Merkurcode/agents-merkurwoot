@@ -36,6 +36,6 @@ class Api::V1::Accounts::MarketingCampaignsController < Api::V1::Accounts::BaseC
   end
 
   def marketing_campaign_params
-    params.require(:marketing_campaign).permit(:title, :description, :start_date, :end_date, :active, :source_id)
+    params.require(:marketing_campaign).permit(:title, :description, :start_date, :end_date, :source_id)
   end
 end

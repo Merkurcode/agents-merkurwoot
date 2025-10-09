@@ -282,9 +282,9 @@
             "ERROR": "End date is required"
           },
           "SOURCE_ID": {
-            "LABEL": "Soruce id",
-            "PLACEHOLDER": "Please enter the soruce id of campaign",
-            "ERROR": "Soruce id is required"
+            "LABEL": "Soruce ID",
+            "PLACEHOLDER": "Please enter the soruce ID of campaign",
+            "ERROR": "Soruce ID is required"
           },
           "BUTTONS": {
             "CREATE": "Create",

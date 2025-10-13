@@ -240,8 +240,7 @@ class Whatsapp::OneoffCampaignService
   end
 
   def find_template(template_name)
-    channel.message_templates.find do |t|
-      t['name'] == template_name && t['language'] == campaign.template_params['language']
-    end
+    @template_cache ||= channel.message_templates.index_by { |t| "#{t['name']}:#{t['language']}" }
+    @template_cache["#{template_name}:#{campaign.template_params['language']}"]
   end
 end

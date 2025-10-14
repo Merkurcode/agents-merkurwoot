@@ -13,4 +13,5 @@ json.array! @appointments do |appointment|
   end
   json.created_at appointment.created_at
   json.updated_at appointment.updated_at
+  json.qr_code_url appointment.qr_code.attached? ? url_for(appointment.qr_code) : nil
 end

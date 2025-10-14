@@ -1,4 +1,6 @@
 class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseController
+  include AppointmentQrGenerator
+
   before_action :appointment, except: [:index, :create]
   before_action :check_authorization
 
@@ -10,7 +12,11 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
 
   def create
     contact = Current.account.contacts.find(params[:contact_id])
-    @appointment = contact.appointments.create!(appointment_params)
+    @appointment = contact.appointments.build(appointment_params)
+    @appointment.account = Current.account
+    @appointment.save!
+
+    generate_qr_code_for_appointment(@appointment)
   end
 
   def update

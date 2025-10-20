@@ -48,6 +48,7 @@ import yearInReview from './yearInReview.json';
 import customerMgmt from './customerMgmt.json';
 import knowledgeBase from './knowledgeBase.json';
 import yearInReview from './yearInReview.json';
+import customerMgmt from './customerMgmt.json';
 
 export default {
   ...advancedFilters,
@@ -100,4 +101,5 @@ export default {
   ...customerMgmt,
   ...knowledgeBase,
   ...yearInReview,
+  ...customerMgmt,
 };

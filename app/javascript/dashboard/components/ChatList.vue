@@ -30,6 +30,7 @@ import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirecti
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import IntersectionObserver from 'dashboard/components/IntersectionObserver.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
+import Board from '../routes/dashboard/conversation/StatusBoard/Board.vue';
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
@@ -74,6 +75,7 @@ const props = defineProps({
   foldersId: { type: [String, Number], default: 0 },
   showConversationList: { default: true, type: Boolean },
   isOnExpandedLayout: { default: false, type: Boolean },
+  isOnBoard: { default: false, type: Boolean },
 });
 
 const emit = defineEmits(['conversationLoad']);
@@ -284,6 +286,9 @@ const activeTeam = computed(() => {
 });
 
 const pageTitle = computed(() => {
+  if (props.isOnBoard) {
+    return t('CHAT_LIST.BOARD');
+  }
   if (hasAppliedFilters.value) {
     return t('CHAT_LIST.TAB_HEADING');
   }
@@ -890,6 +895,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       :is-on-expanded-layout="isOnExpandedLayout"
       :conversation-stats="conversationStats"
       :is-list-loading="chatListLoading && !conversationList.length"
+      :is-on-board="isOnBoard"
       @add-folders="onClickOpenAddFoldersModal"
       @delete-folders="onClickOpenDeleteFoldersModal"
       @filters-modal="onToggleAdvanceFiltersModal"
@@ -947,6 +953,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       @assign-team="onAssignTeamsForBulk"
     />
     <div
+      v-if="!isOnBoard"
       ref="conversationListRef"
       class="flex-1 min-h-0 overflow-y-auto conversations-list"
       :class="{ '!overflow-hidden': isContextMenuOpen }"
@@ -983,6 +990,10 @@ watch(conversationFilters, (newVal, oldVal) => {
         @observed="loadMoreConversations"
       />
     </div>
+    <div v-else class="flex-1 p-4 overflow-auto">
+      <Board v-model="conversationList" />
+    </div>
+
     <Dialog
       ref="deleteConversationDialogRef"
       type="alert"

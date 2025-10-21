@@ -261,6 +261,16 @@ const actions = {
     }
   },
 
+  togglePipelineStatus: async (
+    { commit },
+    { conversationId, pipelineStatusId }
+  ) => {
+    const response = await ConversationApi.update(conversationId, {
+      pipeline_status_id: pipelineStatusId,
+    });
+    commit(types.CHANGE_CONVERSATION_PIPELINE_STATUS, response.data);
+  },
+
   createPendingMessageAndSend: async ({ dispatch }, data) => {
     const pendingMessage = createPendingMessage(data);
     dispatch('sendMessageWithData', pendingMessage);

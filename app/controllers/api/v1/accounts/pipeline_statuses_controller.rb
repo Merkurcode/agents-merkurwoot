@@ -18,6 +18,8 @@ class Api::V1::Accounts::PipelineStatusesController < Api::V1::Accounts::BaseCon
   def destroy
     @pipeline_status.destroy!
     head :ok
+  rescue ActiveRecord::RecordNotDestroyed => e
+    render json: { error: e.record.errors[:base].first }, status: :unprocessable_entity
   end
 
   private

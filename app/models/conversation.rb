@@ -316,9 +316,14 @@ class Conversation < ApplicationRecord
     self['additional_attributes']['referer'] = nil unless url_valid?(additional_attributes['referer'])
   end
 
+  def assign_pipeline_status
+    first_status = account.pipeline_statuses.order(:created_at).first
+    self.pipeline_status = first_status if first_status.present?
+  end
+
   def assign_pipeline_status!
-    first_status_pipeline = account.pipeline_statuses.first
-    conversation.update!(pipeline_status: first_status_pipeline)
+    first_status = account.pipeline_statuses.order(:created_at).first
+    update!(pipeline_status: first_status) if first_status.present?
   end
 
   # creating db triggers

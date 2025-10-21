@@ -21,10 +21,15 @@ class PipelineStatus < ApplicationRecord
 
   # == Callbacks =====================================================
   before_save :set_name
+  before_destroy :check_for_conversations
 
   # == Attributes ===========================================================
+  # == Scopes ===============================================================
+  default_scope { order(created_at: :asc) }
+
   # == Relationships ========================================================
   belongs_to :account
+  has_many :conversations, dependent: :restrict_with_error
 
   # == Instance Methods =====================================================
 
@@ -32,5 +37,12 @@ class PipelineStatus < ApplicationRecord
 
   def set_name
     self.name = name.downcase
+  end
+
+  def check_for_conversations
+    return unless conversations.exists?
+
+    errors.add(:base, 'Cannot delete pipeline status with assigned conversations')
+    throw(:abort)
   end
 end

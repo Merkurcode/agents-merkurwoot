@@ -265,9 +265,15 @@ const actions = {
     { commit },
     { conversationId, pipelineStatusId }
   ) => {
+    commit(types.CHANGE_CONVERSATION_PIPELINE_STATUS, {
+      id: parseInt(conversationId, 10),
+      pipeline_status_id: parseInt(pipelineStatusId, 10),
+    });
+
     const response = await ConversationApi.update(conversationId, {
       pipeline_status_id: pipelineStatusId,
     });
+
     commit(types.CHANGE_CONVERSATION_PIPELINE_STATUS, response.data);
   },
 

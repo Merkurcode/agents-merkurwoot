@@ -44,6 +44,10 @@ const hasSlaPolicyId = computed(() => props.conversation?.sla_policy_id);
 const showLabelsSection = computed(() => {
   return props.conversation?.labels?.length > 0 || hasSlaPolicyId.value;
 });
+
+const assignee = computed(() => props.conversation?.meta?.assignee || {});
+
+const showAssignee = computed(() => assignee.value && assignee.value.name);
 </script>
 
 <template>
@@ -84,14 +88,23 @@ const showLabelsSection = computed(() => {
           </template>
         </CardLabels>
       </div>
+      <div class="flex w-full">
+        <div class="flex items-center mr-2">
+          <fluent-icon icon="calendar" size="14" class="text-n-slate-10" />
+          <TimeAgo
+            :last-activity-timestamp="conversation.timestamp"
+            :created-at-timestamp="conversation.created_at"
+            class="ml-1"
+          />
+        </div>
 
-      <div class="flex items-center">
-        <fluent-icon icon="calendar" size="14" class="text-n-slate-10" />
-        <TimeAgo
-          :last-activity-timestamp="conversation.timestamp"
-          :created-at-timestamp="conversation.created_at"
-          class="ml-1"
-        />
+        <div
+          v-if="showAssignee && assignee.name"
+          class="text-n-slate-11 text-xs font-medium leading-3 py-0.5 px-0 inline-flex items-center truncate"
+        >
+          <fluent-icon icon="person" size="12" class="text-n-slate-11" />
+          {{ assignee.name }}
+        </div>
       </div>
     </div>
   </div>

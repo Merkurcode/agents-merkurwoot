@@ -989,7 +989,10 @@ watch(conversationFilters, (newVal, oldVal) => {
         @observed="loadMoreConversations"
       />
     </div>
-    <div v-else class="flex-1 p-4 overflow-auto">
+    <div
+      v-if="isOnBoard && conversationList.length"
+      class="flex-1 p-4 overflow-auto"
+    >
       <Board v-model="conversationList" />
     </div>
 

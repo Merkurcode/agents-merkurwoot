@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { onMounted, ref, watchEffect } from 'vue';
 import Column from './Column.vue';
 import { useStore } from 'vuex';
 import AddColumn from './AddColumn.vue';
@@ -13,7 +13,7 @@ const props = defineProps({
 });
 
 const store = useStore();
-const chatListLoading = useMapGetter('getChatListLoadingStatus');
+const columns = ref([]);
 
 // =================== CALLBACKS =================== //
 
@@ -26,7 +26,7 @@ onMounted(() => {
   }
 });
 
-const columns = computed(() => {
+watchEffect(() => {
   const pipelineStatuses =
     store.getters['pipelineStatuses/getPipelineStatuses'] || [];
   const conversations = props.modelValue || [];

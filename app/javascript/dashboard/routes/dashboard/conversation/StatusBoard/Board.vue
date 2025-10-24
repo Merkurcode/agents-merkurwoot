@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref, watchEffect } from 'vue';
+import { computed, onMounted } from 'vue';
 import Column from './Column.vue';
 import { useStore } from 'vuex';
 import AddColumn from './AddColumn.vue';
 import Spinner from '../../../../components-next/spinner/Spinner.vue';
+import { useMapGetter } from 'dashboard/composables/store.js';
 
 const props = defineProps({
   modelValue: {
@@ -13,7 +14,7 @@ const props = defineProps({
 });
 
 const store = useStore();
-const columns = ref([]);
+const chatListLoading = useMapGetter('getChatListLoadingStatus');
 
 // =================== CALLBACKS =================== //
 
@@ -26,12 +27,14 @@ onMounted(() => {
   }
 });
 
-watchEffect(() => {
+const columns = computed(() => {
   const pipelineStatuses =
     store.getters['pipelineStatuses/getPipelineStatuses'] || [];
   const conversations = props.modelValue || [];
 
-  columns.value = pipelineStatuses.map(status => {
+  if (pipelineStatuses.length === 0) return [];
+
+  return pipelineStatuses.map(status => {
     const conversationsByCol = conversations.filter(
       conversation => conversation.pipeline_status_id === status.id
     );
@@ -64,7 +67,7 @@ const deleteColumn = column => {
   <div
     class="flex flex-col w-full h-full overflow-auto text-gray-700 bg-gradient-to-tr from-blue-200 via-indigo-200 to-pink-200"
   >
-    <div v-if="columns?.length < 0" class="flex justify-center my-4">
+    <div v-if="chatListLoading" class="flex justify-center my-4">
       <Spinner class="text-n-brand" />
     </div>
 

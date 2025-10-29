@@ -32,15 +32,16 @@ const onToggleFilters = () => {
 
 const closeAdvanceFiltersModal = () => {
   showFiltersModal.value = false;
-  appliedFilter.value = [];
 };
 
 const onApplyFilter = async payload => {
+  appliedFilter.value = JSON.parse(JSON.stringify(payload));
   emit('applyFilter', useSnakeCase(JSON.parse(JSON.stringify(payload))));
   showFiltersModal.value = false;
 };
 
 const clearFilters = async () => {
+  appliedFilter.value = [];
   emit('clearFilters');
 };
 </script>

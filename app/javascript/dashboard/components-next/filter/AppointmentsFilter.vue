@@ -1,5 +1,5 @@
 <script setup>
-import { useTemplateRef, onBeforeUnmount } from 'vue';
+import { useTemplateRef, onBeforeUnmount, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore } from 'dashboard/composables/store';
 import { vOnClickOutside } from '@vueuse/components';
@@ -25,12 +25,19 @@ const DEFAULT_FILTER = {
   attributeModel: 'standard',
 };
 
+onMounted(() => {
+  if (!filters.value || filters.value.length === 0) {
+    filters.value = [{ ...DEFAULT_FILTER }];
+  }
+});
+
 const { t } = useI18n();
 const store = useStore();
 
 const resetFilter = () => {
-  emit('clearFilters');
   filters.value = [{ ...DEFAULT_FILTER }];
+  store.dispatch('appointments/setAppointmentFilters', []);
+  emit('clearFilters');
 };
 
 const removeFilter = index => {

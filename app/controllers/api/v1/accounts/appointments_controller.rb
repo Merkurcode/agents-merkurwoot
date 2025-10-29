@@ -5,7 +5,6 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
   sort_on :start_time, type: :datetime
   sort_on :end_time, type: :datetime
   sort_on :location, type: :string
-  # sort_on :assisted, type: :boolean
   sort_on :created_at, type: :datetime
 
   RESULTS_PER_PAGE = 15

@@ -144,7 +144,7 @@ const menuItems = computed(() => {
         },
         {
           name: 'Board',
-          label: 'CRM List',
+          label: t('SIDEBAR.CRM_LIST'),
           activeOn: ['conversation_through_board'],
           to: accountScopedRoute('conversation_board'),
         },

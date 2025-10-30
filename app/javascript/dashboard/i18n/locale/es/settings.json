@@ -393,7 +393,8 @@
     "DOCS": "Leer documentos",
     "SECURITY": "Security",
     "CAPTAIN_AI": "Capitán",
-    "CONVERSATION_WORKFLOW": "Conversation Workflow"
+    "CONVERSATION_WORKFLOW": "Conversation Workflow",
+    "CRM_LIST": "CRM List"
   },
   "CAPTAIN_SETTINGS": {
     "TITLE": "Captain Settings",

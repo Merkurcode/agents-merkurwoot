@@ -250,3 +250,6 @@
   display_name: Required Conversation Attributes
   enabled: false
   premium: true
+- name: board
+  display_name: Conversation CRM List
+  enabled: true

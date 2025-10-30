@@ -465,7 +465,8 @@
     "API": {
       "SUCCESS": "Captain settings updated successfully.",
       "ERROR": "Failed to update Captain settings. Please try again."
-    }
+    },
+    "CRM_LIST": "CRM List"
   },
   "BILLING_SETTINGS": {
     "TITLE": "Billing",

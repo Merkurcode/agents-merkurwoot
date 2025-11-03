@@ -167,7 +167,7 @@ const menuItems = computed(() => {
           activeOn: ['conversations_through_folders'],
           children: conversationCustomViews.value.map(view => ({
             name: `${view.name}-${view.id}`,
-            label: view.is_board ? `CRM: ${view.name}` : view.name,
+            label: view.name,
             to: accountScopedRoute('folder_conversations', { id: view.id }),
           })),
         },

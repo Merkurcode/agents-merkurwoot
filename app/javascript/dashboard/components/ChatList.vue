@@ -74,7 +74,7 @@ const props = defineProps({
   foldersId: { type: [String, Number], default: 0 },
   showConversationList: { default: true, type: Boolean },
   isOnExpandedLayout: { default: false, type: Boolean },
-  isOnBoard: { default: false, type: Boolean },
+  isOnBoardSection: { default: false, type: Boolean },
 });
 
 const emit = defineEmits(['conversationLoad']);
@@ -170,6 +170,10 @@ const activeFolder = computed(() => {
     return firstValue;
   }
   return undefined;
+});
+
+const isOnBoard = computed(() => {
+  return activeFolder.value?.is_board || props.isOnBoardSection;
 });
 
 const activeFolderName = computed(() => {
@@ -285,7 +289,7 @@ const activeTeam = computed(() => {
 });
 
 const pageTitle = computed(() => {
-  if (props.isOnBoard) {
+  if (isOnBoard.value) {
     return t('CHAT_LIST.BOARD');
   }
   if (hasAppliedFilters.value) {
@@ -909,6 +913,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       <SaveCustomView
         v-model="appliedFilter"
         :custom-views-query="foldersQuery"
+        :is-on-board="isOnBoard"
         :open-last-saved-item="openLastSavedItemInFolder"
         @close="onCloseAddFoldersModal"
       />
@@ -951,6 +956,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       @assign-labels="onAssignLabels"
       @assign-team="onAssignTeamsForBulk"
     />
+
     <div
       v-if="!isOnBoard"
       ref="conversationListRef"

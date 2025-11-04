@@ -466,7 +466,7 @@
       "SUCCESS": "Captain settings updated successfully.",
       "ERROR": "Failed to update Captain settings. Please try again."
     },
-    "CRM_LIST": "CRM List"
+    "CRM_LIST": "Pipelines"
   },
   "BILLING_SETTINGS": {
     "TITLE": "Billing",

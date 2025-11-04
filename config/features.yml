@@ -251,7 +251,7 @@
   enabled: false
   premium: true
 - name: board
-  display_name: Conversation CRM List
+  display_name: Conversation Pipelines
   enabled: true
 - name: auto_generate_landing_page
   display_name: Auto Generate Landing Page

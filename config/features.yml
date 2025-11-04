@@ -231,5 +231,5 @@
   display_name: TikTok Channel
   enabled: true
 - name: board
-  display_name: Conversation CRM List
+  display_name: Conversation Pipelines
   enabled: true

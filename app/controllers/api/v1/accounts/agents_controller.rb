@@ -17,6 +17,7 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
       auto_offline: new_agent_params['auto_offline'],
       timezone: new_agent_params['timezone'],
       phone_number: new_agent_params['phone_number'],
+      responsible_id: new_agent_params['responsible_id'],
       inviter: current_user,
       account: Current.account
     )
@@ -77,7 +78,7 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   end
 
   def allowed_agent_params
-    [:name, :email, :role, :availability, :auto_offline, :timezone, :phone_number, :responsible_id]
+    [:name, :email, :role, :availability, :auto_offline, :timezone, :phone_number]
   end
 
   def agent_params
@@ -85,7 +86,8 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   end
 
   def new_agent_params
-    params.require(:agent).permit(:email, :name, :role, :availability, :auto_offline, :timezone, :phone_number, working_hours: Inbox::OFFISABLE_ATTRS)
+    params.require(:agent).permit(:email, :name, :role, :availability, :auto_offline, :timezone, :responsible_id, :phone_number,
+                                  working_hours: Inbox::OFFISABLE_ATTRS)
   end
 
   def agents

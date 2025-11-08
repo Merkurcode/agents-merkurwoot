@@ -54,8 +54,9 @@ class MetaCampaignInteraction < ApplicationRecord
   end
 
   # Get interaction count by campaign
-  def self.stats_by_campaign(inbox_id, start_time = nil, end_time = nil)
-    query = where(inbox_id: inbox_id)
+  def self.stats_by_campaign(account_id, inbox_id = nil, start_time = nil, end_time = nil)
+    query = where(account_id: account_id)
+    query = query.where(inbox_id: inbox_id) if inbox_id.present?
     query = query.created_between(start_time, end_time) if start_time && end_time
 
     # Use a subquery to get the first metadata for each campaign

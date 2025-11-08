@@ -23,8 +23,8 @@ class Api::V2::Accounts::MetaCampaignReportsController < Api::V1::Accounts::Base
   end
 
   def fetch_campaigns_with_stats
-    inbox_id = params[:inbox_id] || params[:id]
-    MetaCampaignInteraction.stats_by_campaign(inbox_id, start_time, end_time)
+    inbox_id = params[:inbox_id]
+    MetaCampaignInteraction.stats_by_campaign(Current.account.id, inbox_id, start_time, end_time)
   end
 
   def fetch_campaign_details

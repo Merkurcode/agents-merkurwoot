@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter, useRoute } from 'vue-router';
 
 const props = defineProps({
   campaigns: {
@@ -14,6 +15,8 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+const router = useRouter();
+const route = useRoute();
 
 const formatDate = timestamp => {
   if (!timestamp) return '-';
@@ -33,6 +36,16 @@ const getTypeLabel = type => {
 };
 
 const hasCampaigns = computed(() => props.campaigns.length > 0);
+
+const goToCampaignDetail = sourceId => {
+  router.push({
+    name: 'meta_campaign_reports_show',
+    params: {
+      accountId: route.params.accountId,
+      id: sourceId,
+    },
+  });
+};
 </script>
 
 <template>
@@ -106,7 +119,8 @@ const hasCampaigns = computed(() => props.campaigns.length > 0);
           <tr
             v-for="campaign in campaigns"
             :key="campaign.source_id"
-            class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50"
+            class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer"
+            @click="goToCampaignDetail(campaign.source_id)"
           >
             <td class="whitespace-nowrap px-6 py-4">
               <div class="flex items-center">

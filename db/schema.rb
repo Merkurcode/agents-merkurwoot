@@ -1672,7 +1672,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_231242) do
     t.text "message_signature"
     t.string "otp_secret"
     t.integer "consumed_timestep"
-    t.boolean "otp_required_for_login", default: false, null: false
+    t.boolean "otp_required_for_login", default: false
     t.text "otp_backup_codes"
     t.string "phone_number"
     t.index ["email"], name: "index_users_on_email"

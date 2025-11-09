@@ -101,4 +101,5 @@ export default {
   ...knowledgeBase,
   ...yearInReview,
   ...customerMgmt,
+  ...knowledgeBase,
 };

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_09_072536) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -158,6 +158,22 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.index ["sla_policy_id"], name: "index_applied_slas_on_sla_policy_id"
   end
 
+  create_table "appointments", force: :cascade do |t|
+    t.string "location"
+    t.text "description"
+    t.datetime "start_time"
+    t.datetime "end_time"
+    t.boolean "assisted", default: false, null: false
+    t.string "access_token"
+    t.bigint "contact_id", null: false
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["access_token"], name: "index_appointments_on_access_token", unique: true
+    t.index ["account_id"], name: "index_appointments_on_account_id"
+    t.index ["contact_id"], name: "index_appointments_on_contact_id"
+  end
+
   create_table "article_embeddings", force: :cascade do |t|
     t.bigint "article_id", null: false
     t.text "term", null: false
@@ -259,6 +275,27 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.datetime "updated_at", null: false
     t.boolean "active", default: true, null: false
     t.index ["account_id"], name: "index_automation_rules_on_account_id"
+  end
+
+  create_table "bulk_processing_requests", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "user_id", null: false
+    t.string "status", default: "PENDING", null: false
+    t.integer "total_records", default: 0
+    t.integer "processed_records", default: 0
+    t.integer "failed_records", default: 0
+    t.decimal "progress", precision: 5, scale: 2, default: "0.0"
+    t.text "error_message"
+    t.string "file_name"
+    t.string "entity_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "error_details", default: []
+    t.string "job_id"
+    t.index ["account_id"], name: "index_bulk_processing_requests_on_account_id"
+    t.index ["created_at"], name: "index_bulk_processing_requests_on_created_at"
+    t.index ["status"], name: "index_bulk_processing_requests_on_status"
+    t.index ["user_id"], name: "index_bulk_processing_requests_on_user_id"
   end
 
   create_table "campaign_contacts", force: :cascade do |t|
@@ -702,6 +739,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.datetime "waiting_since"
     t.text "cached_label_list"
     t.text "summary", default: ""
+    t.bigint "pipeline_status_id"
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
@@ -713,6 +751,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.index ["first_reply_created_at"], name: "index_conversations_on_first_reply_created_at"
     t.index ["identifier", "account_id"], name: "index_conversations_on_identifier_and_account_id"
     t.index ["inbox_id"], name: "index_conversations_on_inbox_id"
+    t.index ["pipeline_status_id"], name: "index_conversations_on_pipeline_status_id"
     t.index ["priority"], name: "index_conversations_on_priority"
     t.index ["status", "account_id"], name: "index_conversations_on_status_and_account_id"
     t.index ["status", "priority"], name: "index_conversations_on_status_and_priority"
@@ -786,6 +825,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_board", default: false, null: false
     t.index ["account_id"], name: "index_custom_filters_on_account_id"
     t.index ["user_id"], name: "index_custom_filters_on_user_id"
   end
@@ -966,6 +1006,19 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.index ["account_id"], name: "index_macros_on_account_id"
   end
 
+  create_table "marketing_campaigns", force: :cascade do |t|
+    t.string "title", default: "", null: false
+    t.text "description", default: ""
+    t.datetime "start_date", null: false
+    t.datetime "end_date", null: false
+    t.boolean "active", default: true, null: false
+    t.string "source_id", default: ""
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_marketing_campaigns_on_account_id"
+  end
+
   create_table "mentions", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "conversation_id", null: false
@@ -1067,6 +1120,14 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "pipeline_statuses", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_pipeline_statuses_on_account_id"
+  end
+
   create_table "platform_app_permissibles", force: :cascade do |t|
     t.bigint "platform_app_id", null: false
     t.string "permissible_type", null: false
@@ -1110,6 +1171,47 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.index ["portal_id", "user_id"], name: "index_portals_members_on_portal_id_and_user_id", unique: true
     t.index ["portal_id"], name: "index_portals_members_on_portal_id"
     t.index ["user_id"], name: "index_portals_members_on_user_id"
+  end
+
+  create_table "product_catalogs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "industry", null: false
+    t.string "type", null: false
+    t.string "subcategory"
+    t.text "description"
+    t.string "payment_options"
+    t.bigint "bulk_processing_request_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "listPrice", precision: 10, scale: 2
+    t.string "productName", null: false
+    t.text "link"
+    t.text "pdfLinks"
+    t.text "photoLinks"
+    t.text "videoLinks"
+    t.string "product_id"
+    t.index ["account_id"], name: "index_product_catalogs_on_account_id"
+    t.index ["bulk_processing_request_id"], name: "index_product_catalogs_on_bulk_processing_request_id"
+    t.index ["created_at"], name: "index_product_catalogs_on_created_at"
+    t.index ["product_id"], name: "index_product_catalogs_on_product_id", unique: true
+  end
+
+  create_table "product_media", force: :cascade do |t|
+    t.bigint "product_catalog_id", null: false
+    t.string "file_type", null: false
+    t.string "file_name", null: false
+    t.string "file_url", null: false
+    t.string "thumbnail_url"
+    t.integer "file_size"
+    t.string "mime_type"
+    t.integer "display_order", default: 0
+    t.boolean "is_primary", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["file_type"], name: "index_product_media_on_file_type"
+    t.index ["is_primary"], name: "index_product_media_on_is_primary"
+    t.index ["product_catalog_id", "display_order"], name: "index_product_media_on_product_catalog_id_and_display_order"
+    t.index ["product_catalog_id"], name: "index_product_media_on_product_catalog_id"
   end
 
   create_table "related_categories", force: :cascade do |t|
@@ -1298,7 +1400,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
     t.text "message_signature"
     t.string "otp_secret"
     t.integer "consumed_timestep"
-    t.boolean "otp_required_for_login", default: false, null: false
+    t.boolean "otp_required_for_login", default: false
     t.text "otp_backup_codes"
     t.string "phone_number"
     t.index ["email"], name: "index_users_on_email"
@@ -1341,13 +1443,22 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_22_152158) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "appointments", "accounts"
+  add_foreign_key "appointments", "contacts"
+  add_foreign_key "bulk_processing_requests", "accounts"
+  add_foreign_key "bulk_processing_requests", "users"
   add_foreign_key "campaign_contacts", "campaigns"
   add_foreign_key "campaign_contacts", "contacts"
   add_foreign_key "contact_survey_completions", "accounts"
   add_foreign_key "contact_survey_completions", "contacts"
   add_foreign_key "contact_survey_completions", "surveys"
+  add_foreign_key "conversations", "pipeline_statuses"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "inboxes", "surveys"
+  add_foreign_key "marketing_campaigns", "accounts"
+  add_foreign_key "product_catalogs", "accounts"
+  add_foreign_key "product_catalogs", "bulk_processing_requests"
+  add_foreign_key "product_media", "product_catalogs"
   add_foreign_key "survey_answers", "accounts"
   add_foreign_key "survey_answers", "contacts"
   add_foreign_key "survey_answers", "survey_question_options"

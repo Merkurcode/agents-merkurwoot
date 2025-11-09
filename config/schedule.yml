@@ -53,3 +53,10 @@ bulk_auto_assignment_job:
   cron: '*/15 * * * *'
   class: 'Inboxes::BulkAutoAssignmentJob'
   queue: scheduled_jobs
+
+# executed every 5 minutes
+# to cleanup stale bulk processing requests stuck in PENDING/PROCESSING
+cleanup_stale_bulk_requests_job:
+  cron: '*/5 * * * *'
+  class: 'CleanupStaleBulkRequestsJob'
+  queue: scheduled_jobs

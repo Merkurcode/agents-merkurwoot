@@ -767,6 +767,9 @@ GEM
     reverse_markdown (2.1.1)
       nokogiri
     rexml (3.4.4)
+    roo (2.10.1)
+      nokogiri (~> 1)
+      rubyzip (>= 1.3.0, < 3.0.0)
     rotp (6.3.0)
     rqrcode (3.1.0)
       chunky_png (~> 1.0)
@@ -848,6 +851,7 @@ GEM
     ruby_llm-schema (0.2.5)
     ruby_parser (3.20.0)
       sexp_processor (~> 4.16)
+    rubyzip (2.3.2)
     sass (3.7.4)
       sass-listen (~> 4.0.0)
     sass-listen (4.0.0)
@@ -1133,6 +1137,7 @@ DEPENDENCIES
   responders (>= 3.1.1)
   rest-client
   reverse_markdown
+  roo (~> 2.10.0)
   rqrcode
   rspec-rails (>= 6.1.5)
   rspec_junit_formatter
@@ -1144,6 +1149,7 @@ DEPENDENCIES
   ruby-openai
   ruby_llm (>= 1.8.2)
   ruby_llm-schema
+  rubyzip (~> 2.3.0)
   scout_apm
   scss_lint
   searchkick
@@ -1180,9 +1186,10 @@ DEPENDENCIES
   webmock
   wisper (= 2.0.0)
   working_hours
+  write_xlsx (~> 1.11.0)
 
 RUBY VERSION
    ruby 3.4.4p34
 
 BUNDLED WITH
-   2.5.16
+   2.7.2

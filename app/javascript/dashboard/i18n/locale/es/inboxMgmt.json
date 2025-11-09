@@ -98,6 +98,12 @@
           "ENABLED": "Activado",
           "DISABLED": "Deshabilitado"
         },
+        "AUTO_GENERATE_LANDING_PAGE": {
+          "SECTION_TITLE": "Generar Página de Destino Automáticamente",
+          "LABEL": "Generar página de destino automáticamente",
+          "DESCRIPTION_LABEL": "Descripción de la Página de Destino",
+          "DESCRIPTION_PLACEHOLDER": "Describe tu página de destino. Incluye detalles sobre tu negocio, servicios y lo que deseas resaltar a tus clientes."
+        },
         "REPLY_TIME": {
           "TITLE": "Establecer tiempo de respuesta",
           "IN_A_FEW_MINUTES": "En algunos minutos",

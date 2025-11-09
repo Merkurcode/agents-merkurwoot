@@ -98,6 +98,12 @@
           "ENABLED": "Enabled",
           "DISABLED": "Disabled"
         },
+        "AUTO_GENERATE_LANDING_PAGE": {
+          "SECTION_TITLE": "Auto Generate Landing Page",
+          "LABEL": "Auto generate landing page",
+          "DESCRIPTION_LABEL": "Landing Page Description",
+          "DESCRIPTION_PLACEHOLDER": "Describe your landing page. Include details about your business, services, and what you want to highlight to your customers."
+        },
         "REPLY_TIME": {
           "TITLE": "Set Reply time",
           "IN_A_FEW_MINUTES": "In a few minutes",

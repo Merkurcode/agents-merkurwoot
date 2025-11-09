@@ -43,6 +43,7 @@ import contentTemplates from './contentTemplates.json';
 import mfa from './mfa.json';
 import yearInReview from './yearInReview.json';
 import customerMgmt from './customerMgmt.json';
+import knowledgeBase from './knowledgeBase.json';
 
 export default {
   ...advancedFilters,
@@ -90,4 +91,5 @@ export default {
   ...mfa,
   ...yearInReview,
   ...customerMgmt,
+  ...knowledgeBase,
 };

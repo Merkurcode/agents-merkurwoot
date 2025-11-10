@@ -23,7 +23,7 @@
 #  index_meta_campaign_interactions_on_created_at                (created_at)
 #  index_meta_campaign_interactions_on_inbox_id                  (inbox_id)
 #  index_meta_campaign_interactions_on_inbox_id_and_source_id    (inbox_id,source_id)
-#  index_meta_campaign_interactions_on_message_id                (message_id)
+#  index_meta_campaign_interactions_on_message_id                (message_id) UNIQUE
 #  index_meta_campaign_interactions_on_source_id                 (source_id)
 #
 # Foreign Keys
@@ -41,6 +41,7 @@ class MetaCampaignInteraction < ApplicationRecord
 
   validates :source_id, presence: true
   validates :interaction_type, presence: true
+  validates :message_id, uniqueness: true
 
   scope :for_inbox, ->(inbox_id) { where(inbox_id: inbox_id) }
   scope :for_campaign, ->(source_id) { where(source_id: source_id) }

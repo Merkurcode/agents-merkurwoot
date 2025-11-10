@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_03_105651) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_10_170918) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1062,7 +1062,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_03_105651) do
     t.index ["created_at"], name: "index_meta_campaign_interactions_on_created_at"
     t.index ["inbox_id", "source_id"], name: "index_meta_campaign_interactions_on_inbox_id_and_source_id"
     t.index ["inbox_id"], name: "index_meta_campaign_interactions_on_inbox_id"
-    t.index ["message_id"], name: "index_meta_campaign_interactions_on_message_id"
+    t.index ["message_id"], name: "index_meta_campaign_interactions_on_message_id", unique: true
     t.index ["source_id"], name: "index_meta_campaign_interactions_on_source_id"
   end
 

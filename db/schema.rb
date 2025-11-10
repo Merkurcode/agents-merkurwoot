@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_10_015319) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_10_023129) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1191,6 +1191,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_10_015319) do
     t.text "photoLinks"
     t.text "videoLinks"
     t.string "product_id"
+    t.boolean "is_visible", default: true, null: false
     t.index ["account_id", "product_id"], name: "index_product_catalogs_on_account_id_and_product_id", unique: true
     t.index ["account_id"], name: "index_product_catalogs_on_account_id"
     t.index ["bulk_processing_request_id"], name: "index_product_catalogs_on_bulk_processing_request_id"

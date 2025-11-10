@@ -24,6 +24,9 @@ export default {
       channelWelcomeTagline: '',
       greetingEnabled: false,
       greetingMessage: '',
+      welcomeTaglineEditorMenuOptions: WIDGET_BUILDER_EDITOR_MENU_OPTIONS,
+      autoGenerateLandingPage: false,
+      landingPageDescription: '',
     };
   },
   computed: {

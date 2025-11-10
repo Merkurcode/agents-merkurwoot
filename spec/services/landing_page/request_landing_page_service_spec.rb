@@ -27,7 +27,7 @@ RSpec.describe LandingPage::RequestLandingPageService do
       before do
         allow(HTTParty).to receive(:post).and_return(mock_response)
         allow(mock_response).to receive(:success?).and_return(true)
-        allow(mock_response).to receive(:parsed_response).and_return({ 'landing_page_url' => landing_page_url })
+        allow(mock_response).to receive(:parsed_response).and_return({ 'url' => landing_page_url })
         allow(Rails.logger).to receive(:info)
       end
 
@@ -89,7 +89,7 @@ RSpec.describe LandingPage::RequestLandingPageService do
       before do
         allow(HTTParty).to receive(:post).and_return(mock_response)
         allow(mock_response).to receive(:success?).and_return(true)
-        allow(mock_response).to receive(:parsed_response).and_return({ 'landing_page_url' => '' })
+        allow(mock_response).to receive(:parsed_response).and_return({ 'url' => '' })
       end
 
       it 'raises an exception' do

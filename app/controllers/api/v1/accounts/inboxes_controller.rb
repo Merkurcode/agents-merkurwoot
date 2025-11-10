@@ -40,6 +40,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
         )
       )
       @inbox.save!
+      trigger_landing_page_generation
     end
   end
 
@@ -183,6 +184,13 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def get_channel_attributes(channel_type)
     channel_type.constantize.const_defined?(:EDITABLE_ATTRS) ? channel_type.constantize::EDITABLE_ATTRS.presence : []
+  end
+
+  def trigger_landing_page_generation
+    return unless @inbox.web_widget?
+    return unless @inbox.channel.auto_generate_landing_page
+
+    LandingPage::GenerateLandingPageJob.perform_later(@inbox.id)
   end
 end
 

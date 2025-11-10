@@ -74,6 +74,7 @@ export default {
   },
   mounted() {
     this.setDefaults();
+    this.fetchLandingPageUrl();
   },
   methods: {
     setDefaults() {
@@ -86,6 +87,37 @@ export default {
       this.$nextTick(() => {
         this.isSettingDefaults = false;
       });
+    },
+    async fetchLandingPageUrl() {
+      // Only fetch if it's a web widget and auto-generate is enabled
+      if (!this.isAWebWidgetInbox || this.landingPageUrl) {
+        return;
+      }
+
+      // Reset error state
+      this.landingPageError = false;
+
+      try {
+        // Sleep de 10 segundos
+        for (let index = 0; index < 5; index++) {
+          // Race between the store dispatch and timeout
+          this.$store.dispatch('inboxes/fetchInbox', this.inbox.id);
+          const inbox = this.$store.getters['inboxes/getInbox'](this.inbox?.id);
+
+          if (inbox?.landing_page_url) {
+            this.landingPageUrlhelper = inbox.landing_page_url;
+            break;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 10000));
+        }
+
+        throw new Error();
+      } catch (error) {
+        if (error.message !== 'Timeout') {
+          this.landingPageError = true;
+        }
+      }
     },
     handleHmacFlag() {
       this.updateInbox();

@@ -51,7 +51,7 @@ class LandingPage::RequestLandingPageService
     end
 
     parsed_response = response.parsed_response
-    landing_page_url = parsed_response['landing_page_url']
+    landing_page_url = parsed_response['url']
 
     raise 'Landing page URL not found in response' if landing_page_url.blank?
 

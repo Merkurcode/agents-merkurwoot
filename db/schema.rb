@@ -590,6 +590,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_10_170918) do
     t.boolean "hmac_mandatory", default: false
     t.boolean "continuity_via_email", default: true, null: false
     t.text "allowed_domains", default: ""
+    t.boolean "auto_generate_landing_page", default: false, null: false
+    t.text "landing_page_description"
+    t.string "landing_page_url"
     t.index ["hmac_token"], name: "index_channel_web_widgets_on_hmac_token", unique: true
     t.index ["website_token"], name: "index_channel_web_widgets_on_website_token", unique: true
   end

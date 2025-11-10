@@ -52,6 +52,10 @@ class Inboxes extends CacheEnabledApiClient {
   getCSATTemplateStatus(inboxId) {
     return axios.get(`${this.url}/${inboxId}/csat_template`);
   }
+
+  getInbox(inboxId) {
+    return axios.get(`${this.url}/${inboxId}`);
+  }
 }
 
 export default new Inboxes();

@@ -196,6 +196,13 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
     LandingPage::GenerateLandingPageJob.perform_later(@inbox.id)
   end
+
+  def trigger_landing_page_generation
+    return unless @inbox.web_widget?
+    return unless @inbox.channel.auto_generate_landing_page
+
+    LandingPage::GenerateLandingPageJob.perform_later(@inbox.id)
+  end
 end
 
 Api::V1::Accounts::InboxesController.prepend_mod_with('Api::V1::Accounts::InboxesController')

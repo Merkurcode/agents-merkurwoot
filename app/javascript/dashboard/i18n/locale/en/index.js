@@ -28,6 +28,7 @@ import integrations from './integrations.json';
 import labelsMgmt from './labelsMgmt.json';
 import login from './login.json';
 import macros from './macros.json';
+import metaCampaigns from './metaCampaigns.json';
 import report from './report.json';
 import resetPassword from './resetPassword.json';
 import search from './search.json';
@@ -75,6 +76,7 @@ export default {
   ...labelsMgmt,
   ...login,
   ...macros,
+  ...metaCampaigns,
   ...report,
   ...resetPassword,
   ...search,

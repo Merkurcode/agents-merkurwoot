@@ -138,7 +138,7 @@ class Whatsapp::IncomingMessageBaseService
                     end
     return if @conversation
 
-    @conversation = ::Conversation.create!(conversation_params)
+    @conversation = ::Conversation.create!(conversation_params.merge(additional_attributes: referral_attributes))
   end
 
   def attach_files
@@ -177,6 +177,7 @@ class Whatsapp::IncomingMessageBaseService
   def create_message(message, source_id: nil)
     content_attrs = outgoing_echo ? { external_echo: true } : {}
     content_attrs[:in_reply_to_external_id] = @in_reply_to_external_id if @in_reply_to_external_id.present?
+    content_attrs[:referral] = extract_referral_data(message) if !outgoing_echo && message[:referral].present?
 
     @message = @conversation.messages.build(
       content: message_content(message),
@@ -226,5 +227,29 @@ class Whatsapp::IncomingMessageBaseService
     phone_number = "+#{messages_data.first[:from]}"
     formatted_phone_number = TelephoneNumber.parse(phone_number).international_number
     @contact.name == phone_number || @contact.name == formatted_phone_number
+  end
+
+  def referral_attributes
+    first_message = @processed_params[:messages]&.first
+    return {} unless first_message&.dig(:referral).present?
+
+    { meta_ad_campaign: extract_referral_data(first_message) }
+  end
+
+  def extract_referral_data(message)
+    referral = message[:referral]
+    return {} unless referral.present?
+
+    {
+      source_id: referral[:source_id],
+      source_type: referral[:source_type],
+      source_url: referral[:source_url],
+      ctwa_clid: referral[:ctwa_clid],
+      headline: referral[:headline],
+      body: referral[:body],
+      media_type: referral[:media_type],
+      image_url: referral[:image_url],
+      video_url: referral[:video_url]
+    }.compact
   end
 end

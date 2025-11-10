@@ -1,5 +1,6 @@
 class LandingPage::GenerateLandingPageJob < ApplicationJob
   queue_as :default
+  retry_on StandardError, wait: 5.seconds, attempts: 2
 
   def perform(inbox_id)
     inbox = Inbox.find(inbox_id)

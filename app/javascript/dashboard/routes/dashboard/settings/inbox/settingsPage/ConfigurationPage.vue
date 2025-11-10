@@ -38,6 +38,8 @@ export default {
       isSyncingTemplates: false,
       allowedDomains: '',
       isUpdatingAllowedDomains: false,
+      landingPageUrl: '',
+      autoGenerateLandingPage: false,
     };
   },
   validations: {
@@ -63,6 +65,8 @@ export default {
     setDefaults() {
       this.hmacMandatory = this.inbox.hmac_mandatory || false;
       this.allowedDomains = this.inbox.allowed_domains || '';
+      this.landingPageUrl = this.inbox.landing_page_url || '';
+      this.autoGenerateLandingPage = this.inbox.auto_generate_landing_page || false;
     },
     handleHmacFlag() {
       this.updateInbox();
@@ -196,6 +200,29 @@ export default {
   </div>
   <div v-else-if="isAWebWidgetInbox">
     <div class="mx-8">
+      <SettingsSection
+        v-if="autoGenerateLandingPage && landingPageUrl"
+        :title="$t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.LABEL')"
+        :sub-title="$t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.HELP_TEXT')"
+      >
+        <div class="flex flex-col gap-4 w-full max-w-3xl">
+          <woot-code :script="landingPageUrl" class="text-xs" />
+          <a
+            :href="landingPageUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1 w-fit"
+          >
+            <span>{{ $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.OPEN_LINK') }}</span>
+            <fluent-icon
+              icon="open"
+              size="12"
+              class="inline-block"
+            />
+          </a>
+        </div>
+      </SettingsSection>
+
       <SettingsSection
         :title="$t('INBOX_MGMT.SETTINGS_POPUP.MESSENGER_HEADING')"
         :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.MESSENGER_SUB_HEAD')"

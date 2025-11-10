@@ -99,7 +99,6 @@ export default {
       v-if="uiFlags.isCreating"
       :message="$t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LOADING_MESSAGE')"
     />
-    <div> test fron </div>
     <form
       v-if="!uiFlags.isCreating"
       class="flex flex-wrap flex-col mx-0"

@@ -206,22 +206,29 @@ export default {
 
       <div v-if="isAutoGenerateLandingPageEnabled" class="w-full">
         <label class="w-full">
-          {{ $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.AUTO_GENERATE_LANDING_PAGE.SECTION_TITLE') }}
+          {{
+            $t(
+              'INBOX_MGMT.ADD.WEBSITE_CHANNEL.AUTO_GENERATE_LANDING_PAGE.SECTION_TITLE'
+            )
+          }}
         </label>
         <div class="flex gap-2 pt-2 pb-4">
-          <input
-            v-model="autoGenerateLandingPage"
-            type="checkbox"
-          />
+          <input v-model="autoGenerateLandingPage" type="checkbox" />
           <label>
-            {{ $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.AUTO_GENERATE_LANDING_PAGE.LABEL') }}
+            {{
+              $t(
+                'INBOX_MGMT.ADD.WEBSITE_CHANNEL.AUTO_GENERATE_LANDING_PAGE.LABEL'
+              )
+            }}
           </label>
         </div>
         <Editor
           v-if="autoGenerateLandingPage"
           v-model="landingPageDescription"
           :label="
-            $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.AUTO_GENERATE_LANDING_PAGE.DESCRIPTION_LABEL')
+            $t(
+              'INBOX_MGMT.ADD.WEBSITE_CHANNEL.AUTO_GENERATE_LANDING_PAGE.DESCRIPTION_LABEL'
+            )
           "
           :placeholder="
             $t(

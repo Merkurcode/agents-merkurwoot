@@ -138,7 +138,11 @@ export default {
     },
     async fetchLandingPageUrl() {
       // Only fetch if it's a web widget and auto-generate is enabled
-      if (!this.isAWebWidgetInbox || this.landingPageUrl) {
+      if (
+        !this.isAWebWidgetInbox ||
+        !this.autoGenerateLandingPage ||
+        this.landingPageUrl
+      ) {
         return;
       }
 
@@ -147,24 +151,24 @@ export default {
 
       try {
         // Sleep de 10 segundos
-        for (let index = 0; index < 5; index++) {
+        let index = 1;
+        let inbox;
+
+        while (index <= 5) {
           // Race between the store dispatch and timeout
           this.$store.dispatch('inboxes/fetchInbox', this.inbox.id);
-          const inbox = this.$store.getters['inboxes/getInbox'](this.inbox?.id);
+          inbox = this.$store.getters['inboxes/getInbox'](this.inbox?.id);
 
-          if (inbox?.landing_page_url) {
-            this.landingPageUrlhelper = inbox.landing_page_url;
-            break;
-          }
+          if (inbox?.landing_page_url) break;
 
           await new Promise(resolve => setTimeout(resolve, 10000));
+
+          index += 1;
         }
 
-        throw new Error();
+        if (!inbox?.landing_page_url) throw new Error();
       } catch (error) {
-        if (error.message !== 'Timeout') {
-          this.landingPageError = true;
-        }
+        this.landingPageError = true;
       }
     },
     handleHmacFlag() {

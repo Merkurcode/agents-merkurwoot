@@ -125,10 +125,10 @@ class Whatsapp::OneoffCampaignService
       conversation = find_or_create_conversation(contact_inbox)
       create_outgoing_message(conversation, contact, name, message_id)
       Rails.logger.info "Message record created in conversation #{conversation.id}"
-    rescue StandardError => e
+    rescue StandardError => db_error
       # Log DB error but DON'T mark as failed since message was already sent successfully
-      Rails.logger.error "Message sent but failed to create DB records for #{contact.phone_number}: #{e.class.name}: #{e.message}"
-      Rails.logger.error "Backtrace: #{e.backtrace.first(3).join('\n')}"
+      Rails.logger.error "Message sent but failed to create DB records for #{contact.phone_number}: #{db_error.class.name}: #{db_error.message}"
+      Rails.logger.error "Backtrace: #{db_error.backtrace.first(3).join('\n')}"
       # Message is already marked as sent, so no retry will occur
     end
   rescue StandardError => e

@@ -110,7 +110,6 @@ const handlePageChange = newPage => {
   fetchCampaign();
 };
 
-
 watch(
   () => route.params.campaignId,
   async () => {

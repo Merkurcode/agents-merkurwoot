@@ -120,6 +120,13 @@ Rails.application.routes.draw do
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           namespace :channels do
             resource :twilio_channel, only: [:create]
+            resources :whapi_channels, only: [:create] do
+              member do
+                get 'get_qr'
+                get 'qr_status'
+                post 'complete_setup'
+              end
+            end
           end
 
           resources :pipeline_statuses, except: [:new, :edit, :show]
@@ -544,6 +551,7 @@ Rails.application.routes.draw do
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'
+  post 'webhooks/whapi/:inbox_id', to: 'webhooks/whapi#process'
   get 'webhooks/instagram', to: 'webhooks/instagram#verify'
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
 

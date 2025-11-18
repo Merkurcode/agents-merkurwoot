@@ -223,7 +223,7 @@ async function fetchWhapiLightQR() {
 }
 
 async function checkWhapiAuthStatus() {
-  if (!currentInbox.value || !isAWhatsAppLightChannel.value) return;
+  if (!currentInbox.value || !isAWhatsAppLightChannel.value || isWhapiAuthenticated.value) return;
 
   try {
     const response = await axios.get(
@@ -346,10 +346,14 @@ watch(
     if (newInbox) {
       generateQRCodes();
 
-      // Start WhatsApp Light auth polling if it's a WhatsApp Light channel
+      // Start WhatsApp Light auth polling if it's a WhatsApp Light channel and not yet authenticated
       if (isAWhatsAppLightChannel.value && !isWhapiAuthenticated.value) {
         stopQRPolling();
         startAuthPolling();
+      } else if (isAWhatsAppLightChannel.value && isWhapiAuthenticated.value) {
+        // Ensure polling is stopped if already authenticated
+        stopAuthPolling();
+        stopQRExpireCountdown();
       }
     }
   },

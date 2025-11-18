@@ -56,7 +56,19 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
   end
 
   def error_message(response)
-    response.parsed_response&.dig('message') || response.parsed_response&.dig('error')
+    parsed = response.parsed_response
+    return nil if parsed.blank?
+
+    # Whapi error format: { "message": "error description" } or { "error": "error description" }
+    error_msg = parsed['message'] || parsed['error']
+
+    # If error_msg is still an object/hash, convert it to string
+    return error_msg if error_msg.is_a?(String)
+
+    # If the whole response is an error object, try to extract a meaningful message
+    return parsed.to_json if parsed.is_a?(Hash)
+
+    nil
   end
 
   private
@@ -83,7 +95,11 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
       media: attachment.download_url
     }
 
-    body[:caption] = message.outgoing_content if message.outgoing_content.present? && type != 'audio'
+    # Add caption for supported types (not for audio/voice)
+    body[:caption] = message.outgoing_content if message.outgoing_content.present? && !%w[audio voice].include?(type)
+
+    # Add filename for documents
+    body[:filename] = attachment.file.filename.to_s if type == 'document' && attachment.file.attached?
 
     response = HTTParty.post(
       "#{api_base_url}/messages/#{type}",
@@ -110,14 +126,15 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
   end
 
   def format_phone_number(phone_number)
-    # Whapi expects phone numbers without + prefix
-    phone_number.gsub(/^\+/, '') + '@s.whatsapp.net'
+    # Whapi expects phone numbers without + prefix and without @s.whatsapp.net suffix for sending
+    phone_number.gsub(/^\+/, '').gsub(/@s\.whatsapp\.net$/, '')
   end
 
   def map_attachment_type(file_type)
     case file_type
     when 'image' then 'image'
     when 'audio' then 'audio'
+    when 'voice' then 'voice'
     when 'video' then 'video'
     else 'document'
     end
@@ -126,11 +143,25 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
   def process_response(response, message)
     parsed_response = response.parsed_response
 
-    if response.success? && parsed_response['id'].present?
-      parsed_response['id']
-    else
-      handle_error(response, message)
-      nil
+    Rails.logger.info "[WHATSAPP LIGHT] Send message response - Status: #{response.code}, Body: #{parsed_response.inspect}"
+
+    # Whapi returns 200 with structure: { "sent": true, "message": { "id": "...", ... } }
+    if response.success? && parsed_response.is_a?(Hash)
+      # Extract message ID from the nested structure
+      message_id = parsed_response.dig('message', 'id') || parsed_response['id']
+
+      if message_id.present?
+        Rails.logger.info "[WHATSAPP LIGHT] Message sent successfully with ID: #{message_id}"
+
+        # Don't treat pending status as an error - it's normal for Whapi
+        # Status will be updated via webhooks (pending -> sent -> delivered -> read)
+        return message_id
+      end
     end
+
+    # If we get here, something went wrong
+    Rails.logger.error "[WHATSAPP LIGHT] Message send failed - Response: #{response.code}, Body: #{parsed_response.inspect}"
+    handle_error(response, message)
+    nil
   end
 end

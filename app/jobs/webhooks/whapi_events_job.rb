@@ -3,12 +3,13 @@
 class Webhooks::WhapiEventsJob < ApplicationJob
   queue_as :default
 
-  def perform(inbox_id, payload_json)
+  def perform(inbox_id, event_type, payload_json)
     @inbox = Inbox.find_by(id: inbox_id)
     return unless @inbox
     return unless @inbox.channel.is_a?(Channel::Whatsapp)
     return unless @inbox.channel.provider == 'whatsapp_light'
 
+    @event_type = event_type
     @payload = JSON.parse(payload_json)
 
     process_event
@@ -20,25 +21,30 @@ class Webhooks::WhapiEventsJob < ApplicationJob
   private
 
   def process_event
-    event_type = @payload['event']
-
-    case event_type
+    case @event_type
     when 'messages'
       process_message_event
     when 'statuses'
       process_status_event
     when 'chats'
       process_chat_event
+    when 'channel', 'users', 'presences', 'contacts', 'groups', 'labels', 'calls'
+      # These events are informational, log them but don't need processing for now
+      Rails.logger.info "[WHATSAPP LIGHT] Received #{@event_type} event: #{@payload.inspect}"
     else
-      Rails.logger.info "[WHATSAPP LIGHT] Unhandled event type: #{event_type}"
+      Rails.logger.info "[WHATSAPP LIGHT] Unhandled event type: #{@event_type}"
     end
   end
 
   def process_message_event
     messages = @payload['messages'] || [@payload['message']]
     messages.each do |message_data|
-      next if message_data['from_me'] # Skip messages sent by us
+      if message_data['from_me']
+        Rails.logger.info "[WHATSAPP LIGHT] Skipping outgoing message: #{message_data['id']}"
+        next
+      end
 
+      Rails.logger.info "[WHATSAPP LIGHT] Processing incoming message: #{message_data['id']}"
       Whatsapp::IncomingMessageWhapiService.new(
         inbox: @inbox,
         params: message_data
@@ -48,25 +54,43 @@ class Webhooks::WhapiEventsJob < ApplicationJob
 
   def process_status_event
     # Handle message status updates (sent, delivered, read, etc.)
-    status_data = @payload['status'] || @payload
-    message_id = status_data['id']
-    status = status_data['status']
+    # Whapi sends statuses as an array
+    statuses = @payload['statuses'] || [@payload['status']].compact
 
-    message = @inbox.messages.find_by(source_id: message_id)
-    return unless message
+    statuses.each do |status_data|
+      next unless status_data
 
-    case status
-    when 'sent'
-      message.update(status: :sent)
-    when 'delivered'
-      message.update(status: :delivered)
-    when 'read'
-      message.update(status: :read)
-    when 'failed'
-      message.update(status: :failed)
+      message_id = status_data['id']
+      status = status_data['status']
+
+      Rails.logger.info "[WHATSAPP LIGHT] Processing status update for message #{message_id}: #{status}"
+
+      message = @inbox.messages.find_by(source_id: message_id)
+      unless message
+        Rails.logger.warn "[WHATSAPP LIGHT] Message not found for source_id: #{message_id}"
+        next
+      end
+
+      # Map Whapi status to Chatwoot status
+      new_status = case status
+                   when 'sent', 'pending'
+                     :sent
+                   when 'delivered'
+                     :delivered
+                   when 'read'
+                     :read
+                   when 'failed', 'error'
+                     :failed
+                   else
+                     Rails.logger.info "[WHATSAPP LIGHT] Unknown status: #{status}"
+                     nil
+                   end
+
+      if new_status
+        message.update(status: new_status)
+        Rails.logger.info "[WHATSAPP LIGHT] Message #{message_id} status updated to #{new_status}"
+      end
     end
-
-    Rails.logger.info "[WHATSAPP LIGHT] Message #{message_id} status updated to #{status}"
   end
 
   def process_chat_event

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_10_170918) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_18_225856) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1088,6 +1088,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_10_170918) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "push_flags", default: 0, null: false
+    t.integer "whatsapp_flags", default: 0, null: false
     t.index ["account_id", "user_id"], name: "by_account_user", unique: true
   end
 

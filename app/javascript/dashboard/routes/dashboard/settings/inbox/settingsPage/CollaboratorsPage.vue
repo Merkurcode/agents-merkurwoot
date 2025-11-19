@@ -29,12 +29,19 @@ export default {
       isAgentListUpdating: false,
       enableAutoAssignment: false,
       maxAssignmentLimit: null,
+      assignmentType: 'individual',
     };
   },
   computed: {
     ...mapGetters({
       agentList: 'agents/getAgents',
     }),
+    assignmentTypeOptions() {
+      return [
+        { value: 'individual', label: this.$t('INBOX_MGMT.ASSIGNMENT_TYPE.INDIVIDUAL') },
+        { value: 'group', label: this.$t('INBOX_MGMT.ASSIGNMENT_TYPE.GROUP') },
+      ];
+    },
     maxAssignmentLimitErrors() {
       if (this.v$.maxAssignmentLimit.$error) {
         return this.$t(
@@ -57,6 +64,8 @@ export default {
       this.enableAutoAssignment = this.inbox.enable_auto_assignment;
       this.maxAssignmentLimit =
         this.inbox?.auto_assignment_config?.max_assignment_limit || null;
+      this.assignmentType =
+        this.inbox?.auto_assignment_config?.assignment_type || 'individual';
       this.fetchAttachedAgents();
     },
     async fetchAttachedAgents() {
@@ -97,6 +106,7 @@ export default {
           enable_auto_assignment: this.enableAutoAssignment,
           auto_assignment_config: {
             max_assignment_limit: this.maxAssignmentLimit,
+            assignment_type: this.assignmentType,
           },
         };
         await this.$store.dispatch('inboxes/updateInbox', payload);
@@ -152,23 +162,47 @@ export default {
       :title="$t('INBOX_MGMT.SETTINGS_POPUP.AGENT_ASSIGNMENT')"
       :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.AGENT_ASSIGNMENT_SUB_TEXT')"
     >
-      <label class="w-3/4 settings-item">
-        <div class="flex items-center gap-2">
-          <input
-            id="enableAutoAssignment"
-            v-model="enableAutoAssignment"
-            type="checkbox"
-            @change="handleEnableAutoAssignment"
-          />
-          <label for="enableAutoAssignment">
-            {{ $t('INBOX_MGMT.SETTINGS_POPUP.AUTO_ASSIGNMENT') }}
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="block mb-2 text-sm font-medium text-n-slate-12">
+            {{ $t('INBOX_MGMT.ASSIGNMENT_TYPE.LABEL') }}
           </label>
+          <select
+            v-model="assignmentType"
+            class="w-full px-3 py-2 text-sm border rounded-xl border-n-weak focus:outline-none focus:ring-2 focus:ring-n-brand"
+            @change="updateInbox"
+          >
+            <option
+              v-for="option in assignmentTypeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <p class="mt-1 text-sm text-n-slate-11">
+            {{ $t('INBOX_MGMT.ASSIGNMENT_TYPE.SUB_TEXT') }}
+          </p>
         </div>
 
-        <p class="pb-1 text-sm not-italic text-n-slate-11">
-          {{ $t('INBOX_MGMT.SETTINGS_POPUP.AUTO_ASSIGNMENT_SUB_TEXT') }}
-        </p>
-      </label>
+        <label class="w-3/4 settings-item">
+          <div class="flex items-center gap-2">
+            <input
+              id="enableAutoAssignment"
+              v-model="enableAutoAssignment"
+              type="checkbox"
+              @change="handleEnableAutoAssignment"
+            />
+            <label for="enableAutoAssignment">
+              {{ $t('INBOX_MGMT.SETTINGS_POPUP.AUTO_ASSIGNMENT') }}
+            </label>
+          </div>
+
+          <p class="pb-1 text-sm not-italic text-n-slate-11">
+            {{ $t('INBOX_MGMT.SETTINGS_POPUP.AUTO_ASSIGNMENT_SUB_TEXT') }}
+          </p>
+        </label>
+      </div>
 
       <div v-if="enableAutoAssignment && isEnterprise" class="py-3">
         <woot-input

@@ -8,6 +8,10 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
       send_attachment_message(phone_number, message)
     elsif message.content_type == 'input_select'
       send_interactive_text_message(phone_number, message)
+    elsif should_send_location?(message)
+      send_location_message(phone_number, message)
+    elsif should_send_link_preview?(message)
+      send_link_preview_message(phone_number, message)
     else
       send_text_message(phone_number, message)
     end
@@ -123,6 +127,65 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
     )
 
     process_response(response, message)
+  end
+
+  def send_link_preview_message(phone_number, message)
+    link_preview_data = message.content_attributes['link_preview']
+
+    body = {
+      to: format_phone_number(phone_number),
+      body: message.outgoing_content
+    }
+
+    # Add optional fields if present
+    body[:title] = link_preview_data['title'] if link_preview_data['title'].present?
+    if link_preview_data['media'].present? || link_preview_data['image'].present?
+      body[:media] =
+        link_preview_data['media'] || link_preview_data['image']
+    end
+
+    response = HTTParty.post(
+      "#{api_base_url}/messages/link_preview",
+      headers: api_headers,
+      body: body.to_json
+    )
+
+    process_response(response, message)
+  end
+
+  def send_location_message(phone_number, message)
+    location_data = message.content_attributes
+
+    body = {
+      to: format_phone_number(phone_number),
+      latitude: location_data['latitude'].to_f,
+      longitude: location_data['longitude'].to_f
+    }
+
+    # Add optional fields if present
+    body[:name] = location_data['name'] if location_data['name'].present?
+    body[:address] = location_data['address'] if location_data['address'].present?
+    body[:url] = location_data['url'] if location_data['url'].present?
+
+    response = HTTParty.post(
+      "#{api_base_url}/messages/location",
+      headers: api_headers,
+      body: body.to_json
+    )
+
+    process_response(response, message)
+  end
+
+  def should_send_location?(message)
+    message.content_attributes.present? &&
+      message.content_attributes['latitude'].present? &&
+      message.content_attributes['longitude'].present?
+  end
+
+  def should_send_link_preview?(message)
+    message.content_attributes.present? &&
+      message.content_attributes['link_preview'].present? &&
+      message.content_attributes['link_preview']['enabled'] == true
   end
 
   def format_phone_number(phone_number)

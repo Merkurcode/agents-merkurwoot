@@ -792,6 +792,12 @@
       "MAX_ASSIGNMENT_LIMIT_RANGE_ERROR": "Por favor ingrese un valor mayor a 0",
       "MAX_ASSIGNMENT_LIMIT_SUB_TEXT": "Limite la cantidad máxima de conversaciones de esta bandeja de entrada que se pueden asignar automáticamente a un agente"
     },
+    "ASSIGNMENT_TYPE": {
+      "LABEL": "Tipo de Asignación",
+      "SUB_TEXT": "Elige cómo se deben asignar las conversaciones a los agentes",
+      "INDIVIDUAL": "Individual",
+      "GROUP": "Grupal"
+    },
     "FACEBOOK_REAUTHORIZE": {
       "TITLE": "Reautorizar",
       "SUBTITLE": "Su conexión de Facebook expiró, por favor reconecte si página de Facebook para continuar con el servicio",

@@ -174,7 +174,9 @@ class Inbox < ApplicationRecord
     {
       id: id,
       name: name,
-      survey_id: survey_id
+      survey_id: survey_id,
+      enable_auto_assignment: enable_auto_assignment,
+      auto_assignment_config: auto_assignment_config
     }
   end
 

@@ -792,6 +792,12 @@
       "MAX_ASSIGNMENT_LIMIT_RANGE_ERROR": "Please enter a value greater than 0",
       "MAX_ASSIGNMENT_LIMIT_SUB_TEXT": "Limit the maximum number of conversations from this inbox that can be auto assigned to an agent"
     },
+    "ASSIGNMENT_TYPE": {
+      "LABEL": "Assignment Type",
+      "SUB_TEXT": "Choose how conversations should be assigned to agents",
+      "INDIVIDUAL": "Individual",
+      "GROUP": "Group"
+    },
     "FACEBOOK_REAUTHORIZE": {
       "TITLE": "Reauthorize",
       "SUBTITLE": "Your Facebook connection has expired, please reconnect your Facebook page to continue services",

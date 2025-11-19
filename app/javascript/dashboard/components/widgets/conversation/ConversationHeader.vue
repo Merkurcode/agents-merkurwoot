@@ -69,6 +69,22 @@ const currentContact = computed(() =>
   store.getters['contacts/getContact'](props.chat.meta.sender.id)
 );
 
+const isGroupConversation = computed(() => {
+  return props.chat.conversation_type === 1; // whatsapp_group enum value
+});
+
+const displayName = computed(() => {
+  if (isGroupConversation.value) {
+    // For group conversations, use the group name from additional_attributes
+    return (
+      props.chat.additional_attributes?.whatsappGroupName ||
+      props.chat.additional_attributes?.whatsapp_group_name ||
+      'WhatsApp Group'
+    );
+  }
+  return currentContact.value.name;
+});
+
 const isSnoozed = computed(
   () => currentChat.value.status === wootConstants.STATUS_TYPE.SNOOZED
 );
@@ -107,7 +123,7 @@ const hasSlaPolicyId = computed(() => props.chat?.sla_policy_id);
         class="ltr:mr-2 rtl:ml-2"
       />
       <Avatar
-        :name="currentContact.name"
+        :name="displayName"
         :src="currentContact.thumbnail"
         :size="32"
         :status="currentContact.availability_status"
@@ -121,7 +137,7 @@ const hasSlaPolicyId = computed(() => props.chat?.sla_policy_id);
           <span
             class="text-sm font-medium truncate leading-tight text-n-slate-12"
           >
-            {{ currentContact.name }}
+            {{ displayName }}
           </span>
           <fluent-icon
             v-if="!isHMACVerified"

@@ -78,7 +78,10 @@ export default {
 
 <template>
   <div class="flex flex-wrap flex-col mx-0">
-    <form class="flex flex-wrap flex-col mx-0" @submit.prevent="createChannel()">
+    <form
+      class="flex flex-wrap flex-col mx-0"
+      @submit.prevent="createChannel()"
+    >
       <div class="flex-shrink-0 flex-grow-0">
         <label :class="{ error: v$.inboxName.$error }">
           {{ $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.INBOX_NAME.LABEL') }}
@@ -86,7 +89,9 @@ export default {
             v-model="inboxName"
             type="text"
             :disabled="isCreating"
-            :placeholder="$t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.INBOX_NAME.PLACEHOLDER')"
+            :placeholder="
+              $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.INBOX_NAME.PLACEHOLDER')
+            "
             @blur="v$.inboxName.$touch"
           />
           <span v-if="v$.inboxName.$error" class="message">
@@ -102,7 +107,9 @@ export default {
             v-model="phoneNumber"
             type="text"
             :disabled="isCreating"
-            :placeholder="$t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.PHONE_NUMBER.PLACEHOLDER')"
+            :placeholder="
+              $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.PHONE_NUMBER.PLACEHOLDER')
+            "
             @blur="v$.phoneNumber.$touch"
           />
           <span v-if="v$.phoneNumber.$error" class="message">

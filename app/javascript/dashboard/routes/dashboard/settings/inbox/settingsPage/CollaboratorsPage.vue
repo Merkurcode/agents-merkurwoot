@@ -38,7 +38,10 @@ export default {
     }),
     assignmentTypeOptions() {
       return [
-        { value: 'individual', label: this.$t('INBOX_MGMT.ASSIGNMENT_TYPE.INDIVIDUAL') },
+        {
+          value: 'individual',
+          label: this.$t('INBOX_MGMT.ASSIGNMENT_TYPE.INDIVIDUAL'),
+        },
         { value: 'group', label: this.$t('INBOX_MGMT.ASSIGNMENT_TYPE.GROUP') },
       ];
     },

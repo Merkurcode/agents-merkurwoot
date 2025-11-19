@@ -16,6 +16,7 @@ class Api::V1::Accounts::Conversations::AssignmentsController < Api::V1::Account
     @agent = Current.account.users.find_by(id: params[:assignee_id])
     @conversation.assignee = @agent
     @conversation.save!
+    trigger_whatsapp_group_creation
     render_agent
   end
 
@@ -31,5 +32,19 @@ class Api::V1::Accounts::Conversations::AssignmentsController < Api::V1::Account
     @team = Current.account.teams.find_by(id: params[:team_id])
     @conversation.update!(team: @team)
     render json: @team
+  end
+
+  def trigger_whatsapp_group_creation
+    return unless whatsapp_group_enabled?
+
+    Whatsapp::CreateGroupJob.perform_later(@conversation.id)
+  end
+
+  def whatsapp_group_enabled?
+    return false unless @agent.present?
+
+    @conversation.inbox.auto_assignment_config&.dig('assignment_type') == 'group' &&
+      @agent.phone_number.present? &&
+      @conversation.contact&.phone_number.present?
   end
 end

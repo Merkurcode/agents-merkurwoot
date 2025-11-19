@@ -71,6 +71,22 @@ const currentContact = computed(() => {
     : {};
 });
 
+const isGroupConversation = computed(() => {
+  return props.chat.conversation_type === 1; // whatsapp_group enum value
+});
+
+const displayName = computed(() => {
+  if (isGroupConversation.value) {
+    // For group conversations, use the group name from additional_attributes
+    return (
+      props.chat.additional_attributes?.whatsappGroupName ||
+      props.chat.additional_attributes?.whatsapp_group_name ||
+      'WhatsApp Group'
+    );
+  }
+  return currentContact.value.name;
+});
+
 const isActiveChat = computed(() => {
   return currentChat.value.id === props.chat.id;
 });
@@ -257,7 +273,7 @@ const deleteConversation = () => {
     >
       <Avatar
         v-if="!hideThumbnail"
-        :name="currentContact.name"
+        :name="displayName"
         :src="currentContact.thumbnail"
         :size="32"
         :status="currentContact.availability_status"
@@ -315,7 +331,7 @@ const deleteConversation = () => {
         class="conversation--user text-sm my-0 mx-2 capitalize pt-0.5 text-ellipsis overflow-hidden whitespace-nowrap flex-1 min-w-0 ltr:pr-16 rtl:pl-16 text-n-slate-12"
         :class="hasUnread ? 'font-semibold' : 'font-medium'"
       >
-        {{ currentContact.name }}
+        {{ displayName }}
       </h4>
       <div
         v-if="callStatus"

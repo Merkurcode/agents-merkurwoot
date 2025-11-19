@@ -160,7 +160,10 @@ export default {
       this.updateNotificationSettings();
     },
     handleWhatsappInput(id) {
-      this.selectedWhatsappFlags = this.toggleInput(this.selectedWhatsappFlags, id);
+      this.selectedWhatsappFlags = this.toggleInput(
+        this.selectedWhatsappFlags,
+        id
+      );
       this.updateNotificationSettings();
     },
     toggleInput(selected, current) {

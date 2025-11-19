@@ -203,7 +203,7 @@ async function fetchWhapiLightQR() {
         whapiLightQR.value = qrData.base64;
         whapiLightQRExpire.value = qrData.expire;
         whapiLightQRSecondsLeft.value = qrData.expire;
-        whapiLightQRExpireTime.value = Date.now() + (qrData.expire * 1000);
+        whapiLightQRExpireTime.value = Date.now() + qrData.expire * 1000;
         isWaitingForQR.value = false;
         whapiQRError.value = null;
 
@@ -213,17 +213,26 @@ async function fetchWhapiLightQR() {
     }
   } catch (error) {
     // If it's a 503 or waiting status, keep polling
-    if (error.response?.status === 503 || error.response?.data?.status === 'waiting') {
+    if (
+      error.response?.status === 503 ||
+      error.response?.data?.status === 'waiting'
+    ) {
       isWaitingForQR.value = true;
     } else {
-      whapiQRError.value = error.response?.data?.error || 'Failed to fetch QR code';
+      whapiQRError.value =
+        error.response?.data?.error || 'Failed to fetch QR code';
       stopQRPolling();
     }
   }
 }
 
 async function checkWhapiAuthStatus() {
-  if (!currentInbox.value || !isAWhatsAppLightChannel.value || isWhapiAuthenticated.value) return;
+  if (
+    !currentInbox.value ||
+    !isAWhatsAppLightChannel.value ||
+    isWhapiAuthenticated.value
+  )
+    return;
 
   try {
     const response = await axios.get(
@@ -242,7 +251,8 @@ async function checkWhapiAuthStatus() {
       await completeWhapiSetup();
     }
   } catch (error) {
-    whapiQRError.value = error.response?.data?.error || 'Failed to check authentication status';
+    whapiQRError.value =
+      error.response?.data?.error || 'Failed to check authentication status';
   }
 }
 
@@ -304,7 +314,10 @@ function startQRExpireCountdown() {
       return;
     }
 
-    const secondsLeft = Math.max(0, Math.floor((whapiLightQRExpireTime.value - Date.now()) / 1000));
+    const secondsLeft = Math.max(
+      0,
+      Math.floor((whapiLightQRExpireTime.value - Date.now()) / 1000)
+    );
     whapiLightQRSecondsLeft.value = secondsLeft;
 
     if (secondsLeft === 0) {
@@ -441,7 +454,9 @@ onUnmounted(() => {
           <woot-code lang="html" :script="currentInbox.forward_to_email" />
         </div>
         <div
-          v-if="isAWhatsAppChannel && !isAWhatsAppLightChannel && qrCodes.whatsapp"
+          v-if="
+            isAWhatsAppChannel && !isAWhatsAppLightChannel && qrCodes.whatsapp
+          "
           class="flex flex-col gap-3 items-center mt-8"
         >
           <p class="mt-2 text-sm text-n-slate-9">
@@ -487,21 +502,30 @@ onUnmounted(() => {
           </div>
         </div>
         <!-- WhatsApp Light - Loading state -->
-        <div v-if="isAWhatsAppLightChannel && isWaitingForQR" class="flex flex-col gap-3 items-center mt-8">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-woot-500"></div>
+        <div
+          v-if="isAWhatsAppLightChannel && isWaitingForQR"
+          class="flex flex-col gap-3 items-center mt-8"
+        >
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-woot-500"
+          />
           <p class="text-sm text-n-slate-9">
             {{ $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.WAITING') }}
           </p>
         </div>
         <!-- WhatsApp Light - QR Code -->
         <div
-          v-if="isAWhatsAppLightChannel && whapiLightQR && !isWhapiAuthenticated"
+          v-if="
+            isAWhatsAppLightChannel && whapiLightQR && !isWhapiAuthenticated
+          "
           class="flex flex-col gap-3 items-center mt-8"
         >
           <p class="mt-2 text-sm text-n-slate-9">
             {{ $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.QR_TITLE') }}
           </p>
-          <div class="rounded-lg shadow outline-1 outline-n-strong outline bg-white p-4">
+          <div
+            class="rounded-lg shadow outline-1 outline-n-strong outline bg-white p-4"
+          >
             <img
               :src="whapiLightQR"
               alt="WhatsApp Light QR Code"
@@ -513,34 +537,71 @@ onUnmounted(() => {
             {{ $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.WAITING_AUTH') }}
           </div>
           <p v-if="whapiLightQRSecondsLeft" class="text-xs text-n-slate-9 mt-2">
-            {{ $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.EXPIRES_IN', { seconds: whapiLightQRSecondsLeft }) }}
+            {{
+              $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.EXPIRES_IN', {
+                seconds: whapiLightQRSecondsLeft,
+              })
+            }}
           </p>
         </div>
         <!-- WhatsApp Light - QR Expired -->
         <div
-          v-if="isAWhatsAppLightChannel && !whapiLightQR && !isWaitingForQR && !isWhapiAuthenticated && !whapiQRError"
+          v-if="
+            isAWhatsAppLightChannel &&
+            !whapiLightQR &&
+            !isWaitingForQR &&
+            !isWhapiAuthenticated &&
+            !whapiQRError
+          "
           class="flex flex-col gap-3 items-center mt-8"
         >
-          <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-2">
-            <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div
+            class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-2"
+          >
+            <svg
+              class="w-8 h-8 text-orange-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <p class="text-sm text-n-slate-9 mb-2">
             {{ $t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.QR_EXPIRED') }}
           </p>
           <NextButton
-            @click="regenerateQR"
             solid
             blue
             :label="$t('INBOX_MGMT.ADD.WHATSAPP_LIGHT.GENERATE_NEW_QR')"
+            @click="regenerateQR"
           />
         </div>
         <!-- WhatsApp Light - Success state -->
-        <div v-if="isAWhatsAppLightChannel && isWhapiAuthenticated" class="flex flex-col gap-3 items-center mt-8">
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <div
+          v-if="isAWhatsAppLightChannel && isWhapiAuthenticated"
+          class="flex flex-col gap-3 items-center mt-8"
+        >
+          <div
+            class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center"
+          >
+            <svg
+              class="w-8 h-8 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
           <p class="text-lg font-medium text-green-900">
@@ -548,17 +609,35 @@ onUnmounted(() => {
           </p>
         </div>
         <!-- WhatsApp Light - Error state -->
-        <div v-if="isAWhatsAppLightChannel && whapiQRError" class="flex flex-col gap-3 items-center mt-8">
-          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <div
+          v-if="isAWhatsAppLightChannel && whapiQRError"
+          class="flex flex-col gap-3 items-center mt-8"
+        >
+          <div
+            class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center"
+          >
+            <svg
+              class="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </div>
           <p class="text-sm text-red-600">
             {{ whapiQRError }}
           </p>
         </div>
-        <div v-if="!isAWhatsAppLightChannel || isWhapiAuthenticated" class="flex gap-2 justify-center mt-4">
+        <div
+          v-if="!isAWhatsAppLightChannel || isWhapiAuthenticated"
+          class="flex gap-2 justify-center mt-4"
+        >
           <router-link
             :to="{
               name: 'settings_inbox_show',

@@ -5,7 +5,10 @@ class Whatsapp::IncomingMessageWhapiService
 
   def perform
     return if message_already_processed?
-    return if params['from_me'] # Skip messages sent by us
+
+    # For group messages, process both incoming and outgoing
+    # For individual messages, skip outgoing (from_me)
+    return if params['from_me'] && !group_message?
 
     set_contact
     return unless @contact
@@ -23,8 +26,32 @@ class Whatsapp::IncomingMessageWhapiService
   end
 
   def set_contact
-    phone_number = extract_phone_number(params['chat_id'] || params['from'])
-    contact_name = params.dig('from_name') || params.dig('chat', 'name') || phone_number
+    chat_id = params['chat_id'] || params['from']
+    is_group = chat_id.to_s.include?('@g.us')
+
+    if is_group
+      setup_group_contact(chat_id)
+    else
+      setup_individual_contact(chat_id)
+    end
+  end
+
+  def setup_group_contact(chat_id)
+    # For groups, use the full chat_id as source_id
+    # Find existing contact_inbox for this group
+    @contact_inbox = inbox.contact_inboxes.find_by(source_id: chat_id)
+
+    unless @contact_inbox
+      Rails.logger.error "[WHATSAPP LIGHT] Group contact_inbox not found for chat_id: #{chat_id}"
+      return
+    end
+
+    @contact = @contact_inbox.contact
+  end
+
+  def setup_individual_contact(chat_id)
+    phone_number = extract_phone_number(chat_id)
+    contact_name = params['from_name'] || params.dig('chat', 'name') || phone_number
 
     contact_inbox = ::ContactInboxWithContactBuilder.new(
       source_id: phone_number,
@@ -40,15 +67,35 @@ class Whatsapp::IncomingMessageWhapiService
   end
 
   def set_conversation
-    @conversation = ::Conversation.find_by(conversation_params) || build_conversation
+    # For group messages, find the whatsapp_group conversation
+    # For individual messages, find the default conversation
+    @conversation = if group_message?
+                      find_or_build_group_conversation
+                    else
+                      find_or_build_individual_conversation
+                    end
     @conversation.save!
   end
 
-  def build_conversation
+  def find_or_build_group_conversation
+    # Find existing group conversation for this contact_inbox
+    conversation = ::Conversation.find_by(
+      contact_inbox_id: @contact_inbox.id,
+      conversation_type: :whatsapp_group
+    )
+
+    conversation || build_conversation(conversation_type: :whatsapp_group)
+  end
+
+  def find_or_build_individual_conversation
+    ::Conversation.find_by(conversation_params) || build_conversation
+  end
+
+  def build_conversation(additional_params = {})
     ::Conversation.new(conversation_params.merge(
       contact_id: @contact.id,
       contact_inbox_id: @contact_inbox.id
-    ))
+    ).merge(additional_params))
   end
 
   def conversation_params
@@ -60,6 +107,11 @@ class Whatsapp::IncomingMessageWhapiService
     }
   end
 
+  def group_message?
+    chat_id = params['chat_id'] || params['from']
+    chat_id.to_s.include?('@g.us')
+  end
+
   def create_message
     @message = @conversation.messages.create!(message_params)
     attach_files if attachment_present?
@@ -68,15 +120,36 @@ class Whatsapp::IncomingMessageWhapiService
   end
 
   def message_params
-    {
+    base_params = {
       account_id: @conversation.account_id,
       inbox_id: @conversation.inbox_id,
-      message_type: :incoming,
+      message_type: params['from_me'] ? :outgoing : :incoming,
       content: message_content,
       source_id: params['id'],
-      sender: @contact,
+      sender: message_sender,
       external_created_at: params['timestamp'] ? Time.zone.at(params['timestamp']) : Time.current
     }
+
+    # For outgoing messages without a real sender, add external sender info for display
+    if params['from_me'] && message_sender.nil?
+      base_params[:additional_attributes] = {
+        external_sender_name: ENV.fetch('WHATSAPP_ADMIN_NAME', 'Nauto Assistant'),
+        external_sender_type: 'whatsapp_admin'
+      }
+    end
+
+    base_params
+  end
+
+  def message_sender
+    # For outgoing messages, try to find the user by phone, otherwise return nil
+    # For incoming messages, sender is the contact
+    if params['from_me']
+      phone = extract_phone_number(params['from'])
+      inbox.account.users.find { |user| format_phone_number(user.phone_number) == format_phone_number(phone) }
+    else
+      @contact
+    end
   end
 
   def message_content
@@ -156,5 +229,10 @@ class Whatsapp::IncomingMessageWhapiService
   def extract_phone_number(chat_id)
     # Whapi format: "1234567890@s.whatsapp.net" or "1234567890-1234567890@g.us" (group)
     chat_id.to_s.split('@').first.split('-').first
+  end
+
+  def format_phone_number(phone)
+    # Remove the + if exists and leave only numbers
+    phone.to_s.gsub(/[^0-9]/, '')
   end
 end

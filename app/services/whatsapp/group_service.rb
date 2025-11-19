@@ -35,15 +35,11 @@ class Whatsapp::GroupService
     participants = []
 
     # Agregar número del agente asignado
-    if conversation.assignee&.phone_number.present?
-      participants << format_phone_number(conversation.assignee.phone_number)
-    end
+    participants << format_phone_number(conversation.assignee.phone_number) if conversation.assignee&.phone_number.present?
 
     # Agregar número del cliente
-    if conversation.contact&.phone_number.present?
-      participants << format_phone_number(conversation.contact.phone_number)
-    end
-
+    participants << format_phone_number(conversation.contact.phone_number) if conversation.contact&.phone_number.present?
+    Rails.logger.info "[WHATSAPP GROUP] Participants: #{participants}"
     participants.compact.uniq
   end
 
@@ -61,73 +57,102 @@ class Whatsapp::GroupService
   def process_response(response)
     return nil unless response&.success?
 
-    parsed_response = JSON.parse(response.body)
-    group_id = parsed_response['group_id'] || parsed_response['id']
-    participants = parsed_response['participants'] || []
+    parsed_response = parse_response_body(response.body)
+    return nil unless parsed_response
 
-    if group_id.present?
-      Rails.logger.info "[WHATSAPP GROUP] Group created successfully: #{group_id}"
+    group_id = extract_group_id(parsed_response)
+    return log_missing_group_id(response.body) unless group_id
 
-      # Mapear los IDs de Whapi con nuestros contactos
-      mapped_participants = map_participants_to_contacts(participants)
-      participant_whapi_ids = participants.map { |p| p['id'] }.compact
+    setup_group_conversation(group_id, parsed_response['participants'] || [])
+    group_id
+  end
 
-      # Actualizar metadata de la conversación
-      update_conversation_metadata(group_id, participant_whapi_ids, mapped_participants)
-
-      # Crear ContactInbox para el grupo
-      create_group_contact_inbox(group_id)
-
-      group_id
-    else
-      Rails.logger.error "[WHATSAPP GROUP] No group_id in response: #{response.body}"
-      nil
-    end
+  def parse_response_body(body)
+    parsed = JSON.parse(body)
+    Rails.logger.info "[WHATSAPP GROUP] Group created response: #{parsed}"
+    parsed
   rescue JSON::ParserError => e
     Rails.logger.error "[WHATSAPP GROUP] Error parsing response: #{e.message}"
     nil
   end
 
-  def update_conversation_metadata(group_id, participant_ids, mapped_participants)
-    conversation.additional_attributes ||= {}
-    conversation.additional_attributes['whatsapp_group_id'] = group_id
-    conversation.additional_attributes['type'] = 'group'
-    conversation.additional_attributes['participant_ids'] = participant_ids
-    conversation.additional_attributes['participants'] = mapped_participants
-    conversation.save!
+  def extract_group_id(parsed_response)
+    group_id = parsed_response['group_id'] || parsed_response['id']
+    Rails.logger.info "[WHATSAPP GROUP] Group created successfully: #{group_id}" if group_id
+    group_id
+  end
+
+  def log_missing_group_id(response_body)
+    Rails.logger.error "[WHATSAPP GROUP] No group_id in response: #{response_body}"
+    nil
+  end
+
+  def setup_group_conversation(group_id, participants)
+    mapped_participants = map_participants_to_contacts(participants)
+    group_contact_inbox = create_group_contact_inbox(group_id)
+    create_group_conversation(group_contact_inbox, mapped_participants, group_id) if group_contact_inbox
+  end
+
+  def create_group_conversation(group_contact_inbox, mapped_participants, group_id)
+    group_conversation = inbox.account.conversations.create!(
+      inbox: inbox,
+      contact: conversation.contact,
+      contact_inbox: group_contact_inbox,
+      assignee: conversation.assignee,
+      conversation_type: :whatsapp_group,
+      additional_attributes: {
+        whatsapp_group_id: group_id,
+        whatsapp_group_name: group_subject,
+        source_conversation_id: conversation.id,
+        participants: mapped_participants
+      }
+    )
+
+    Rails.logger.info "[WHATSAPP GROUP] Group conversation created: #{group_conversation.id}"
+    group_conversation
+  rescue StandardError => e
+    Rails.logger.error "[WHATSAPP GROUP] Error creating group conversation: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    nil
   end
 
   def create_group_contact_inbox(group_id)
     # Crear ContactInbox para el grupo con el source_id del grupo
-    return if inbox.contact_inboxes.exists?(source_id: group_id)
+    existing = inbox.contact_inboxes.find_by(source_id: group_id)
+    return existing if existing
 
-    inbox.contact_inboxes.create!(
+    group_contact_inbox = inbox.contact_inboxes.create!(
       contact_id: conversation.contact_id,
       source_id: group_id
     )
 
     Rails.logger.info "[WHATSAPP GROUP] ContactInbox created for group: #{group_id}"
+    group_contact_inbox
   rescue StandardError => e
     Rails.logger.error "[WHATSAPP GROUP] Error creating group contact inbox: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
+    nil
   end
 
   def map_participants_to_contacts(participants)
     # Mapear los participantes de Whapi con nuestros contactos locales
-    participants.map do |participant|
+    participants.filter_map do |participant|
       whapi_id = participant['id']
       phone = participant['phone'] || extract_phone_from_whapi_id(whapi_id)
+      rank = participant['rank']
 
       # Intentar encontrar el contacto por teléfono
       contact = find_contact_by_phone(phone)
+      user = find_user_by_phone(phone)
 
       {
         'whapi_id' => whapi_id,
         'phone' => phone,
+        'rank' => rank,
         'contact_id' => contact&.id,
-        'user_id' => find_user_by_phone(phone)&.id
+        'user_id' => user&.id
       }
-    end.compact
+    end
   end
 
   def extract_phone_from_whapi_id(whapi_id)
@@ -142,7 +167,7 @@ class Whatsapp::GroupService
     formatted_phone = format_phone_number(phone)
     # Buscar contacto por número formateado (solo números)
     inbox.account.contacts.find do |contact|
-      next unless contact.phone_number.present?
+      next if contact.phone_number.blank?
 
       format_phone_number(contact.phone_number) == formatted_phone
     end
@@ -154,7 +179,7 @@ class Whatsapp::GroupService
     formatted_phone = format_phone_number(phone)
     # Buscar usuario por número formateado (solo números)
     inbox.account.users.find do |user|
-      next unless user.phone_number.present?
+      next if user.phone_number.blank?
 
       format_phone_number(user.phone_number) == formatted_phone
     end

@@ -40,7 +40,10 @@ export const actions = {
     }
   },
 
-  update: async ({ commit }, { selectedEmailFlags, selectedPushFlags, selectedWhatsappFlags }) => {
+  update: async (
+    { commit },
+    { selectedEmailFlags, selectedPushFlags, selectedWhatsappFlags }
+  ) => {
     commit(types.default.SET_USER_NOTIFICATION_UI_FLAG, { isUpdating: true });
     try {
       const response = await UserNotificationSettings.update({

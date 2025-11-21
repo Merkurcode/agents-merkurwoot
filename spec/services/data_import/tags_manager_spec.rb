@@ -43,7 +43,11 @@ RSpec.describe DataImport::TagsManager do
       it 'assigns all tags to the contact' do
         manager.build(identifier: '123', tags: 'ruby, invalid_tag')
 
-        expect(contact.reload.label_list).to match_array(%w[ruby invalid_tag])
+        taggings = manager.build(identifier: '123', tags: 'ruby, invalid_tag')
+
+        expect(taggings.size).to eq(2)
+        expect(taggings.all?(ActsAsTaggableOn::Tagging)).to be true
+        expect(taggings.map(&:taggable_id).uniq).to eq([contact.id])
       end
     end
 

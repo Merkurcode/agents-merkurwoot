@@ -32,35 +32,59 @@ class DataImportJob < ApplicationJob
   end
 
   def update_contact_tags
-    @csv.each do |row|
-      @tags_manager.build(row.to_h.with_indifferent_access)
-    end
+    tags =
+      @csv.each_with_object([]) do |row, acc|
+        acc.concat(@tags_manager.build(row.to_h.with_indifferent_access))
+      end
+
+    ActsAsTaggableOn::Tagging.import(
+      tags,
+      synchronize: tags,
+      on_duplicate_key_ignore: true,
+      track_validation_failures: true,
+      validate: true,
+      batch_size: 1000
+    )
   end
 
   def parse_csv_and_build_contacts
     contacts = []
     rejected_contacts = []
 
-    with_import_file do |file|
-      file.binmode
-      raw_data = file.read
-      utf8_data = raw_data.force_encoding('UTF-8')
-      # Ensure that the data is valid UTF-8, preserving valid characters
-      clean_data = utf8_data.valid_encoding? ? utf8_data : utf8_data.encode('UTF-16le', invalid: :replace, replace: '').encode('UTF-8')
+    @csv = parse_csv
 
-      @csv = CSV.parse(clean_data, headers: true)
-
-      @csv.each do |row|
-        current_contact = @contact_manager.build_contact(row.to_h.with_indifferent_access)
-        if current_contact.valid?
-          contacts << current_contact
-        else
-          append_rejected_contact(row, current_contact, rejected_contacts)
-        end
+    @csv.each do |row|
+      current_contact = @contact_manager.build_contact(row.to_h.with_indifferent_access)
+      if current_contact.valid?
+        contacts << current_contact
+      else
+        append_rejected_contact(row, current_contact, rejected_contacts)
       end
     end
 
     [contacts, rejected_contacts]
+  end
+
+  def detect_delimiter(data)
+    first_lines = data.lines.take(5).join
+
+    comma_count = first_lines.count(',')
+    semicolon_count = first_lines.count(';')
+
+    semicolon_count > comma_count ? ';' : ','
+  end
+
+  def parse_csv
+    # Ensuring that importing non utf-8 characters will not throw error
+    data = @data_import.import_file.download
+    clean_data = data.force_encoding('UTF-8')
+
+    # Ensure that the data is valid UTF-8, preserving valid characters
+    clean_data = clean_data.encode('UTF-16le', invalid: :replace, replace: '').encode('UTF-8') unless clean_data.valid_encoding?
+
+    @csv_delimiter = detect_delimiter(clean_data)
+
+    CSV.parse(clean_data, headers: true, col_sep: @csv_delimiter)
   end
 
   def append_rejected_contact(row, contact, rejected_contacts)
@@ -86,7 +110,7 @@ class DataImportJob < ApplicationJob
   end
 
   def generate_csv_data(rejected_contacts)
-    headers = csv_headers
+    headers = CSV.parse(@data_import.import_file.download, headers: true, col_sep: @csv_delimiter).headers
     headers << 'errors'
     return if rejected_contacts.blank?
 

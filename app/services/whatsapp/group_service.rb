@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Whatsapp::GroupService
-  pattr_initialize [:conversation!]
+  pattr_initialize [:conversation!, :group_options]
 
   def create_group
     return unless should_create_group?
@@ -9,7 +9,10 @@ class Whatsapp::GroupService
     whapi_payload = build_group_payload
     response = send_create_group_request(whapi_payload)
 
-    process_response(response)
+    group_id = process_response(response)
+    Rails.logger.info "[WHATSAPP GROUP] Group created: #{group_id}, with welcome message: #{welcome_message}"
+    send_welcome_message(group_id) if group_id && welcome_message.present?
+    group_id
   end
 
   private
@@ -28,7 +31,18 @@ class Whatsapp::GroupService
   end
 
   def group_subject
+    return group_options[:group_name] if group_options.present? && group_options[:group_name].present?
+
     "Conversación ##{conversation.display_id} - #{inbox.name}"
+  end
+
+  def welcome_message
+    return group_options[:welcome_message] if group_options.present? && group_options[:welcome_message].present?
+
+    agent_name = conversation.assignee&.name || 'Agente'
+
+    "¡Bienvenido\n\n" \
+      "Este grupo se ha creado para brindarte un mejor servicio. #{agent_name} atenderá tus consultas a la brevedad."
   end
 
   def group_participants
@@ -85,6 +99,23 @@ class Whatsapp::GroupService
   def log_missing_group_id(response_body)
     Rails.logger.error "[WHATSAPP GROUP] No group_id in response: #{response_body}"
     nil
+  end
+
+  def send_welcome_message(group_id)
+    message_payload = {
+      to: group_id,
+      body: welcome_message
+    }
+
+    response = HTTParty.post(
+      "#{whapi_api_url}/messages/text",
+      headers: whapi_headers,
+      body: message_payload.to_json
+    )
+
+    Rails.logger.info "[WHATSAPP GROUP] Welcome message sent to group: #{group_id}, response: #{response.body}"
+  rescue StandardError => e
+    Rails.logger.error "[WHATSAPP GROUP] Error sending welcome message: #{e.message}"
   end
 
   def setup_group_conversation(group_id, participants)

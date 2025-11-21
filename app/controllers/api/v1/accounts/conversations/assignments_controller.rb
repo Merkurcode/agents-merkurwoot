@@ -37,7 +37,12 @@ class Api::V1::Accounts::Conversations::AssignmentsController < Api::V1::Account
   def trigger_whatsapp_group_creation
     return unless whatsapp_group_enabled?
 
-    Whatsapp::CreateGroupJob.perform_later(@conversation.id)
+    group_options = {
+      group_name: params[:group_name],
+      welcome_message: params[:welcome_message]
+    }.compact
+
+    Whatsapp::CreateGroupJob.perform_later(@conversation.id, group_options)
   end
 
   def whatsapp_group_enabled?

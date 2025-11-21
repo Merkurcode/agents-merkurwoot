@@ -47,6 +47,7 @@ RSpec.describe DataImport::TagsManager do
         # ActsAsTaggableOn::Tags are created automatically via callback
         taggings = manager.build(identifier: '123', tags: ' Ruby ,  RAILS ')
 
+
         expect(taggings.size).to eq(2)
         tag_names = taggings.map { |t| ActsAsTaggableOn::Tag.find(t.tag_id).name }
         expect(tag_names).to match_array(%w[ruby rails])

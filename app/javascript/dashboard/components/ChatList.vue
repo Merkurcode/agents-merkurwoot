@@ -577,6 +577,11 @@ function resetAndFetchData() {
 }
 
 function loadMoreConversations() {
+  // Don't load more if on board view - board loads all conversations at once
+  if (isOnBoard.value) {
+    return;
+  }
+
   if (hasCurrentPageEndReached.value || chatListLoading.value) {
     return;
   }
@@ -812,6 +817,10 @@ onMounted(() => {
   if (hasActiveFolders.value) {
     store.dispatch('campaigns/get');
   }
+  // Load all conversations if board view is active on mount
+  if (isOnBoard.value) {
+    loadAllConversationsForBoard();
+  }
 });
 
 const deleteConversationDialogRef = ref(null);
@@ -877,6 +886,13 @@ watch(chatLists, () => {
 watch(conversationFilters, (newVal, oldVal) => {
   if (newVal !== oldVal) {
     store.dispatch('updateChatListFilters', newVal);
+  }
+});
+
+watch(isOnBoard, (newVal, oldVal) => {
+  // When switching to board view, load all conversations
+  if (newVal && !oldVal) {
+    loadAllConversationsForBoard();
   }
 });
 </script>

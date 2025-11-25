@@ -578,6 +578,11 @@ function resetAndFetchData() {
 }
 
 function loadMoreConversations() {
+  // Don't load more if on board view - board loads all conversations at once
+  if (isOnBoard.value) {
+    return;
+  }
+
   if (hasCurrentPageEndReached.value || chatListLoading.value) {
     return;
   }
@@ -597,8 +602,54 @@ function loadMoreConversations() {
 // IntersectionObserver triggers as soon as the sentinel is visible.
 const intersectionObserverOptions = computed(() => ({
   root: conversationListRef.value,
-  rootMargin: '100px 0px 100px 0px',
+  rootMargin: ‘100px 0px 100px 0px’,
 }));
+
+// Load all conversations for board view
+async function loadAllConversationsForBoard() {
+  let maxIterations = 50;
+  let iteration = 0;
+
+  while (!hasCurrentPageEndReached.value && iteration < maxIterations) {
+    iteration++;
+
+    try {
+      if (!hasAppliedFiltersOrActiveFolders.value) {
+        await store.dispatch(‘updateChatListFilters’, conversationFilters.value);
+        await store.dispatch(‘fetchAllConversations’);
+      } else if (hasActiveFolders.value) {
+        const payload = activeFolder.value.query;
+        let page = currentFiltersPage.value + 1;
+        await store.dispatch(‘fetchFilteredConversations’, {
+          queryData: payload,
+          page,
+        });
+      } else if (hasAppliedFilters.value) {
+        let page = currentFiltersPage.value + 1;
+        await store.dispatch(‘fetchFilteredConversations’, {
+          queryData: filterQueryGenerator(appliedFilters.value),
+          page,
+        });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      break;
+    }
+  }
+}
+
+function handleScroll() {
+  if (isOnBoard.value) return;
+
+  const scroller = conversationDynamicScroller.value;
+  if (scroller && scroller.hasScrollbar) {
+    const { scrollTop, scrollHeight, clientHeight } = scroller.$el;
+    if (scrollHeight - (scrollTop + clientHeight) < 100) {
+      loadMoreConversations();
+    }
+  }
+}
 
 function updateAssigneeTab(selectedTab) {
   if (activeAssigneeTab.value !== selectedTab) {
@@ -813,6 +864,10 @@ onMounted(() => {
   if (hasActiveFolders.value) {
     store.dispatch('campaigns/get');
   }
+  // Load all conversations if board view is active on mount
+  if (isOnBoard.value) {
+    loadAllConversationsForBoard();
+  }
 });
 
 const deleteConversationDialogRef = ref(null);
@@ -878,6 +933,13 @@ watch(chatLists, () => {
 watch(conversationFilters, (newVal, oldVal) => {
   if (newVal !== oldVal) {
     store.dispatch('updateChatListFilters', newVal);
+  }
+});
+
+watch(isOnBoard, (newVal, oldVal) => {
+  // When switching to board view, load all conversations
+  if (newVal && !oldVal) {
+    loadAllConversationsForBoard();
   }
 });
 </script>

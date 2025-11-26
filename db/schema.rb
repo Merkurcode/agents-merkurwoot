@@ -614,6 +614,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_25_001100) do
     t.boolean "hmac_mandatory", default: false
     t.boolean "continuity_via_email", default: true, null: false
     t.text "allowed_domains", default: ""
+    t.boolean "auto_generate_landing_page", default: false, null: false
+    t.text "landing_page_description"
+    t.string "landing_page_url"
     t.index ["hmac_token"], name: "index_channel_web_widgets_on_hmac_token", unique: true
     t.index ["website_token"], name: "index_channel_web_widgets_on_website_token", unique: true
   end
@@ -1068,6 +1071,28 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_25_001100) do
     t.index ["source_id"], name: "index_messages_on_source_id"
   end
 
+  create_table "meta_campaign_interactions", force: :cascade do |t|
+    t.bigint "inbox_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "message_id", null: false
+    t.string "source_id", null: false
+    t.string "source_type"
+    t.string "ctwa_clid"
+    t.jsonb "metadata", default: {}
+    t.string "interaction_type", default: "initial_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "source_id"], name: "index_meta_campaign_interactions_on_account_id_and_source_id"
+    t.index ["account_id"], name: "index_meta_campaign_interactions_on_account_id"
+    t.index ["conversation_id"], name: "index_meta_campaign_interactions_on_conversation_id"
+    t.index ["created_at"], name: "index_meta_campaign_interactions_on_created_at"
+    t.index ["inbox_id", "source_id"], name: "index_meta_campaign_interactions_on_inbox_id_and_source_id"
+    t.index ["inbox_id"], name: "index_meta_campaign_interactions_on_inbox_id"
+    t.index ["message_id"], name: "index_meta_campaign_interactions_on_message_id", unique: true
+    t.index ["source_id"], name: "index_meta_campaign_interactions_on_source_id"
+  end
+
   create_table "notes", force: :cascade do |t|
     t.text "content", null: false
     t.bigint "account_id", null: false
@@ -1475,6 +1500,10 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_25_001100) do
   add_foreign_key "product_media", "product_catalogs"
   add_foreign_key "product_media", "users"
   add_foreign_key "product_media", "users", column: "last_updated_by_id"
+  add_foreign_key "meta_campaign_interactions", "accounts"
+  add_foreign_key "meta_campaign_interactions", "conversations"
+  add_foreign_key "meta_campaign_interactions", "inboxes"
+  add_foreign_key "meta_campaign_interactions", "messages"
   add_foreign_key "survey_answers", "accounts"
   add_foreign_key "survey_answers", "contacts"
   add_foreign_key "survey_answers", "survey_question_options"

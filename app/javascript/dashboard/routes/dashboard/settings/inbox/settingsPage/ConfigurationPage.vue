@@ -38,6 +38,7 @@ export default {
       isSyncingTemplates: false,
       allowedDomains: '',
       isUpdatingAllowedDomains: false,
+      landingPageError: false,
     };
   },
   validations: {
@@ -50,6 +51,12 @@ export default {
     whatsappAppId() {
       return window.chatwootConfig?.whatsappAppId;
     },
+    landingPageUrl() {
+      return this.inbox?.landing_page_url;
+    },
+    autoGenerateLandingPage() {
+      return this.inbox?.auto_generate_landing_page || false;
+    },
   },
   watch: {
     inbox() {
@@ -58,11 +65,47 @@ export default {
   },
   mounted() {
     this.setDefaults();
+    this.fetchLandingPageUrl();
   },
   methods: {
     setDefaults() {
       this.hmacMandatory = this.inbox.hmac_mandatory || false;
       this.allowedDomains = this.inbox.allowed_domains || '';
+    },
+    async fetchLandingPageUrl() {
+      // Only fetch if it's a web widget and auto-generate is enabled
+      if (
+        !this.isAWebWidgetInbox ||
+        !this.autoGenerateLandingPage ||
+        this.landingPageUrl
+      ) {
+        return;
+      }
+
+      // Reset error state
+      this.landingPageError = false;
+
+      try {
+        // Sleep de 10 segundos
+        let index = 1;
+        let inbox;
+
+        while (index <= 5) {
+          // Race between the store dispatch and timeout
+          this.$store.dispatch('inboxes/fetchInbox', this.inbox.id);
+          inbox = this.$store.getters['inboxes/getInbox'](this.inbox?.id);
+
+          if (inbox?.landing_page_url) break;
+
+          await new Promise(resolve => setTimeout(resolve, 10000));
+
+          index += 1;
+        }
+
+        if (!inbox?.landing_page_url) throw new Error();
+      } catch (error) {
+        this.landingPageError = true;
+      }
     },
     handleHmacFlag() {
       this.updateInbox();
@@ -196,6 +239,65 @@ export default {
   </div>
   <div v-else-if="isAWebWidgetInbox">
     <div class="mx-8">
+      <!-- Loading state for landing page -->
+      <SettingsSection
+        v-if="autoGenerateLandingPage && landingPageError"
+        :title="$t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.LABEL')"
+        :sub-title="
+          $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.HELP_TEXT')
+        "
+      >
+        <div class="flex flex-col gap-4 w-full max-w-3xl">
+          <p class="text-sm text-red-600">
+            {{
+              $t(
+                'INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.ERROR_MESSAGE'
+              )
+            }}
+          </p>
+        </div>
+      </SettingsSection>
+
+      <!-- Loading state for landing page -->
+      <SettingsSection
+        v-else-if="autoGenerateLandingPage && !landingPageUrl"
+        :title="$t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.LABEL')"
+        :sub-title="
+          $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.HELP_TEXT')
+        "
+      >
+        <div class="flex flex-col gap-4 w-full max-w-3xl">
+          <div class="h-16 bg-n-slate-3 rounded animate-pulse" />
+          <div class="h-6 w-32 bg-n-slate-3 rounded animate-pulse" />
+        </div>
+      </SettingsSection>
+
+      <!-- Loaded state with landing page URL -->
+      <SettingsSection
+        v-else-if="autoGenerateLandingPage && landingPageUrl"
+        :title="$t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.LABEL')"
+        :sub-title="
+          $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.HELP_TEXT')
+        "
+      >
+        <div class="flex flex-col gap-4 w-full max-w-3xl">
+          <woot-code :script="landingPageUrl" class="text-xs" />
+          <a
+            :href="landingPageUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1 w-fit"
+          >
+            <span>
+              {{
+                $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.LANDING_PAGE_URL.OPEN_LINK')
+              }}
+            </span>
+            <fluent-icon icon="open" size="12" class="inline-block" />
+          </a>
+        </div>
+      </SettingsSection>
+
       <SettingsSection
         :title="$t('INBOX_MGMT.SETTINGS_POPUP.MESSENGER_HEADING')"
         :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.MESSENGER_SUB_HEAD')"

@@ -138,6 +138,10 @@
         "FAILED": "Couldn't change priority. Please try again."
       }
     },
+    "TYPE": {
+      "DEFAULT": "Default",
+      "WHATSAPP_GROUP": "WhatsApp Group"
+    },
     "DELETE_CONVERSATION": {
       "TITLE": "Delete conversation #{conversationId}",
       "DESCRIPTION": "Are you sure you want to delete this conversation?",

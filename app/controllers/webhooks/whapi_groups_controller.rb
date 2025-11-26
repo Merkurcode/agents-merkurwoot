@@ -2,11 +2,13 @@
 
 class Webhooks::WhapiGroupsController < ActionController::API
   def process_payload
-    Rails.logger.info "[WHATSAPP GROUPS] Received webhook for event type: #{params[:event_type]}"
-    Rails.logger.debug { "[WHATSAPP GROUPS] Webhook payload: #{request.body.read}" }
+    body = request.body.read
     request.body.rewind
 
-    Webhooks::WhapiGroupEventsJob.perform_later(params[:event_type], request.body.read)
+    Rails.logger.info "[WHATSAPP GROUPS] Received webhook for event type: #{params[:event_type]}"
+    Rails.logger.debug { "[WHATSAPP GROUPS] Webhook payload: #{body}" }
+
+    Webhooks::WhapiGroupEventsJob.perform_later(params[:event_type], body)
 
     head :ok
   rescue StandardError => e

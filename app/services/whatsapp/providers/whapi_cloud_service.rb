@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
+  class_attribute :use_admin_token, default: false
+
   def send_message(phone_number, message)
     @message = message
 
@@ -28,7 +30,7 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
 
   def validate_provider_config?
     return false if whatsapp_channel.provider_config['channel_id'].blank?
-    return false if whatsapp_channel.provider_config['token'].blank?
+    return false if auth_token.blank?
 
     # Validate with Whapi health endpoint
     response = HTTParty.get(
@@ -44,7 +46,7 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
 
   def api_headers
     {
-      'Authorization' => "Bearer #{whatsapp_channel.provider_config['token']}",
+      'Authorization' => "Bearer #{auth_token}",
       'Accept' => 'application/json',
       'Content-Type' => 'application/json'
     }
@@ -76,6 +78,14 @@ class Whatsapp::Providers::WhapiCloudService < Whatsapp::Providers::BaseService
   end
 
   private
+
+  def auth_token
+    if self.class.use_admin_token
+      ENV.fetch('WHAPI_ADMIN_CHANNEL_TOKEN', nil)
+    else
+      whatsapp_channel.provider_config['token']
+    end
+  end
 
   def send_text_message(phone_number, message)
     response = HTTParty.post(

@@ -138,6 +138,10 @@
         "FAILED": "No se pudo cambiar la prioridad. Por favor, inténtelo de nuevo."
       }
     },
+    "TYPE": {
+      "DEFAULT": "Predeterminado",
+      "WHATSAPP_GROUP": "Grupo WhatsApp"
+    },
     "DELETE_CONVERSATION": {
       "TITLE": "Eliminar conversación #{conversationId}",
       "DESCRIPTION": "¿Está seguro que desea eliminar esta conversación?",

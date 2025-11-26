@@ -142,14 +142,17 @@ class Whatsapp::IncomingMessageWhapiService
   end
 
   def message_sender
-    # For outgoing messages, try to find the user by phone, otherwise return nil
-    # For incoming messages, sender is the contact
-    if params['from_me']
-      phone = extract_phone_number(params['from'])
-      inbox.account.users.find { |user| format_phone_number(user.phone_number) == format_phone_number(phone) }
-    else
-      @contact
-    end
+    phone = extract_phone_number(params['from'])
+    formatted_phone = format_phone_number(phone)
+
+    # Try to find a user (agent) by phone number first
+    # This handles both outgoing messages (from_me=true) and group messages from agents (from_me=false)
+    user = inbox.account.users.find { |u| format_phone_number(u.phone_number) == formatted_phone }
+    return user if user
+
+    # If from_me is true but no user found, it might be the admin channel
+    # If from_me is false, it's a contact message
+    @contact unless params['from_me']
   end
 
   def message_content

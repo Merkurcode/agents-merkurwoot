@@ -90,7 +90,7 @@ class Webhooks::WhapiGroupEventsJob < ApplicationJob
     # Find the inbox and conversation for this group
     contact_inbox = ContactInbox.joins(:inbox)
                                 .where(source_id: group_id)
-                                .where(inboxes: { channel_type: 'Channel::Whatsapp' })
+                                .where(inboxes: { channel_type: 'Channel::Api' })
                                 .first
 
     unless contact_inbox

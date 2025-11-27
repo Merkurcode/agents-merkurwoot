@@ -13,6 +13,7 @@ import { conversationListPageURL } from 'dashboard/helper/URLHelper';
 import { snoozedReopenTime } from 'dashboard/helper/snoozeHelpers';
 import { useInbox } from 'dashboard/composables/useInbox';
 import { useI18n } from 'vue-i18n';
+import { CONVERSATION_TYPES } from 'dashboard/helper/inbox';
 
 const props = defineProps({
   chat: {
@@ -70,7 +71,7 @@ const currentContact = computed(() =>
 );
 
 const isGroupConversation = computed(() => {
-  return props.chat.conversation_type === 1; // whatsapp_group enum value
+  return props.chat.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP;
 });
 
 const displayName = computed(() => {

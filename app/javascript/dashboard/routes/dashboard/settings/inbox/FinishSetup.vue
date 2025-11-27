@@ -29,6 +29,7 @@ const whapiLightQRSecondsLeft = ref(null);
 const isWaitingForQR = ref(false);
 const isWhapiAuthenticated = ref(false);
 const whapiQRError = ref(null);
+const hasAttemptedQRFetch = ref(false); // Track if we've tried to fetch QR at least once
 const qrPollInterval = ref(null);
 const authPollInterval = ref(null);
 const qrExpireInterval = ref(null);
@@ -178,6 +179,8 @@ async function generateQRCodes() {
 async function fetchWhapiLightQR() {
   if (!currentInbox.value || !isAWhatsAppLightChannel.value) return;
 
+  hasAttemptedQRFetch.value = true;
+
   try {
     const response = await axios.get(
       `/api/v1/accounts/${route.params.accountId}/channels/whapi_channels/${route.params.inbox_id}/get_qr`
@@ -221,6 +224,7 @@ async function fetchWhapiLightQR() {
     } else {
       whapiQRError.value =
         error.response?.data?.error || 'Failed to fetch QR code';
+      isWaitingForQR.value = false;
       stopQRPolling();
     }
   }
@@ -239,8 +243,8 @@ async function checkWhapiAuthStatus() {
       `/api/v1/accounts/${route.params.accountId}/channels/whapi_channels/${route.params.inbox_id}/qr_status`
     );
 
-    // If status is 'QR', we need to fetch the QR code
-    if (response.data.status_text === 'QR' && !whapiLightQR.value) {
+    // If status is 'QR' and we haven't fetched the QR yet, fetch it once
+    if (response.data.status_text === 'QR' && !hasAttemptedQRFetch.value) {
       await fetchWhapiLightQR();
     }
 
@@ -289,10 +293,10 @@ function stopQRPolling() {
 function startAuthPolling() {
   if (authPollInterval.value) return;
 
-  // Poll every 3 seconds for authentication status
+  // Poll every 5 seconds for authentication status
   authPollInterval.value = setInterval(() => {
     checkWhapiAuthStatus();
-  }, 3000);
+  }, 5000);
 
   // Check immediately
   checkWhapiAuthStatus();
@@ -343,6 +347,7 @@ function handleQRExpired() {
 async function regenerateQR() {
   whapiQRError.value = null;
   isWaitingForQR.value = true;
+  hasAttemptedQRFetch.value = false; // Reset the flag to allow fetching again
   await fetchWhapiLightQR();
 }
 
@@ -551,7 +556,8 @@ onUnmounted(() => {
             !whapiLightQR &&
             !isWaitingForQR &&
             !isWhapiAuthenticated &&
-            !whapiQRError
+            !whapiQRError &&
+            hasAttemptedQRFetch
           "
           class="flex flex-col gap-3 items-center mt-8"
         >

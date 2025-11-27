@@ -14,6 +14,7 @@ import CardLabels from './conversationCardComponents/CardLabels.vue';
 import PriorityMark from './PriorityMark.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import ContextMenu from 'dashboard/components/ui/ContextMenu.vue';
+import { CONVERSATION_TYPES } from 'dashboard/helper/inbox';
 
 const props = defineProps({
   activeLabel: { type: String, default: '' },
@@ -72,7 +73,7 @@ const currentContact = computed(() => {
 });
 
 const isGroupConversation = computed(() => {
-  return props.chat.conversation_type === 1; // whatsapp_group enum value
+  return props.chat.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP;
 });
 
 const displayName = computed(() => {

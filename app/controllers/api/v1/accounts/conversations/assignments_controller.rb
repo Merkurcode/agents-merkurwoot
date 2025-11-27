@@ -47,6 +47,7 @@ class Api::V1::Accounts::Conversations::AssignmentsController < Api::V1::Account
 
   def whatsapp_group_enabled?
     return false unless @agent.present?
+    return false unless Current.account.feature_enabled?(:whatsapp_groups)
 
     @conversation.inbox.auto_assignment_config&.dig('assignment_type') == 'group' &&
       @agent.phone_number.present? &&

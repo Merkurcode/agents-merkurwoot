@@ -1053,6 +1053,16 @@
       "API": "Canal API",
       "INSTAGRAM": "Instagram",
       "VOICE": "Voice"
+    },
+    "WHATSAPP_GROUPS": {
+      "SUB_TITLE": "Bandeja especial para conversaciones de grupos de WhatsApp",
+      "NOTE": "<strong>Nota:</strong> Esta es una bandeja administrada por el sistema utilizada exclusivamente para conversaciones de grupos de WhatsApp. Se crea automáticamente y no se puede modificar ni eliminar.",
+      "TYPE_LABEL": "Tipo:",
+      "TYPE_VALUE": "Grupos de WhatsApp",
+      "STATUS_LABEL": "Estado:",
+      "STATUS_VALUE": "Activo",
+      "AUTO_ASSIGNMENT_LABEL": "Asignación automática:",
+      "AUTO_ASSIGNMENT_VALUE": "Deshabilitado"
     }
   }
 }

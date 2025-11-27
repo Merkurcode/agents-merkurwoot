@@ -9,9 +9,14 @@ class Whatsapp::GroupService
     whapi_payload = build_group_payload
     response = send_create_group_request(whapi_payload)
 
-    group_id = process_response(response)
+    result = process_response(response)
+    return unless result
+
+    group_id = result[:group_id]
+    group_conversation = result[:conversation]
+
     Rails.logger.info "[WHATSAPP GROUP] Group created: #{group_id}, with welcome message: #{welcome_message}"
-    send_welcome_message(group_id) if group_id && welcome_message.present?
+    send_welcome_message(group_id, group_conversation) if group_id && group_conversation && welcome_message.present?
     group_id
   end
 
@@ -77,8 +82,10 @@ class Whatsapp::GroupService
     group_id = extract_group_id(parsed_response)
     return log_missing_group_id(response.body) unless group_id
 
-    setup_group_conversation(group_id, parsed_response['participants'] || [])
-    group_id
+    group_conversation = setup_group_conversation(group_id, parsed_response['participants'] || [])
+    return nil unless group_conversation
+
+    { group_id: group_id, conversation: group_conversation }
   end
 
   def parse_response_body(body)
@@ -101,7 +108,7 @@ class Whatsapp::GroupService
     nil
   end
 
-  def send_welcome_message(group_id)
+  def send_welcome_message(group_id, group_conversation)
     message_payload = {
       to: group_id,
       body: welcome_message
@@ -114,6 +121,16 @@ class Whatsapp::GroupService
     )
 
     Rails.logger.info "[WHATSAPP GROUP] Welcome message sent to group: #{group_id}, response: #{response.body}"
+
+    # Save welcome message to database
+    if response.success?
+      parsed_response = JSON.parse(response.body)
+      message_id = parsed_response.dig('message', 'id')
+
+      if message_id
+        create_welcome_message_record(group_conversation, message_id)
+      end
+    end
   rescue StandardError => e
     Rails.logger.error "[WHATSAPP GROUP] Error sending welcome message: #{e.message}"
   end
@@ -121,12 +138,15 @@ class Whatsapp::GroupService
   def setup_group_conversation(group_id, participants)
     mapped_participants = map_participants_to_contacts(participants)
     group_contact_inbox = create_group_contact_inbox(group_id)
-    create_group_conversation(group_contact_inbox, mapped_participants, group_id) if group_contact_inbox
+    group_conversation = create_group_conversation(group_contact_inbox, mapped_participants, group_id) if group_contact_inbox
+    group_conversation
   end
 
   def create_group_conversation(group_contact_inbox, mapped_participants, group_id)
+    return nil unless groups_inbox
+
     group_conversation = inbox.account.conversations.create!(
-      inbox: inbox,
+      inbox: groups_inbox,
       contact: conversation.contact,
       contact_inbox: group_contact_inbox,
       assignee: conversation.assignee,
@@ -139,7 +159,7 @@ class Whatsapp::GroupService
       }
     )
 
-    Rails.logger.info "[WHATSAPP GROUP] Group conversation created: #{group_conversation.id}"
+    Rails.logger.info "[WHATSAPP GROUP] Group conversation created: #{group_conversation.id} in groups inbox: #{groups_inbox.id}"
     group_conversation
   rescue StandardError => e
     Rails.logger.error "[WHATSAPP GROUP] Error creating group conversation: #{e.message}"
@@ -148,16 +168,19 @@ class Whatsapp::GroupService
   end
 
   def create_group_contact_inbox(group_id)
-    # Crear ContactInbox para el grupo con el source_id del grupo
-    existing = inbox.contact_inboxes.find_by(source_id: group_id)
+    return nil unless groups_inbox
+
+    # Crear ContactInbox para el grupo con el source_id del grupo en el inbox de grupos
+    existing = ContactInbox.find_by(inbox_id: groups_inbox.id, source_id: group_id)
     return existing if existing
 
-    group_contact_inbox = inbox.contact_inboxes.create!(
+    group_contact_inbox = ContactInbox.create!(
+      inbox_id: groups_inbox.id,
       contact_id: conversation.contact_id,
       source_id: group_id
     )
 
-    Rails.logger.info "[WHATSAPP GROUP] ContactInbox created for group: #{group_id}"
+    Rails.logger.info "[WHATSAPP GROUP] ContactInbox created for group: #{group_id} in groups inbox: #{groups_inbox.id}"
     group_contact_inbox
   rescue StandardError => e
     Rails.logger.error "[WHATSAPP GROUP] Error creating group contact inbox: #{e.message}"
@@ -233,7 +256,33 @@ class Whatsapp::GroupService
     }
   end
 
+  def create_welcome_message_record(group_conversation, message_id)
+    Message.create!(
+      account_id: group_conversation.account_id,
+      inbox_id: group_conversation.inbox_id,
+      conversation_id: group_conversation.id,
+      message_type: :outgoing,
+      content: welcome_message,
+      source_id: message_id,
+      sender: nil,
+      content_type: 'text',
+      content_attributes: {
+        external_sender_name: ENV.fetch('WHATSAPP_ADMIN_NAME', 'Nauto Assistant'),
+        external_sender_type: 'whatsapp_admin'
+      }
+    )
+
+    Rails.logger.info "[WHATSAPP GROUP] Welcome message saved to conversation: #{group_conversation.id}"
+  rescue StandardError => e
+    Rails.logger.error "[WHATSAPP GROUP] Error saving welcome message: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+  end
+
   def inbox
     @inbox ||= conversation.inbox
+  end
+
+  def groups_inbox
+    @groups_inbox ||= inbox.account.whatsapp_groups_inbox
   end
 end

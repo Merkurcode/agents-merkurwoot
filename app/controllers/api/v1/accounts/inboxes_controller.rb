@@ -44,6 +44,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def update
+    return if @inbox.whatsapp_groups_inbox?
+
     inbox_params = permitted_params.except(:channel, :csat_config, :auto_assignment_config)
     inbox_params[:csat_config] = format_csat_config(permitted_params[:csat_config]) if permitted_params[:csat_config].present?
 

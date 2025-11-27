@@ -80,6 +80,7 @@ class Inbox < ApplicationRecord
 
   enum sender_name_type: { friendly: 0, professional: 1 }
 
+  before_destroy :prevent_whatsapp_groups_inbox_deletion
   after_destroy :delete_round_robin_agents
 
   after_create_commit :dispatch_create_event
@@ -197,6 +198,10 @@ class Inbox < ApplicationRecord
     members.ids
   end
 
+  def whatsapp_groups_inbox?
+    auto_assignment_config&.dig('is_whatsapp_groups_inbox') == true
+  end
+
   private
 
   def default_name_for_blank_name
@@ -237,6 +242,13 @@ class Inbox < ApplicationRecord
 
   def check_channel_type?
     ['Channel::Email', 'Channel::Api', 'Channel::WebWidget'].include?(channel_type)
+  end
+
+  def prevent_whatsapp_groups_inbox_deletion
+    return unless whatsapp_groups_inbox?
+
+    errors.add(:base, 'WhatsApp Groups inbox cannot be deleted')
+    throw(:abort)
   end
 end
 

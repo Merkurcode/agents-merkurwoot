@@ -1053,6 +1053,16 @@
       "API": "API Channel",
       "INSTAGRAM": "Instagram",
       "VOICE": "Voice"
+    },
+    "WHATSAPP_GROUPS": {
+      "SUB_TITLE": "Special inbox for WhatsApp group conversations",
+      "NOTE": "<strong>Note:</strong> This is a system-managed inbox used exclusively for WhatsApp group conversations. It is automatically created and cannot be modified or deleted.",
+      "TYPE_LABEL": "Type:",
+      "TYPE_VALUE": "WhatsApp Groups",
+      "STATUS_LABEL": "Status:",
+      "STATUS_VALUE": "Active",
+      "AUTO_ASSIGNMENT_LABEL": "Auto Assignment:",
+      "AUTO_ASSIGNMENT_VALUE": "Disabled"
     }
   }
 }

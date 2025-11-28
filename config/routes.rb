@@ -79,6 +79,7 @@ Rails.application.routes.draw do
             resources :survey_questions, only: [:index, :create, :show, :update, :destroy]
           end
           resources :survey_answers, only: [:create]
+          resources :survey_calls, only: [:create]
           resources :contact_inboxes, only: [] do
             collection do
               post :filter

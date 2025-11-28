@@ -45,9 +45,10 @@ RSpec.describe DataImport::TagsManager do
 
         taggings = manager.build(identifier: '123', tags: 'ruby, invalid_tag')
 
-        expect(taggings.size).to eq(2)
+        expect(taggings.size).to eq(1)
         expect(taggings.all?(ActsAsTaggableOn::Tagging)).to be true
         expect(taggings.map(&:taggable_id).uniq).to eq([contact.id])
+        expect(taggings.first.tag_id).to eq(ActsAsTaggableOn::Tag.find_by(name: 'ruby').id)
       end
     end
 

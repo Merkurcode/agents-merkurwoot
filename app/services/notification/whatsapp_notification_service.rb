@@ -58,7 +58,7 @@ class Notification::WhatsappNotificationService
 
   def build_action_url
     frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
-    "#{frontend_url}/app/accounts/#{notification.account_id}/conversations/#{notification.primary_actor_id}"
+    "#{frontend_url}/app/accounts/#{notification.account_id}/conversations/#{notification.conversation.display_id}"
   end
 
   def format_phone_number(phone)

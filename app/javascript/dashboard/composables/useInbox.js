@@ -119,6 +119,13 @@ export const useInbox = (inboxId = null) => {
     );
   });
 
+  const isAWhatsAppLightChannel = computed(() => {
+    return (
+      channelType.value === INBOX_TYPES.WHATSAPP &&
+      whatsAppAPIProvider.value === 'whatsapp_light'
+    );
+  });
+
   const isAWhatsAppChannel = computed(() => {
     return (
       channelType.value === INBOX_TYPES.WHATSAPP ||
@@ -153,6 +160,7 @@ export const useInbox = (inboxId = null) => {
     isATwilioWhatsAppChannel,
     isAWhatsAppCloudChannel,
     is360DialogWhatsAppChannel,
+    isAWhatsAppLightChannel,
     isAnEmailChannel,
     isAnInstagramChannel,
     isATiktokChannel,

@@ -68,6 +68,14 @@ const translateValue = computed(() => {
 </script>
 
 <template>
+  <!-- Mostrar solo "Nota privada" cuando showOnlyPrivateNote es true -->
+  <div
+    v-if="showOnlyPrivateNote"
+    class="flex items-center w-auto h-8 px-3 border rounded-full bg-n-alpha-2"
+  >
+    <span class="text-sm">{{ $t('CONVERSATION.REPLYBOX.PRIVATE_NOTE') }}</span>
+  </div>
+  <!-- Toggle normal cuando showOnlyPrivateNote es false -->
   <button
     class="flex items-center w-auto h-8 p-1 transition-all border rounded-full bg-n-alpha-2 group relative duration-300 ease-in-out z-0 active:scale-[0.995] active:duration-75"
     :disabled="disabled || isReplyRestricted"

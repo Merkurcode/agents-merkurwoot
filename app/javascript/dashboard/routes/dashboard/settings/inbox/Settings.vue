@@ -134,6 +134,16 @@ export default {
       return '';
     },
     tabs() {
+      // WhatsApp Groups inbox only shows basic settings tab
+      if (this.inbox?.is_whatsapp_groups_inbox) {
+        return [
+          {
+            key: 'inbox-settings',
+            name: this.$t('INBOX_MGMT.TABS.SETTINGS'),
+          },
+        ];
+      }
+
       let visibleToAllChannelTabs = [
         {
           key: 'inbox-settings',

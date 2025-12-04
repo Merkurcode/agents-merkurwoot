@@ -388,11 +388,11 @@ export const actions = {
     const response = await InboxesAPI.getCSATTemplateStatus(inboxId);
     return response.data;
   },
-  setSurvey: async ({ commit, rootState }, { inboxId, surveyId }) => {
+  setSurvey: async ({ commit, state }, { inboxId, surveyId }) => {
     try {
       await InboxesAPI.setSurvey(inboxId, surveyId);
 
-      const updatedInboxes = rootState.records.map(inbox => {
+      const updatedInboxes = state.records.map(inbox => {
         if (inbox.id === Number(inboxId)) {
           return {
             ...inbox,

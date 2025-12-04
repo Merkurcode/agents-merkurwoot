@@ -205,7 +205,6 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
                      { survey_rules: [:operator, { values: [] }],
                        template: [:name, :template_id, :friendly_name, :content_sid, :approval_sid, :created_at, :language, :status] }] },
      { auto_assignment_config: {} }]
-
   end
 
   def permitted_params(channel_attributes = [])

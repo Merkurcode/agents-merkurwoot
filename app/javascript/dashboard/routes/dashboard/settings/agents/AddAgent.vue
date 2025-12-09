@@ -242,6 +242,7 @@ const addAgent = async () => {
               $t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.SEARCH_PLACEHOLDER')
             "
             :empty-state="$t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.EMPTY_STATE')"
+            class="[&_button]:!bg-n-alpha-black2"
           />
         </label>
       </div>

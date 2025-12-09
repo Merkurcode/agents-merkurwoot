@@ -317,6 +317,7 @@ const resetPassword = async () => {
               $t('AGENT_MGMT.EDIT.FORM.RESPONSIBLE.SEARCH_PLACEHOLDER')
             "
             :empty-state="$t('AGENT_MGMT.EDIT.FORM.RESPONSIBLE.EMPTY_STATE')"
+            class="[&_button]:!bg-n-alpha-black2"
           />
         </label>
       </div>

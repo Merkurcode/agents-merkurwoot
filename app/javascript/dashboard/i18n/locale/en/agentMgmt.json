@@ -20,7 +20,9 @@
       "ACTIONS": "Actions",
       "VERIFIED": "Verified",
       "VERIFICATION_PENDING": "Verification Pending",
-      "AVAILABLE_CUSTOM_ROLE": "Available custom role permissions"
+      "AVAILABLE_CUSTOM_ROLE": "Available custom role permissions",
+      "RESPONSIBLE": "Person in charge:",
+      "RESPONSIBLE_404": "No one assigned"
     },
     "ADD": {
       "TITLE": "Add agent to your team",
@@ -43,6 +45,12 @@
         "PHONE_NUMBER": {
           "LABEL": "Phone Number",
           "PLACEHOLDER": "Please enter a phone number (e.g. +1234567890)"
+        },
+        "RESPONSIBLE": {
+          "LABEL": "Responsible",
+          "PLACEHOLDER": "Select a responsible",
+          "SEARCH_PLACEHOLDER": "Search for responsible",
+          "EMPTY_STATE": "No agents available"
         },
         "SUBMIT": "Add Agent"
       },
@@ -85,6 +93,12 @@
           "LABEL": "Availability",
           "PLACEHOLDER": "Please select an availability status",
           "ERROR": "Availability is required"
+        },
+        "RESPONSIBLE": {
+          "LABEL": "Responsible",
+          "PLACEHOLDER": "Select a responsible",
+          "SEARCH_PLACEHOLDER": "Search for responsible",
+          "EMPTY_STATE": "No agents available"
         },
         "SUBMIT": "Edit Agent"
       },

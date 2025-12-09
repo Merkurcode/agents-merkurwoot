@@ -6,6 +6,7 @@ import { useAlert } from 'dashboard/composables';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email } from '@vuelidate/validators';
 import Button from 'dashboard/components-next/button/Button.vue';
+import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
 import WeeklyAvailabilitySection from '../components/WeeklyAvailabilitySection.vue';
 import { isPhoneNumberValid } from 'shared/helpers/Validators';
 import parsePhoneNumber from 'libphonenumber-js';
@@ -19,6 +20,7 @@ const agentEmail = ref('');
 const agentPhoneNumber = ref('');
 const activeDialCode = ref('');
 const selectedRoleId = ref('agent');
+const responsibleId = ref(null);
 
 const parsedPhoneNumber = computed(() => {
   return parsePhoneNumber(agentPhoneNumber.value || '');
@@ -77,6 +79,14 @@ const v$ = useVuelidate(rules, {
 
 const uiFlags = useMapGetter('agents/getUIFlags');
 const getCustomRoles = useMapGetter('customRole/getCustomRoles');
+const agents = useMapGetter('agents/getAgents');
+
+const responsibleOptions = computed(() => {
+  return agents.value.map(agent => ({
+    value: agent.current_account_user_id,
+    label: agent.name,
+  }));
+});
 
 const roles = computed(() => {
   const defaultRoles = [
@@ -123,6 +133,10 @@ const addAgent = async () => {
       phone_number: setPhoneNumber.value,
       ...availability,
     };
+
+    if (responsibleId.value) {
+      payload.responsible_id = responsibleId.value;
+    }
 
     if (selectedRole.value.name.startsWith('custom_')) {
       payload.custom_role_id = selectedRole.value.id;
@@ -213,6 +227,22 @@ const addAgent = async () => {
           <span v-if="isPhoneNumberNotValid" class="message">
             {{ $t('CONTACT_FORM.FORM.PHONE_NUMBER.ERROR') }}
           </span>
+        </label>
+      </div>
+
+      <div class="w-full">
+        <label>
+          {{ $t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.LABEL') }}
+          <ComboBox
+            v-model="responsibleId"
+            :options="responsibleOptions"
+            :placeholder="$t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.PLACEHOLDER')"
+            :search-placeholder="
+              $t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.SEARCH_PLACEHOLDER')
+            "
+            :empty-state="$t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.EMPTY_STATE')"
+            class="[&_button]:!bg-n-alpha-black2"
+          />
         </label>
       </div>
 

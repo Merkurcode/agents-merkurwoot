@@ -293,6 +293,7 @@ const confirmDeletion = () => {
         :availability="currentAgent.availability_status"
         :custom-role-id="currentAgent.custom_role_id"
         :agent="currentAgent"
+        :responsible-id="currentAgent.responsible_id"
         @close="hideEditPopup"
       />
     </woot-modal>

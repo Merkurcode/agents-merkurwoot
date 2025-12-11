@@ -1,4 +1,7 @@
 class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseController
+  DEFAULT_BUTTON_TEXT = 'Please rate us'.freeze
+  DEFAULT_LANGUAGE = 'en'.freeze
+
   before_action :fetch_inbox
   before_action :validate_whatsapp_channel
 
@@ -56,6 +59,18 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
     end
   end
 
+  def create_template_via_provider(template_params)
+    template_config = {
+      message: template_params[:message],
+      button_text: template_params[:button_text] || DEFAULT_BUTTON_TEXT,
+      base_url: ENV.fetch('FRONTEND_URL', 'http://localhost:3000'),
+      language: template_params[:language] || DEFAULT_LANGUAGE,
+      template_name: Whatsapp::CsatTemplateNameService.csat_template_name(@inbox.id)
+    }
+
+    @inbox.channel.provider_service.create_csat_template(template_config)
+  end
+
   def render_successful_template_creation(result)
     if @inbox.twilio_whatsapp?
       render json: {
@@ -86,6 +101,45 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
       error: error_message,
       details: whatsapp_error[:technical_details]
     }, status: :unprocessable_entity
+  end
+
+  def delete_existing_template_if_needed
+    template = @inbox.csat_config&.dig('template')
+    return true if template.blank?
+
+    template_name = template['name']
+    return true if template_name.blank?
+
+    template_status = @inbox.channel.provider_service.get_template_status(template_name)
+    return true unless template_status[:success]
+
+    deletion_result = @inbox.channel.provider_service.delete_csat_template(template_name)
+    if deletion_result[:success]
+      Rails.logger.info "Deleted existing CSAT template '#{template_name}' for inbox #{@inbox.id}"
+      true
+    else
+      Rails.logger.warn "Failed to delete existing CSAT template '#{template_name}' for inbox #{@inbox.id}: #{deletion_result[:response_body]}"
+      false
+    end
+  rescue StandardError => e
+    Rails.logger.error "Error during template deletion for inbox #{@inbox.id}: #{e.message}"
+    false
+  end
+
+  def render_template_status_response(status_result, template_name)
+    if status_result[:success]
+      render json: {
+        template_exists: true,
+        template_name: template_name,
+        status: status_result[:template][:status],
+        template_id: status_result[:template][:id]
+      }
+    else
+      render json: {
+        template_exists: false,
+        error: 'Template not found'
+      }
+    end
   end
 
   def parse_whatsapp_error(response_body)

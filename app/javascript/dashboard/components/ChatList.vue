@@ -581,11 +581,6 @@ function resetAndFetchData() {
 }
 
 function loadMoreConversations() {
-  // Don't load more if on board view - board loads all conversations at once
-  if (isOnBoard.value) {
-    return;
-  }
-
   if (hasCurrentPageEndReached.value || chatListLoading.value) {
     return;
   }
@@ -821,10 +816,6 @@ onMounted(() => {
   if (hasActiveFolders.value) {
     store.dispatch('campaigns/get');
   }
-  // Load all conversations if board view is active on mount
-  if (isOnBoard.value) {
-    loadAllConversationsForBoard();
-  }
 });
 
 const deleteConversationDialogRef = ref(null);
@@ -893,12 +884,28 @@ watch(conversationFilters, (newVal, oldVal) => {
   }
 });
 
-watch(isOnBoard, (newVal, oldVal) => {
-  // When switching to board view, load all conversations
-  if (newVal && !oldVal) {
-    loadAllConversationsForBoard();
+watch(conversationList, newConversations => {
+  if (isOnBoard.value) {
+    store.dispatch('pipelineStatuses/organizeConversations', {
+      conversations: newConversations,
+    });
   }
 });
+
+watch(
+  () => conversationStats.value.totalPages,
+  async newTotalPages => {
+    if (isOnBoard.value && !!newTotalPages) {
+      for (let i = 1; i < newTotalPages; i += 1) {
+        // Wait until previous loading is complete
+        while (chatListLoading.value) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        await loadMoreConversations();
+      }
+    }
+  }
+);
 </script>
 
 <template>
@@ -918,7 +925,6 @@ watch(isOnBoard, (newVal, oldVal) => {
       :is-on-expanded-layout="isOnExpandedLayout"
       :conversation-stats="conversationStats"
       :is-list-loading="chatListLoading && !conversationList.length"
-      :is-on-board="isOnBoard"
       @add-folders="onClickOpenAddFoldersModal"
       @delete-folders="onClickOpenDeleteFoldersModal"
       @filters-modal="onToggleAdvanceFiltersModal"
@@ -1015,12 +1021,15 @@ watch(isOnBoard, (newVal, oldVal) => {
         @observed="loadMoreConversations"
       />
     </div>
-    <div v-if="isOnBoard" class="flex-1 p-4 overflow-auto">
-      <div v-if="chatListLoading" class="flex justify-center my-4">
-        <Spinner class="text-n-brand" />
-      </div>
 
-      <Board v-else v-model="conversationList" />
+    <div
+      v-if="isOnBoard"
+      class="flex p-4 max-w-screen overflow-x-scroll relative h-screen"
+    >
+      <Board
+        class="absolute"
+        :by-pipeline-status="conversationStats.byPipelineStatus"
+      />
     </div>
 
     <Dialog

@@ -6,7 +6,6 @@ import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import Button from '../../../../components-next/button/Button.vue';
-import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 
 const props = defineProps({
   column: {
@@ -161,6 +160,7 @@ const onDragEnd = async event => {
           <ConversationCard
             :conversation="element"
             :data-conversation-id="element.id"
+            conversation-type="board"
           />
         </template>
       </draggable>

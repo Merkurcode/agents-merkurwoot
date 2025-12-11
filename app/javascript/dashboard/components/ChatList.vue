@@ -869,9 +869,12 @@ watch(
   () => conversationStats.value.totalPages,
   async newTotalPages => {
     if (isOnBoard.value && !!newTotalPages) {
-      for (let i = 0; i < newTotalPages; i += 1) {
+      for (let i = 1; i < newTotalPages; i += 1) {
+        // Wait until previous loading is complete
+        while (chatListLoading.value) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
         await loadMoreConversations();
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
   }
@@ -895,7 +898,6 @@ watch(
       :is-on-expanded-layout="isOnExpandedLayout"
       :conversation-stats="conversationStats"
       :is-list-loading="chatListLoading && !conversationList.length"
-      :is-on-board="isOnBoard"
       @add-folders="onClickOpenAddFoldersModal"
       @delete-folders="onClickOpenDeleteFoldersModal"
       @filters-modal="onToggleAdvanceFiltersModal"
@@ -1018,7 +1020,10 @@ watch(
       v-if="isOnBoard"
       class="flex p-4 max-w-screen overflow-x-scroll relative h-screen"
     >
-      <Board class="absolute" :by-pipeline-status="conversationStats.byPipelineStatus" />
+      <Board
+        class="absolute"
+        :by-pipeline-status="conversationStats.byPipelineStatus"
+      />
     </div>
 
     <Dialog

@@ -355,6 +355,7 @@
     "CUSTOM_ATTRIBUTES": "Atributos personalizados",
     "AUTOMATION": "Automatización",
     "MACROS": "Macros",
+    "LEAD_RETARGETING": "Retargeting de Leads",
     "TEAMS": "Equipos",
     "BILLING": "Facturación",
     "CUSTOM_VIEWS_FOLDER": "Carpetas",
@@ -794,6 +795,94 @@
       "DESCRIPTION": "Are you sure you want to delete this policy? This action cannot be undone.",
       "CONFIRM_BUTTON_LABEL": "Eliminar",
       "CANCEL_BUTTON_LABEL": "Cancelar"
+    }
+  },
+  "LEAD_RETARGETING": {
+    "HEADER": "Secuencias de Retargeting de Leads",
+    "DESCRIPTION": "Haz seguimiento automático a leads de campañas Meta que no han respondido",
+    "LEARN_MORE": "Leer más",
+    "HEADER_BTN_TXT": "Añadir Secuencia",
+    "BREADCRUMB": {
+      "BACK": "Atrás"
+    },
+    "LIST": {
+      "404": "No hay secuencias creadas aún",
+      "STEPS": "Pasos",
+      "ENROLLED": "inscritos",
+      "EDIT": "Editar",
+      "ACTIVATE": "Activar",
+      "DEACTIVATE": "Desactivar",
+      "DELETE": "Eliminar",
+      "TABLE_HEADER": {
+        "NAME": "Nombre",
+        "STATUS": "Estado",
+        "INBOX": "Bandeja",
+        "STEPS": "Pasos"
+      },
+      "API": {
+        "ERROR_MESSAGE": "Error al cargar las secuencias"
+      }
+    },
+    "STATUS": {
+      "ACTIVE": "Activa",
+      "INACTIVE": "Inactiva"
+    },
+    "TOGGLE": {
+      "ACTIVATED": "Secuencia activada exitosamente",
+      "DEACTIVATED": "Secuencia desactivada exitosamente",
+      "ERROR": "Error al cambiar el estado de la secuencia"
+    },
+    "DELETE": {
+      "CONFIRM_MESSAGE": "¿Estás seguro de que deseas eliminar {name}?",
+      "SUCCESS_MESSAGE": "Secuencia eliminada exitosamente",
+      "ERROR_MESSAGE": "Error al eliminar la secuencia"
+    },
+    "FORM": {
+      "NEW_TITLE": "Nueva Secuencia de Retargeting",
+      "EDIT_TITLE": "Editar Secuencia de Retargeting",
+      "CANCEL": "Cancelar",
+      "SAVE": "Guardar",
+      "BASIC_INFO": "Información Básica",
+      "NAME": "Nombre",
+      "NAME_PLACEHOLDER": "ej., Seguimiento de Campaña Meta",
+      "NAME_REQUIRED": "El nombre de la secuencia es requerido",
+      "DESCRIPTION": "Descripción",
+      "DESCRIPTION_PLACEHOLDER": "Describe cuándo debería ejecutarse esta secuencia",
+      "INBOX": "Bandeja de WhatsApp",
+      "INBOX_REQUIRED": "La bandeja de WhatsApp es requerida",
+      "SELECT_INBOX": "Seleccionar bandeja...",
+      "SETTINGS": "Configuración",
+      "STOP_ON_REPLY": "Detener secuencia cuando el contacto responda",
+      "STOP_ON_RESOLVED": "Detener secuencia cuando la conversación se resuelva",
+      "ACTIVATE": "Activar secuencia",
+      "STEPS": "Pasos de la Secuencia",
+      "NO_STEPS": "No hay pasos añadidos aún. Añade períodos de espera y mensajes de plantilla para crear tu secuencia.",
+      "STEP_NAME": "Nombre del paso",
+      "LOAD_ERROR": "Error al cargar la secuencia",
+      "CREATE_SUCCESS": "Secuencia creada exitosamente",
+      "CREATE_ERROR": "Error al crear la secuencia",
+      "UPDATE_SUCCESS": "Secuencia actualizada exitosamente",
+      "UPDATE_ERROR": "Error al actualizar la secuencia"
+    },
+    "STEPS": {
+      "WAIT": {
+        "ADD": "Esperar",
+        "DEFAULT_NAME": "Período de espera",
+        "LABEL": "Esperar",
+        "MINUTES": "minutos",
+        "HOURS": "horas",
+        "DAYS": "días"
+      },
+      "SEND_TEMPLATE": {
+        "ADD": "Enviar Plantilla",
+        "DEFAULT_NAME": "Enviar plantilla de WhatsApp",
+        "SELECT": "Seleccionar plantilla..."
+      },
+      "ADD_LABEL": {
+        "ADD": "Añadir Etiqueta",
+        "DEFAULT_NAME": "Añadir etiqueta a la conversación",
+        "PLACEHOLDER": "Ingresa el nombre de la etiqueta"
+      }
     }
   }
 }

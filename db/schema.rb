@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_10_180552) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_11_004359) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -728,6 +728,20 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_10_180552) do
     t.index ["phone_number", "account_id"], name: "index_contacts_on_phone_number_and_account_id"
   end
 
+  create_table "conversation_follow_ups", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.bigint "lead_follow_up_sequence_id", null: false
+    t.integer "current_step", default: 0, null: false
+    t.datetime "next_action_at"
+    t.string "status", default: "active", null: false
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id"], name: "index_conversation_follow_ups_on_conversation_id", unique: true
+    t.index ["lead_follow_up_sequence_id"], name: "index_conversation_follow_ups_on_lead_follow_up_sequence_id"
+    t.index ["status", "next_action_at"], name: "index_conversation_follow_ups_on_status_and_next_action_at"
+  end
+
   create_table "conversation_participants", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "user_id", null: false
@@ -770,6 +784,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_10_180552) do
     t.bigint "pipeline_status_id"
     t.bigint "assignee_agent_bot_id"
     t.integer "conversation_type", default: 0, null: false
+    t.bigint "assignee_agent_bot_id"
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
@@ -1005,6 +1020,23 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_10_180552) do
     t.datetime "updated_at", precision: nil, null: false
     t.index ["account_id"], name: "index_labels_on_account_id"
     t.index ["title", "account_id"], name: "index_labels_on_title_and_account_id", unique: true
+  end
+
+  create_table "lead_follow_up_sequences", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "active", default: false, null: false
+    t.jsonb "trigger_conditions", default: {}
+    t.jsonb "steps", default: [], null: false
+    t.jsonb "settings", default: {}
+    t.jsonb "stats", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "active"], name: "index_lead_follow_up_sequences_on_account_id_and_active"
+    t.index ["account_id"], name: "index_lead_follow_up_sequences_on_account_id"
+    t.index ["inbox_id"], name: "index_lead_follow_up_sequences_on_inbox_id"
   end
 
   create_table "leaves", force: :cascade do |t|
@@ -1518,9 +1550,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_10_180552) do
   add_foreign_key "contact_survey_completions", "accounts"
   add_foreign_key "contact_survey_completions", "contacts"
   add_foreign_key "contact_survey_completions", "surveys"
+  add_foreign_key "conversation_follow_ups", "conversations"
+  add_foreign_key "conversation_follow_ups", "lead_follow_up_sequences"
   add_foreign_key "conversations", "pipeline_statuses"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "inboxes", "surveys"
+  add_foreign_key "lead_follow_up_sequences", "accounts"
+  add_foreign_key "lead_follow_up_sequences", "inboxes"
   add_foreign_key "marketing_campaigns", "accounts"
   add_foreign_key "meta_campaign_interactions", "accounts"
   add_foreign_key "meta_campaign_interactions", "conversations"

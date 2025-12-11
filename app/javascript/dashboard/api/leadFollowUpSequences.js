@@ -1,0 +1,24 @@
+/* global axios */
+import ApiClient from './ApiClient';
+
+class LeadFollowUpSequencesAPI extends ApiClient {
+  constructor() {
+    super('lead_follow_up_sequences', { accountScoped: true });
+  }
+
+  activate(sequenceId) {
+    return axios.post(`${this.url}/${sequenceId}/activate`);
+  }
+
+  deactivate(sequenceId) {
+    return axios.post(`${this.url}/${sequenceId}/deactivate`);
+  }
+
+  getAvailableTemplates(inboxId) {
+    return axios.get(`${this.url}/available_templates`, {
+      params: { inbox_id: inboxId },
+    });
+  }
+}
+
+export default new LeadFollowUpSequencesAPI();

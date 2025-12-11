@@ -1,0 +1,179 @@
+class LeadFollowUpSequence < ApplicationRecord
+  belongs_to :account
+  belongs_to :inbox
+  has_many :conversation_follow_ups, dependent: :destroy
+
+  validates :name, presence: true
+  validates :inbox, presence: true
+  validate :inbox_must_be_whatsapp
+  validate :steps_structure
+  validate :validate_templates_exist
+
+  scope :active, -> { where(active: true) }
+
+  STEP_TYPES = %w[
+    wait
+    send_template
+    add_label
+    remove_label
+    assign_agent
+    assign_team
+    condition
+    webhook
+    change_priority
+  ].freeze
+
+  AVAILABLE_VARIABLES = {
+    contact: %w[id name email phone_number city country_code],
+    conversation: %w[id display_id status priority created_at],
+    account: %w[id name],
+    inbox: %w[id name],
+    meta_campaign: %w[source_id source_type headline body],
+    custom_attr: :dynamic
+  }.freeze
+
+  def activate!
+    update!(active: true)
+  end
+
+  def deactivate!
+    update!(active: false)
+    conversation_follow_ups.where(status: 'active').update_all(status: 'cancelled')
+  end
+
+  def step_by_id(step_id)
+    steps.find { |s| s['id'] == step_id }
+  end
+
+  def enabled_steps
+    steps.select { |s| s['enabled'] == true }
+  end
+
+  def render_param_value(value, context)
+    return value unless value.is_a?(String)
+
+    result = value.dup
+    result.scan(/\{\{([^}]+)\}\}/).each do |match|
+      variable_path = match[0].strip
+      resolved_value = resolve_variable(variable_path, context)
+      result.gsub!("{{#{variable_path}}}", resolved_value.to_s)
+    end
+    result
+  end
+
+  private
+
+  def inbox_must_be_whatsapp
+    return unless inbox
+
+    errors.add(:inbox, 'must be a WhatsApp inbox') unless inbox.inbox_type == 'Whatsapp'
+  end
+
+  def steps_structure
+    return if steps.blank?
+
+    unless steps.is_a?(Array)
+      errors.add(:steps, 'must be an array')
+      return
+    end
+
+    steps.each_with_index do |step, index|
+      validate_step(step, index)
+    end
+  end
+
+  def validate_step(step, index)
+    unless step.is_a?(Hash)
+      errors.add(:steps, "step at index #{index} must be a hash")
+      return
+    end
+
+    unless STEP_TYPES.include?(step['type'])
+      errors.add(:steps, "step at index #{index} has invalid type: #{step['type']}")
+    end
+
+    unless step['id'].present?
+      errors.add(:steps, "step at index #{index} must have an id")
+    end
+
+    case step['type']
+    when 'wait'
+      validate_wait_step(step, index)
+    when 'send_template'
+      validate_template_step(step, index)
+    end
+  end
+
+  def validate_wait_step(step, index)
+    config = step['config'] || {}
+
+    unless config['delay_value'].present? && config['delay_value'].to_i.positive?
+      errors.add(:steps, "wait step at index #{index} must have delay_value > 0")
+    end
+
+    unless %w[minutes hours days].include?(config['delay_type'])
+      errors.add(:steps, "wait step at index #{index} must have delay_type: minutes, hours, or days")
+    end
+  end
+
+  def validate_template_step(step, index)
+    config = step['config'] || {}
+
+    unless config['template_name'].present?
+      errors.add(:steps, "template step at index #{index} must have template_name")
+    end
+
+    unless config['language'].present?
+      errors.add(:steps, "template step at index #{index} must have language")
+    end
+  end
+
+  def validate_templates_exist
+    return unless inbox&.channel
+
+    template_steps = steps.select { |s| s['type'] == 'send_template' }
+    available_templates = inbox.channel.message_templates || []
+
+    template_steps.each do |step|
+      template_name = step.dig('config', 'template_name')
+      language = step.dig('config', 'language')
+
+      next unless template_name && language
+
+      template_exists = available_templates.any? do |t|
+        t['name'] == template_name && t['language'] == language
+      end
+
+      unless template_exists
+        errors.add(:steps, "Template '#{template_name}' (#{language}) not found in WhatsApp inbox")
+      end
+    end
+  end
+
+  def resolve_variable(variable_path, context)
+    parts = variable_path.split('.')
+    scope = parts[0]
+    attribute = parts[1]
+
+    case scope
+    when 'contact'
+      context[:contact]&.send(attribute)
+    when 'conversation'
+      context[:conversation]&.send(attribute)
+    when 'account'
+      context[:account]&.send(attribute)
+    when 'inbox'
+      context[:inbox]&.send(attribute)
+    when 'meta_campaign'
+      context[:meta_campaign]&.dig('metadata', attribute) ||
+        context[:meta_campaign]&.send(attribute)
+    when 'custom_attr'
+      context[:contact]&.custom_attributes&.dig(attribute)
+    else
+      "[Unknown variable: #{variable_path}]"
+    end
+  rescue StandardError => e
+    Rails.logger.error "Failed to resolve variable #{variable_path}: #{e.message}"
+    "[Error: #{variable_path}]"
+  end
+end

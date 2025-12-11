@@ -219,7 +219,7 @@ export default {
             )
           "
           :max-length="500"
-          :enabled-menu-options="welcomeTaglineEditorMenuOptions"
+          channel-type="Context::InboxSettings"
           class="mb-4"
         />
       </div>

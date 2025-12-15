@@ -55,6 +55,7 @@
 - Prefer Conventional Commits: `type(scope): subject` (scope optional)
 - Example: `feat(auth): add user authentication`
 - Don't reference Claude in commit messages
+- Prefer `with_modified_env` (from spec helpers) over stubbing `ENV` directly in specs
 
 ## Project-Specific
 

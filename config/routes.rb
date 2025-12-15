@@ -298,9 +298,15 @@ Rails.application.routes.draw do
             get :health, on: :member
             resources :faq_categories, only: [:index, :create], controller: 'inbox_faq_categories'
             resources :bot_faqs, only: [:index], controller: 'inbox_bot_faqs'
+            if ChatwootApp.enterprise?
+              resource :conference, only: %i[create destroy], controller: 'conference' do
+                get :token, on: :member
+              end
+            end
 
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates'
           end
+
           resources :inbox_members, only: [:create, :show], param: :inbox_id do
             collection do
               delete :destroy
@@ -659,13 +665,9 @@ Rails.application.routes.draw do
     resources :delivery_status, only: [:create]
 
     if ChatwootApp.enterprise?
-      resource :voice, only: [], controller: 'voice' do
-        collection do
-          post 'call/:phone', action: :call_twiml
-          post 'status/:phone', action: :status
-          post 'conference_status/:phone', action: :conference_status
-        end
-      end
+      post 'voice/call/:phone', to: 'voice#call_twiml', as: :voice_call
+      post 'voice/status/:phone', to: 'voice#status', as: :voice_status
+      post 'voice/conference_status/:phone', to: 'voice#conference_status', as: :voice_conference_status
     end
   end
 

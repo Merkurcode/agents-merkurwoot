@@ -73,10 +73,6 @@ const selectedRoleId = ref(props.customRoleId || props.type);
 const agentCredentials = ref({ email: props.email });
 const selectedResponsibleId = ref(props.responsibleId);
 
-const parsedPhoneNumber = computed(() => {
-  return parsePhoneNumber(agentPhoneNumber.value || '');
-});
-
 const isPhoneNumberNotValid = computed(() => {
   if (agentPhoneNumber.value !== '') {
     return (
@@ -85,6 +81,31 @@ const isPhoneNumberNotValid = computed(() => {
     );
   }
   return false;
+});
+
+const setPhoneCode = code => {
+  activeDialCode.value = code;
+};
+
+// Initialize phone number from props
+if (props.phoneNumber) {
+  const parsed = parsePhoneNumber(props.phoneNumber);
+  if (parsed && parsed.countryCallingCode) {
+    // Set dial code
+    activeDialCode.value = `+${parsed.countryCallingCode}`;
+    // Extract number without country code for the input
+    agentPhoneNumber.value = props.phoneNumber.replace(
+      `+${parsed.countryCallingCode}`,
+      ''
+    );
+  } else {
+    // If not parseable, use the raw value
+    agentPhoneNumber.value = props.phoneNumber;
+  }
+}
+
+const parsedPhoneNumber = computed(() => {
+  return parsePhoneNumber(agentPhoneNumber.value || '');
 });
 
 const setPhoneNumber = computed(() => {
@@ -98,10 +119,6 @@ const setPhoneNumber = computed(() => {
     ? `${activeDialCode.value}${agentPhoneNumber.value}`
     : '';
 });
-
-const setPhoneCode = code => {
-  activeDialCode.value = code;
-};
 
 // Initialize phone number from props
 if (props.phoneNumber) {

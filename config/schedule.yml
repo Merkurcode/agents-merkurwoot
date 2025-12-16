@@ -13,10 +13,14 @@ trigger_scheduled_items_job:
   class: 'TriggerScheduledItemsJob'
   queue: scheduled_jobs
 
-# executed At every 5th minute - Process lead follow-ups for retargeting
 process_lead_follow_ups_job:
   cron: '*/5 * * * *'
   class: 'ProcessLeadFollowUpsJob'
+  queue: scheduled_jobs
+
+reactivate_completed_follow_ups_job:
+  cron: '*/15 * * * *'
+  class: 'ReactivateCompletedFollowUpsJob'
   queue: scheduled_jobs
 
 # executed At every minute..

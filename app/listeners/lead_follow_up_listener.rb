@@ -42,7 +42,7 @@ class LeadFollowUpListener < BaseListener
                        Time.current
                      end
 
-    ConversationFollowUp.create!(
+    follow_up = ConversationFollowUp.create!(
       conversation: conversation,
       lead_follow_up_sequence: sequence,
       current_step: 0,
@@ -51,6 +51,15 @@ class LeadFollowUpListener < BaseListener
     )
 
     Rails.logger.info "Enrolled conversation #{conversation.id} in sequence #{sequence.id}"
+
+    # Check if contact has already replied (race condition fix)
+    if sequence.settings.dig('stop_on_contact_reply') && conversation.messages.incoming.exists?
+      follow_up.mark_as_completed!('Contact replied')
+      Rails.logger.info "Immediately completed follow-up #{follow_up.id} - contact already replied"
+    else
+      # Schedule job for exact timing
+      follow_up.schedule_job!
+    end
   rescue StandardError => e
     Rails.logger.error "Failed to enroll conversation #{conversation.id}: #{e.message}"
   end
@@ -59,6 +68,7 @@ class LeadFollowUpListener < BaseListener
     return unless follow_up.status == 'active'
 
     if follow_up.lead_follow_up_sequence.settings.dig('stop_on_contact_reply')
+      follow_up.cancel_job!
       follow_up.mark_as_completed!('Contact replied')
       Rails.logger.info "Completed follow-up #{follow_up.id} - contact replied"
     end
@@ -84,6 +94,9 @@ class LeadFollowUpListener < BaseListener
         reset_count: (follow_up.metadata&.dig('reset_count') || 0) + 1
       )
     )
+
+    # Reschedule job for the new next_action_at
+    follow_up.schedule_job!
 
     Rails.logger.info "Reset follow-up #{follow_up.id} - agent replied"
   end

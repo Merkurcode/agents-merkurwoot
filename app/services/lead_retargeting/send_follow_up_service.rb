@@ -263,11 +263,14 @@ class LeadRetargeting::SendFollowUpService
 
     raise 'Failed to send template - no message_id' unless message_id.present?
 
+    # Render template content with actual values
+    rendered_content = render_template_content(name, language, params)
+
     @conversation.messages.create!(
       account_id: @account.id,
       inbox_id: @inbox.id,
       message_type: :template,
-      content: "Template: #{name}",
+      content: rendered_content,
       source_id: message_id,
       status: :sent,
       content_attributes: {
@@ -278,6 +281,36 @@ class LeadRetargeting::SendFollowUpService
     )
 
     Rails.logger.info "Sent template #{name} to #{@contact.phone_number}, message_id: #{message_id}"
+  end
+
+  def render_template_content(template_name, language, params)
+    # Find the template from channel's message_templates
+    template = find_template(template_name, language)
+    return "Template: #{template_name}" if template.blank?
+
+    # Extract body text from template components
+    body_component = template['components']&.find { |c| c['type'] == 'BODY' }
+    return "Template: #{template_name}" if body_component.blank?
+
+    template_text = body_component['text']
+    return template_text if template_text.blank? || params.blank?
+
+    # Replace variables with actual values from processed_params
+    rendered_text = template_text.dup
+    body_params = params['body'] || {}
+
+    # Replace {{1}}, {{2}}, etc. with actual values
+    body_params.each do |key, value|
+      rendered_text.gsub!("{{#{key}}}", value.to_s)
+    end
+
+    rendered_text
+  end
+
+  def find_template(template_name, language)
+    channel = @inbox.channel
+    @template_cache ||= channel.message_templates.index_by { |t| "#{t['name']}:#{t['language']}" }
+    @template_cache["#{template_name}:#{language}"]
   end
 
   def conversation_responded_recently?
@@ -327,6 +360,7 @@ class LeadRetargeting::SendFollowUpService
     )
 
     @follow_up.update!(next_action_at: next_action_at)
+    @follow_up.schedule_job!
 
     Rails.logger.info "Rescheduled follow-up #{@follow_up.id} to next business hours: #{next_action_at}"
   end
@@ -349,6 +383,7 @@ class LeadRetargeting::SendFollowUpService
           last_executed_at: Time.current
         )
       )
+      @follow_up.schedule_job!
     end
   end
 
@@ -386,6 +421,7 @@ class LeadRetargeting::SendFollowUpService
           last_error: error
         )
       )
+      @follow_up.schedule_job!
 
       Rails.logger.warn "Step failed, scheduling retry #{retry_count + 1}/#{max_retries}: #{error}"
     else
@@ -450,6 +486,7 @@ class LeadRetargeting::SendFollowUpService
   end
 
   def complete_follow_up(reason)
+    @follow_up.cancel_job!
     @follow_up.mark_as_completed!(reason)
     update_sequence_stats
 
@@ -457,6 +494,7 @@ class LeadRetargeting::SendFollowUpService
   end
 
   def cancel_follow_up(reason)
+    @follow_up.cancel_job!
     @follow_up.mark_as_cancelled!(reason)
     update_sequence_stats
 

@@ -5,9 +5,9 @@ import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
 import leadFollowUpSequencesAPI from 'dashboard/api/leadFollowUpSequences';
-import SettingsLayout from '../SettingsLayout.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
-import Breadcrumb from 'dashboard/components-next/breadcrumb/Breadcrumb.vue';
+import SettingIntroBanner from 'dashboard/components/widgets/SettingIntroBanner.vue';
+import SettingsSection from 'dashboard/components/SettingsSection.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -19,6 +19,9 @@ const accountId = computed(() => getters.getCurrentAccountId.value);
 const inboxes = computed(() =>
   getters['inboxes/getWhatsAppInboxes'].value
 );
+const agents = computed(() => getters['agents/getAgents'].value);
+const teams = computed(() => getters['teams/getTeams'].value);
+const labels = computed(() => getters['labels/getLabels'].value);
 
 const loading = ref(false);
 const availableTemplates = ref([]);
@@ -42,19 +45,23 @@ const sequence = ref({
 });
 
 const isEdit = computed(() => !!route.params.sequenceId);
+const pageTitle = computed(() =>
+  isEdit.value
+    ? `${t('LEAD_RETARGETING.FORM.EDIT_TITLE')}: ${sequence.value.name}`
+    : t('LEAD_RETARGETING.FORM.NEW_TITLE')
+);
 
-const breadcrumbItems = computed(() => [
-  {
-    label: t('LEAD_RETARGETING.BREADCRUMB.BACK'),
-  },
-]);
-
-const handleBreadcrumbClick = () => {
+const goBack = () => {
   router.push({ name: 'lead_retargeting_list' });
 };
 
 onMounted(async () => {
-  await store.dispatch('inboxes/get');
+  await Promise.all([
+    store.dispatch('inboxes/get'),
+    store.dispatch('agents/get'),
+    store.dispatch('teams/get'),
+    store.dispatch('labels/get'),
+  ]);
 
   if (isEdit.value) {
     await fetchSequence();
@@ -129,6 +136,55 @@ const addStep = type => {
         labels: [],
       },
     },
+    remove_label: {
+      id: stepId,
+      type: 'remove_label',
+      name: t('LEAD_RETARGETING.STEPS.REMOVE_LABEL.DEFAULT_NAME'),
+      enabled: true,
+      config: {
+        labels: [],
+      },
+    },
+    assign_agent: {
+      id: stepId,
+      type: 'assign_agent',
+      name: t('LEAD_RETARGETING.STEPS.ASSIGN_AGENT.DEFAULT_NAME'),
+      enabled: true,
+      config: {
+        assignment_type: 'round_robin',
+        agent_id: null,
+      },
+    },
+    assign_team: {
+      id: stepId,
+      type: 'assign_team',
+      name: t('LEAD_RETARGETING.STEPS.ASSIGN_TEAM.DEFAULT_NAME'),
+      enabled: true,
+      config: {
+        team_id: null,
+      },
+    },
+    change_priority: {
+      id: stepId,
+      type: 'change_priority',
+      name: t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.DEFAULT_NAME'),
+      enabled: true,
+      config: {
+        priority: 'medium',
+      },
+    },
+    webhook: {
+      id: stepId,
+      type: 'webhook',
+      name: t('LEAD_RETARGETING.STEPS.WEBHOOK.DEFAULT_NAME'),
+      enabled: true,
+      config: {
+        url: '',
+        method: 'POST',
+        headers: {},
+        payload: {},
+      },
+    },
   };
 
   sequence.value.steps.push(stepDefaults[type]);
@@ -168,7 +224,6 @@ const onTemplateChange = step => {
     step.config.template_params = { body: {} };
   }
 
-  // Find the selected template and set its language
   const selectedTemplate = availableTemplates.value.find(t => t.name === step.config.template_name);
   if (selectedTemplate) {
     step.config.language = selectedTemplate.language;
@@ -226,77 +281,62 @@ const saveSequence = async () => {
     loading.value = false;
   }
 };
-
-const cancel = () => {
-  router.push({ name: 'lead_retargeting_list' });
-};
 </script>
 
 <template>
-  <SettingsLayout :is-loading="loading">
-    <template #header>
-      <div class="flex flex-col gap-4 w-full">
-        <Breadcrumb :items="breadcrumbItems" @click="handleBreadcrumbClick" />
-        <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-semibold text-slate-800 dark:text-slate-100">
-            {{ isEdit ? t('LEAD_RETARGETING.FORM.EDIT_TITLE') : t('LEAD_RETARGETING.FORM.NEW_TITLE') }}
-          </h2>
-          <div class="flex gap-2">
-            <Button
-              slate
-              :label="t('LEAD_RETARGETING.FORM.CANCEL')"
-              @click="cancel"
-            />
-            <Button
-              :is-loading="loading"
-              :label="t('LEAD_RETARGETING.FORM.SAVE')"
-              @click="saveSequence"
-            />
-          </div>
-        </div>
-      </div>
-    </template>
+  <div class="overflow-auto flex-grow flex-shrink pr-0 pl-0 w-full min-w-0 settings">
+    <SettingIntroBanner :header-title="pageTitle">
+      <button
+        class="flex items-center gap-1 text-n-slate-11 hover:text-n-slate-12 text-sm mb-4"
+        @click="goBack"
+      >
+        <i class="i-lucide-arrow-left text-base" />
+        {{ t('LEAD_RETARGETING.BREADCRUMB.BACK') }}
+      </button>
+    </SettingIntroBanner>
 
-    <template #body>
-      <div class="max-w-4xl space-y-6">
-        <!-- Basic Info -->
-        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-          <h3 class="text-lg font-medium text-slate-800 dark:text-slate-100 mb-4">{{ t('LEAD_RETARGETING.FORM.BASIC_INFO') }}</h3>
-
+    <section class="mx-auto w-full max-w-6xl">
+      <div class="mx-8">
+        <!-- Basic Information -->
+        <SettingsSection
+          :title="t('LEAD_RETARGETING.FORM.BASIC_INFO')"
+          :sub-title="t('LEAD_RETARGETING.FORM.BASIC_INFO_SUBTITLE')"
+        >
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                {{ t('LEAD_RETARGETING.FORM.NAME') }} *
+              <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
+                {{ t('LEAD_RETARGETING.FORM.NAME') }}
+                <span class="text-n-red-10">*</span>
               </label>
               <input
                 v-model="sequence.name"
                 type="text"
-                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                class="w-full"
                 :placeholder="t('LEAD_RETARGETING.FORM.NAME_PLACEHOLDER')"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
                 {{ t('LEAD_RETARGETING.FORM.DESCRIPTION') }}
               </label>
               <textarea
                 v-model="sequence.description"
                 rows="3"
-                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                class="w-full"
                 :placeholder="t('LEAD_RETARGETING.FORM.DESCRIPTION_PLACEHOLDER')"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                {{ t('LEAD_RETARGETING.FORM.INBOX') }} *
+              <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
+                {{ t('LEAD_RETARGETING.FORM.INBOX') }}
+                <span class="text-n-red-10">*</span>
               </label>
-              <select
-                v-model="sequence.inbox_id"
-                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-              >
-                <option :value="null">{{ t('LEAD_RETARGETING.FORM.SELECT_INBOX') }}</option>
+              <select v-model="sequence.inbox_id" class="w-full">
+                <option :value="null">
+                  {{ t('LEAD_RETARGETING.FORM.SELECT_INBOX') }}
+                </option>
                 <option
                   v-for="inbox in inboxes"
                   :key="inbox.id"
@@ -307,56 +347,68 @@ const cancel = () => {
               </select>
             </div>
           </div>
-        </div>
+        </SettingsSection>
 
         <!-- Settings -->
-        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-          <h3 class="text-lg font-medium text-slate-800 dark:text-slate-100 mb-4">{{ t('LEAD_RETARGETING.FORM.SETTINGS') }}</h3>
-
+        <SettingsSection
+          :title="t('LEAD_RETARGETING.FORM.SETTINGS')"
+          :sub-title="t('LEAD_RETARGETING.FORM.SETTINGS_SUBTITLE')"
+        >
           <div class="space-y-3">
-            <label class="flex items-center gap-2">
+            <label class="flex items-center gap-2 cursor-pointer">
               <input
                 v-model="sequence.settings.stop_on_contact_reply"
                 type="checkbox"
                 class="rounded"
               />
-              <span class="text-sm text-slate-700 dark:text-slate-300">{{ t('LEAD_RETARGETING.FORM.STOP_ON_REPLY') }}</span>
+              <span class="text-sm text-n-slate-11">
+                {{ t('LEAD_RETARGETING.FORM.STOP_ON_REPLY') }}
+              </span>
             </label>
 
-            <label class="flex items-center gap-2">
+            <label class="flex items-center gap-2 cursor-pointer">
               <input
                 v-model="sequence.settings.stop_on_conversation_resolved"
                 type="checkbox"
                 class="rounded"
               />
-              <span class="text-sm text-slate-700 dark:text-slate-300">{{ t('LEAD_RETARGETING.FORM.STOP_ON_RESOLVED') }}</span>
+              <span class="text-sm text-n-slate-11">
+                {{ t('LEAD_RETARGETING.FORM.STOP_ON_RESOLVED') }}
+              </span>
             </label>
 
-            <label class="flex items-center gap-2">
+            <label class="flex items-center gap-2 cursor-pointer">
               <input
                 v-model="sequence.active"
                 type="checkbox"
                 class="rounded"
               />
-              <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ t('LEAD_RETARGETING.FORM.ACTIVATE') }}</span>
+              <span class="text-sm font-medium text-n-slate-12">
+                {{ t('LEAD_RETARGETING.FORM.ACTIVATE') }}
+              </span>
             </label>
           </div>
-        </div>
+        </SettingsSection>
 
-        <!-- Steps -->
-        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-slate-800 dark:text-slate-100">{{ t('LEAD_RETARGETING.FORM.STEPS') }}</h3>
-            <div class="flex gap-2">
+        <!-- Sequence Steps -->
+        <SettingsSection
+          :title="t('LEAD_RETARGETING.FORM.STEPS')"
+          :sub-title="t('LEAD_RETARGETING.FORM.STEPS_SUBTITLE')"
+        >
+          <div class="space-y-4">
+            <!-- Add Step Buttons -->
+            <div class="flex gap-2 flex-wrap">
               <Button
                 xs
                 slate
+                faded
                 :label="'+ ' + t('LEAD_RETARGETING.STEPS.WAIT.ADD')"
                 @click="addStep('wait')"
               />
               <Button
                 xs
                 slate
+                faded
                 :label="'+ ' + t('LEAD_RETARGETING.STEPS.SEND_TEMPLATE.ADD')"
                 :disabled="!sequence.inbox_id"
                 @click="addStep('send_template')"
@@ -364,145 +416,312 @@ const cancel = () => {
               <Button
                 xs
                 slate
+                faded
                 :label="'+ ' + t('LEAD_RETARGETING.STEPS.ADD_LABEL.ADD')"
                 @click="addStep('add_label')"
               />
+              <Button
+                xs
+                slate
+                faded
+                :label="'+ ' + t('LEAD_RETARGETING.STEPS.REMOVE_LABEL.ADD')"
+                @click="addStep('remove_label')"
+              />
+              <Button
+                xs
+                slate
+                faded
+                :label="'+ ' + t('LEAD_RETARGETING.STEPS.ASSIGN_AGENT.ADD')"
+                @click="addStep('assign_agent')"
+              />
+              <Button
+                xs
+                slate
+                faded
+                :label="'+ ' + t('LEAD_RETARGETING.STEPS.ASSIGN_TEAM.ADD')"
+                @click="addStep('assign_team')"
+              />
+              <Button
+                xs
+                slate
+                faded
+                :label="'+ ' + t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.ADD')"
+                @click="addStep('change_priority')"
+              />
+              <Button
+                xs
+                slate
+                faded
+                :label="'+ ' + t('LEAD_RETARGETING.STEPS.WEBHOOK.ADD')"
+                @click="addStep('webhook')"
+              />
             </div>
-          </div>
 
-          <div v-if="sequence.steps.length === 0" class="text-center py-8 text-slate-500 dark:text-slate-400">
-            {{ t('LEAD_RETARGETING.FORM.NO_STEPS') }}
-          </div>
+            <!-- No Steps Message -->
+            <div v-if="sequence.steps.length === 0" class="text-center py-8 text-n-slate-11">
+              {{ t('LEAD_RETARGETING.FORM.NO_STEPS') }}
+            </div>
 
-          <div v-else class="space-y-3">
-            <div
-              v-for="(step, index) in sequence.steps"
-              :key="step.id"
-              class="border border-slate-200 dark:border-slate-700 rounded-lg p-4"
-            >
-              <div class="flex items-start gap-4">
-                <div class="flex flex-col gap-1">
-                  <button
-                    type="button"
-                    :disabled="index === 0"
-                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 disabled:opacity-30"
-                    @click="moveStepUp(index)"
-                  >
-                    <i class="icon ion-chevron-up" />
-                  </button>
-                  <span class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ index + 1 }}</span>
-                  <button
-                    type="button"
-                    :disabled="index === sequence.steps.length - 1"
-                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 disabled:opacity-30"
-                    @click="moveStepDown(index)"
-                  >
-                    <i class="icon ion-chevron-down" />
-                  </button>
-                </div>
-
-                <div class="flex-1">
-                  <input
-                    v-model="step.name"
-                    type="text"
-                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 mb-3"
-                    :placeholder="t('LEAD_RETARGETING.FORM.STEP_NAME')"
-                  />
-
-                  <!-- Wait Step -->
-                  <div v-if="step.type === 'wait'" class="flex gap-2 items-center">
-                    <span class="text-sm text-slate-700 dark:text-slate-300">{{ t('LEAD_RETARGETING.STEPS.WAIT.LABEL') }}</span>
-                    <input
-                      v-model.number="step.config.delay_value"
-                      type="number"
-                      min="1"
-                      class="w-20 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                    />
-                    <select
-                      v-model="step.config.delay_type"
-                      class="px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            <!-- Steps List -->
+            <div v-else class="space-y-3">
+              <div
+                v-for="(step, index) in sequence.steps"
+                :key="step.id"
+                class="border border-n-weak/60 rounded-lg p-4"
+              >
+                <div class="flex items-start gap-4">
+                  <!-- Order Controls -->
+                  <div class="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      :disabled="index === 0"
+                      class="text-n-slate-11 hover:text-n-slate-12 disabled:opacity-30 disabled:cursor-not-allowed"
+                      @click="moveStepUp(index)"
                     >
-                      <option value="minutes">{{ t('LEAD_RETARGETING.STEPS.WAIT.MINUTES') }}</option>
-                      <option value="hours">{{ t('LEAD_RETARGETING.STEPS.WAIT.HOURS') }}</option>
-                      <option value="days">{{ t('LEAD_RETARGETING.STEPS.WAIT.DAYS') }}</option>
-                    </select>
+                      <i class="i-lucide-chevron-up text-base" />
+                    </button>
+                    <span class="text-sm font-medium text-n-slate-11">{{ index + 1 }}</span>
+                    <button
+                      type="button"
+                      :disabled="index === sequence.steps.length - 1"
+                      class="text-n-slate-11 hover:text-n-slate-12 disabled:opacity-30 disabled:cursor-not-allowed"
+                      @click="moveStepDown(index)"
+                    >
+                      <i class="i-lucide-chevron-down text-base" />
+                    </button>
                   </div>
 
-                  <!-- Send Template Step -->
-                  <div v-else-if="step.type === 'send_template'" class="space-y-3">
-                    <div>
-                      <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Template</label>
-                      <select
-                        v-model="step.config.template_name"
-                        class="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                        @change="onTemplateChange(step)"
-                      >
-                        <option value="">{{ t('LEAD_RETARGETING.STEPS.SEND_TEMPLATE.SELECT') }}</option>
-                        <option
-                          v-for="template in availableTemplates"
-                          :key="`${template.name}-${template.language}`"
-                          :value="template.name"
+                  <!-- Step Content -->
+                  <div class="flex-1">
+                    <input
+                      v-model="step.name"
+                      type="text"
+                      class="w-full mb-3"
+                      :placeholder="t('LEAD_RETARGETING.FORM.STEP_NAME')"
+                    />
+
+                    <!-- Wait Step -->
+                    <div v-if="step.type === 'wait'" class="flex gap-2 items-center">
+                      <span class="text-sm text-n-slate-11">{{ t('LEAD_RETARGETING.STEPS.WAIT.LABEL') }}</span>
+                      <input
+                        v-model.number="step.config.delay_value"
+                        type="number"
+                        min="1"
+                        class="w-20 px-2 py-1"
+                      />
+                      <select v-model="step.config.delay_type" class="px-2 py-1">
+                        <option value="minutes">{{ t('LEAD_RETARGETING.STEPS.WAIT.MINUTES') }}</option>
+                        <option value="hours">{{ t('LEAD_RETARGETING.STEPS.WAIT.HOURS') }}</option>
+                        <option value="days">{{ t('LEAD_RETARGETING.STEPS.WAIT.DAYS') }}</option>
+                      </select>
+                    </div>
+
+                    <!-- Send Template Step -->
+                    <div v-else-if="step.type === 'send_template'" class="space-y-3">
+                      <div>
+                        <label class="block text-xs font-medium text-n-slate-12 mb-1">Template</label>
+                        <select
+                          v-model="step.config.template_name"
+                          class="w-full text-sm"
+                          @change="onTemplateChange(step)"
                         >
-                          {{ template.name }} ({{ template.language }})
+                          <option value="">{{ t('LEAD_RETARGETING.STEPS.SEND_TEMPLATE.SELECT') }}</option>
+                          <option
+                            v-for="template in availableTemplates"
+                            :key="`${template.name}-${template.language}`"
+                            :value="template.name"
+                          >
+                            {{ template.name }} ({{ template.language }})
+                          </option>
+                        </select>
+                      </div>
+
+                      <!-- Template Parameters -->
+                      <div v-if="step.config.template_name && getTemplateParams(step.config.template_name).length > 0" class="space-y-2 p-3 bg-n-weak/30 rounded">
+                        <label class="block text-xs font-medium text-n-slate-12 mb-2">Parámetros del Template</label>
+                        <div
+                          v-for="(param, idx) in getTemplateParams(step.config.template_name)"
+                          :key="idx"
+                          class="flex items-center gap-2"
+                        >
+                          <span class="text-xs text-n-slate-11 w-16">{{ '{' + '{' + (idx + 1) + '}' + '}' }}:</span>
+                          <input
+                            v-model="step.config.template_params.body[idx + 1]"
+                            type="text"
+                            class="flex-1 px-2 py-1 text-sm"
+                            :placeholder="`Valor para parámetro ${idx + 1}`"
+                          />
+                        </div>
+                        <div class="mt-2 p-2 bg-n-blue-2 dark:bg-n-blue-3 rounded text-xs">
+                          <p class="font-medium text-n-slate-12 mb-1">Variables disponibles:</p>
+                          <div class="flex flex-wrap gap-2">
+                            <code
+                              v-for="variable in ['contact.name', 'contact.email', 'contact.phone_number']"
+                              :key="variable"
+                              class="px-2 py-0.5 bg-white dark:bg-n-slate-3 border border-n-weak/60 rounded cursor-pointer hover:bg-n-blue-4 text-n-slate-12"
+                              @click="copyToClipboard(`{{${variable}}}`)"
+                            >
+                              {{ '{' + '{' + variable + '}' + '}' }}
+                            </code>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Add Label Step -->
+                    <div v-else-if="step.type === 'add_label'" class="space-y-2">
+                      <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                        {{ t('LEAD_RETARGETING.STEPS.ADD_LABEL.SELECT_LABEL') }}
+                      </label>
+                      <select v-model="step.config.labels[0]" class="w-full">
+                        <option value="">{{ t('LEAD_RETARGETING.STEPS.ADD_LABEL.PLACEHOLDER') }}</option>
+                        <option
+                          v-for="label in labels"
+                          :key="label.id"
+                          :value="label.title"
+                        >
+                          {{ label.title }}
                         </option>
                       </select>
                     </div>
 
-                    <!-- Template Parameters -->
-                    <div v-if="step.config.template_name && getTemplateParams(step.config.template_name).length > 0" class="space-y-2 p-3 bg-slate-50 dark:bg-slate-900 rounded">
-                      <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Parámetros del Template</label>
-                      <div
-                        v-for="(param, idx) in getTemplateParams(step.config.template_name)"
-                        :key="idx"
-                        class="flex items-center gap-2"
-                      >
-                        <span class="text-xs text-slate-600 dark:text-slate-400 w-16">{{ '{' + '{' + (idx + 1) + '}' + '}' }}:</span>
+                    <!-- Remove Label Step -->
+                    <div v-else-if="step.type === 'remove_label'" class="space-y-2">
+                      <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                        {{ t('LEAD_RETARGETING.STEPS.REMOVE_LABEL.SELECT_LABEL') }}
+                      </label>
+                      <select v-model="step.config.labels[0]" class="w-full">
+                        <option value="">{{ t('LEAD_RETARGETING.STEPS.REMOVE_LABEL.PLACEHOLDER') }}</option>
+                        <option
+                          v-for="label in labels"
+                          :key="label.id"
+                          :value="label.title"
+                        >
+                          {{ label.title }}
+                        </option>
+                      </select>
+                    </div>
+
+                    <!-- Assign Agent Step -->
+                    <div v-else-if="step.type === 'assign_agent'" class="space-y-2">
+                      <div>
+                        <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                          {{ t('LEAD_RETARGETING.STEPS.ASSIGN_AGENT.TYPE') }}
+                        </label>
+                        <select v-model="step.config.assignment_type" class="w-full">
+                          <option value="round_robin">{{ t('LEAD_RETARGETING.STEPS.ASSIGN_AGENT.ROUND_ROBIN') }}</option>
+                          <option value="specific_agent">{{ t('LEAD_RETARGETING.STEPS.ASSIGN_AGENT.SPECIFIC') }}</option>
+                        </select>
+                      </div>
+                      <div v-if="step.config.assignment_type === 'specific_agent'">
+                        <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                          {{ t('LEAD_RETARGETING.STEPS.ASSIGN_AGENT.SELECT_AGENT') }}
+                        </label>
+                        <select v-model="step.config.agent_id" class="w-full">
+                          <option :value="null">{{ t('LEAD_RETARGETING.STEPS.ASSIGN_AGENT.SELECT_PLACEHOLDER') }}</option>
+                          <option
+                            v-for="agent in agents"
+                            :key="agent.id"
+                            :value="agent.id"
+                          >
+                            {{ agent.name }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Assign Team Step -->
+                    <div v-else-if="step.type === 'assign_team'" class="space-y-2">
+                      <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                        {{ t('LEAD_RETARGETING.STEPS.ASSIGN_TEAM.SELECT_TEAM') }}
+                      </label>
+                      <select v-model="step.config.team_id" class="w-full">
+                        <option :value="null">{{ t('LEAD_RETARGETING.STEPS.ASSIGN_TEAM.SELECT_PLACEHOLDER') }}</option>
+                        <option
+                          v-for="team in teams"
+                          :key="team.id"
+                          :value="team.id"
+                        >
+                          {{ team.name }}
+                        </option>
+                      </select>
+                    </div>
+
+                    <!-- Change Priority Step -->
+                    <div v-else-if="step.type === 'change_priority'" class="space-y-2">
+                      <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                        {{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.SELECT_PRIORITY') }}
+                      </label>
+                      <select v-model="step.config.priority" class="w-full">
+                        <option value="low">{{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.LOW') }}</option>
+                        <option value="medium">{{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.MEDIUM') }}</option>
+                        <option value="high">{{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.HIGH') }}</option>
+                        <option value="urgent">{{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.URGENT') }}</option>
+                      </select>
+                    </div>
+
+                    <!-- Webhook Step -->
+                    <div v-else-if="step.type === 'webhook'" class="space-y-2">
+                      <div>
+                        <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                          {{ t('LEAD_RETARGETING.STEPS.WEBHOOK.URL') }}
+                        </label>
                         <input
-                          v-model="step.config.template_params.body[idx + 1]"
-                          type="text"
-                          class="flex-1 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                          :placeholder="`Valor para parámetro ${idx + 1}`"
+                          v-model="step.config.url"
+                          type="url"
+                          class="w-full"
+                          :placeholder="t('LEAD_RETARGETING.STEPS.WEBHOOK.URL_PLACEHOLDER')"
                         />
                       </div>
-                      <div class="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
-                        <p class="font-medium text-slate-700 dark:text-slate-300 mb-1">Variables disponibles:</p>
-                        <div class="flex flex-wrap gap-2">
-                          <code
-                            v-for="variable in ['contact.name', 'contact.email', 'contact.phone_number']"
-                            :key="variable"
-                            class="px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300"
-                            @click="copyToClipboard(`{{${variable}}}`)"
-                          >
-                            {{ '{' + '{' + variable + '}' + '}' }}
-                          </code>
-                        </div>
+                      <div>
+                        <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                          {{ t('LEAD_RETARGETING.STEPS.WEBHOOK.METHOD') }}
+                        </label>
+                        <select v-model="step.config.method" class="w-full">
+                          <option value="GET">GET</option>
+                          <option value="POST">POST</option>
+                          <option value="PUT">PUT</option>
+                          <option value="PATCH">PATCH</option>
+                          <option value="DELETE">DELETE</option>
+                        </select>
+                      </div>
+                      <div class="text-xs text-n-slate-11">
+                        {{ t('LEAD_RETARGETING.STEPS.WEBHOOK.VARIABLES_HINT') }}
                       </div>
                     </div>
                   </div>
 
-                  <!-- Add Label Step -->
-                  <div v-else-if="step.type === 'add_label'" class="space-y-2">
-                    <input
-                      v-model="step.config.labels[0]"
-                      type="text"
-                      class="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                      :placeholder="t('LEAD_RETARGETING.STEPS.ADD_LABEL.PLACEHOLDER')"
-                    />
-                  </div>
+                  <!-- Delete Button -->
+                  <Button
+                    v-tooltip.top="t('LEAD_RETARGETING.FORM.DELETE_STEP')"
+                    icon="i-lucide-trash-2"
+                    xs
+                    ruby
+                    faded
+                    @click="removeStep(index)"
+                  />
                 </div>
-
-                <button
-                  type="button"
-                  class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                  @click="removeStep(index)"
-                >
-                  <i class="icon ion-close-circled text-xl" />
-                </button>
               </div>
             </div>
           </div>
-        </div>
+        </SettingsSection>
+
+        <!-- Action Buttons -->
+        <SettingsSection :show-border="false">
+          <div class="flex gap-2">
+            <Button
+              slate
+              :label="t('LEAD_RETARGETING.FORM.CANCEL')"
+              @click="goBack"
+            />
+            <Button
+              :is-loading="loading"
+              :label="t('LEAD_RETARGETING.FORM.SAVE')"
+              @click="saveSequence"
+            />
+          </div>
+        </SettingsSection>
       </div>
-    </template>
-  </SettingsLayout>
+    </section>
+  </div>
 </template>

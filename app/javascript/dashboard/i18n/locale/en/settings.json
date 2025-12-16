@@ -872,6 +872,7 @@
       "CANCEL": "Cancel",
       "SAVE": "Save",
       "BASIC_INFO": "Basic Information",
+      "BASIC_INFO_SUBTITLE": "Configure the basic details for your retargeting sequence",
       "NAME": "Name",
       "NAME_PLACEHOLDER": "e.g., Meta Campaign Follow-up",
       "NAME_REQUIRED": "Sequence name is required",
@@ -881,12 +882,15 @@
       "INBOX_REQUIRED": "WhatsApp inbox is required",
       "SELECT_INBOX": "Select inbox...",
       "SETTINGS": "Settings",
+      "SETTINGS_SUBTITLE": "Control when and how the sequence should execute",
       "STOP_ON_REPLY": "Stop sequence when contact replies",
       "STOP_ON_RESOLVED": "Stop sequence when conversation is resolved",
       "ACTIVATE": "Activate sequence",
       "STEPS": "Sequence Steps",
+      "STEPS_SUBTITLE": "Define the actions that will be executed in order",
       "NO_STEPS": "No steps added yet. Add wait periods and template messages to create your sequence.",
       "STEP_NAME": "Step name",
+      "DELETE_STEP": "Delete step",
       "LOAD_ERROR": "Failed to load sequence",
       "CREATE_SUCCESS": "Sequence created successfully",
       "CREATE_ERROR": "Failed to create sequence",
@@ -910,7 +914,46 @@
       "ADD_LABEL": {
         "ADD": "Add Label",
         "DEFAULT_NAME": "Add label to conversation",
-        "PLACEHOLDER": "Enter label name"
+        "SELECT_LABEL": "Select Label",
+        "PLACEHOLDER": "Select a label..."
+      },
+      "REMOVE_LABEL": {
+        "ADD": "Remove Label",
+        "DEFAULT_NAME": "Remove label from conversation",
+        "SELECT_LABEL": "Select Label",
+        "PLACEHOLDER": "Select a label to remove..."
+      },
+      "ASSIGN_AGENT": {
+        "ADD": "Assign Agent",
+        "DEFAULT_NAME": "Assign agent to conversation",
+        "TYPE": "Assignment Type",
+        "ROUND_ROBIN": "Round Robin",
+        "SPECIFIC": "Specific Agent",
+        "SELECT_AGENT": "Select Agent",
+        "SELECT_PLACEHOLDER": "Select an agent..."
+      },
+      "ASSIGN_TEAM": {
+        "ADD": "Assign Team",
+        "DEFAULT_NAME": "Assign team to conversation",
+        "SELECT_TEAM": "Select Team",
+        "SELECT_PLACEHOLDER": "Select a team..."
+      },
+      "CHANGE_PRIORITY": {
+        "ADD": "Change Priority",
+        "DEFAULT_NAME": "Change conversation priority",
+        "SELECT_PRIORITY": "Priority",
+        "LOW": "Low",
+        "MEDIUM": "Medium",
+        "HIGH": "High",
+        "URGENT": "Urgent"
+      },
+      "WEBHOOK": {
+        "ADD": "Webhook",
+        "DEFAULT_NAME": "Call webhook",
+        "URL": "Webhook URL",
+        "URL_PLACEHOLDER": "https://example.com/webhook",
+        "METHOD": "HTTP Method",
+        "VARIABLES_HINT": "You can use variables like {{contact.name}}, {{conversation.id}}, etc."
       }
     }
   }

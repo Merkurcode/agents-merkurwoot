@@ -24,7 +24,9 @@ class ReactivateCompletedFollowUpsJob < ApplicationJob
     follow_up.mark_processing!
 
     conversation = follow_up.conversation
-    last_message = conversation.messages.order(created_at: :desc).last
+    # Use reorder instead of order to bypass Message's default_scope { order(created_at: :asc) }
+    # which would interfere with getting the actual last message
+    last_message = conversation.messages.reorder(created_at: :desc).first
 
     return follow_up.clear_processing! unless last_message&.outgoing?
 

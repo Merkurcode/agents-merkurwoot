@@ -94,22 +94,17 @@ class LeadRetargeting::SendFollowUpService
 
   def execute_add_label_step(step)
     labels = step.dig('config', 'labels') || []
-
-    labels.each do |label_name|
-      label = @account.labels.find_or_create_by!(title: label_name)
-      @conversation.labels << label unless @conversation.labels.include?(label)
-    end
+    @conversation.add_labels(labels)
 
     { success: true }
   end
 
   def execute_remove_label_step(step)
     labels = step.dig('config', 'labels') || []
+    return { success: true } if labels.empty?
 
-    labels.each do |label_name|
-      label = @account.labels.find_by(title: label_name)
-      @conversation.labels.delete(label) if label
-    end
+    updated_labels = @conversation.label_list - labels
+    @conversation.update(label_list: updated_labels)
 
     { success: true }
   end

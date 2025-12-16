@@ -18,6 +18,40 @@ RSpec.describe LeadRetargeting::SendFollowUpService do
   end
   let(:service) { described_class.new(follow_up) }
 
+  before do
+    stub_request(:get, 'https://waba.360dialog.io/v1/configs/templates')
+      .to_return(status: 200, body: {
+        waba_templates: [
+          {
+            'name' => 'follow_up_message',
+            'language' => 'en',
+            'status' => 'APPROVED',
+            'components' => [
+              {
+                'type' => 'BODY',
+                'text' => 'Hello {{1}}, this is a follow-up message.'
+              }
+            ]
+          },
+          {
+            'name' => 'test_template',
+            'language' => 'es',
+            'status' => 'APPROVED',
+            'components' => [
+              {
+                'type' => 'BODY',
+                'text' => 'Hola, este es un mensaje de prueba.'
+              }
+            ]
+          }
+        ]
+      }.to_json, headers: { 'Content-Type' => 'application/json' })
+    stub_request(:get, 'https://waba.360dialog.io/v1/settings/application')
+      .to_return(status: 200, body: { settings: {} }.to_json, headers: { 'Content-Type' => 'application/json' })
+    stub_request(:post, 'https://waba.360dialog.io/v1/configs/webhook')
+      .to_return(status: 200, body: {}.to_json, headers: { 'Content-Type' => 'application/json' })
+  end
+
   describe '#execute' do
     context 'when sequence is deactivated' do
       before { sequence.update!(active: false) }
@@ -36,7 +70,10 @@ RSpec.describe LeadRetargeting::SendFollowUpService do
     context 'when contact has replied recently' do
       before do
         sequence.update!(settings: sequence.settings.merge('stop_on_contact_reply' => true))
-        create(:message, conversation: conversation, message_type: :incoming, created_at: 1.minute.ago)
+        # Create follow_up first to set its updated_at
+        follow_up
+        # Then create message after follow_up so it's considered recent
+        create(:message, conversation: conversation, message_type: :incoming, created_at: Time.current)
       end
 
       it 'completes the follow-up' do
@@ -134,12 +171,13 @@ RSpec.describe LeadRetargeting::SendFollowUpService do
 
         it 'adds labels to conversation' do
           service.execute
-          expect(conversation.reload.labels.pluck(:title)).to include('urgent', 'follow_up')
+          expect(conversation.reload.label_list).to include('urgent', 'follow_up')
         end
 
-        it 'advances to next step' do
+        it 'completes the follow-up' do
           service.execute
-          expect(follow_up.reload.current_step).to eq(1)
+          expect(follow_up.reload.status).to eq('completed')
+          expect(follow_up.reload.metadata['completion_reason']).to eq('All steps completed')
         end
       end
 
@@ -156,14 +194,14 @@ RSpec.describe LeadRetargeting::SendFollowUpService do
         end
 
         before do
-          conversation.labels << [label1, label2]
+          conversation.add_labels([label1.title, label2.title])
           sequence.update!(steps: [remove_step])
         end
 
         it 'removes specified labels' do
           service.execute
-          expect(conversation.reload.labels.pluck(:title)).to include('urgent')
-          expect(conversation.reload.labels.pluck(:title)).not_to include('old')
+          expect(conversation.reload.label_list).to include('urgent')
+          expect(conversation.reload.label_list).not_to include('old')
         end
       end
 

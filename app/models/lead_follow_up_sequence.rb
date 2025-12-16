@@ -8,6 +8,9 @@ class LeadFollowUpSequence < ApplicationRecord
   validate :inbox_must_be_whatsapp
   validate :steps_structure
   validate :validate_templates_exist
+  validate :validate_trigger_conditions
+
+  after_commit :enroll_eligible_conversations, if: :should_auto_enroll?
 
   scope :active, -> { where(active: true) }
 
@@ -47,6 +50,54 @@ class LeadFollowUpSequence < ApplicationRecord
 
   def enabled_steps
     steps.select { |s| s['enabled'] == true }
+  end
+
+  def matches_reactivation_filters?(conversation)
+    return true if trigger_conditions.blank?
+
+    matches_date_filter?(conversation) && matches_label_filter?(conversation)
+  end
+
+  def matches_date_filter?(conversation)
+    filter = trigger_conditions.dig('date_filter')
+    return true unless filter&.dig('enabled')
+
+    date_to_check = case filter['filter_type']
+                    when 'conversation_created_at'
+                      conversation.created_at
+                    when 'last_message_at'
+                      conversation.messages.maximum(:created_at)
+                    when 'inactive_days'
+                      conversation.last_activity_at
+                    end
+
+    return false unless date_to_check
+
+    case filter['operator']
+    when 'older_than'
+      date_to_check < filter['value'].to_i.days.ago
+    when 'newer_than'
+      date_to_check > filter['value'].to_i.days.ago
+    when 'between'
+      from_date = Date.parse(filter['from_date'])
+      to_date = Date.parse(filter['to_date'])
+      date_to_check.to_date.between?(from_date, to_date)
+    else
+      false
+    end
+  rescue StandardError => e
+    Rails.logger.error("Error evaluating date filter for sequence #{id}: #{e.message}")
+    false
+  end
+
+  def matches_label_filter?(conversation)
+    filter = trigger_conditions.dig('label_filter')
+    return true unless filter&.dig('enabled')
+    return true if filter['labels'].blank?
+
+    conversation_labels = conversation.cached_label_list_array
+    # OR logic: conversation must have at least one of the selected labels
+    (filter['labels'] & conversation_labels).any?
   end
 
   def render_param_value(value, context)
@@ -175,5 +226,60 @@ class LeadFollowUpSequence < ApplicationRecord
   rescue StandardError => e
     Rails.logger.error "Failed to resolve variable #{variable_path}: #{e.message}"
     "[Error: #{variable_path}]"
+  end
+
+  def validate_trigger_conditions
+    return if trigger_conditions.blank?
+
+    validate_date_filter_structure if trigger_conditions['date_filter'].present?
+    validate_label_filter_structure if trigger_conditions['label_filter'].present?
+  end
+
+  def validate_date_filter_structure
+    filter = trigger_conditions['date_filter']
+    return unless filter['enabled']
+
+    valid_types = %w[conversation_created_at last_message_at inactive_days]
+    unless valid_types.include?(filter['filter_type'])
+      errors.add(:trigger_conditions, "Invalid date filter type: #{filter['filter_type']}")
+    end
+
+    valid_operators = %w[older_than newer_than between]
+    unless valid_operators.include?(filter['operator'])
+      errors.add(:trigger_conditions, "Invalid date operator: #{filter['operator']}")
+    end
+
+    if filter['operator'] == 'between'
+      unless filter['from_date'].present? && filter['to_date'].present?
+        errors.add(:trigger_conditions, 'Date range requires from_date and to_date')
+      end
+    elsif filter['value'].to_i <= 0
+      errors.add(:trigger_conditions, 'Date filter value must be positive')
+    end
+  end
+
+  def validate_label_filter_structure
+    filter = trigger_conditions['label_filter']
+    return unless filter['enabled']
+
+    unless filter['labels'].is_a?(Array) && filter['labels'].any?
+      errors.add(:trigger_conditions, 'Label filter requires at least one label')
+    end
+  end
+
+  def should_auto_enroll?
+    # Solo auto-enrollar cuando se activa una secuencia
+    # (no cuando se crea inactiva o cuando se desactiva)
+    return false unless active?
+
+    # Auto-enrollar si:
+    # 1. Es un nuevo registro que se crea activo, O
+    # 2. Se acaba de activar (active cambió de false a true)
+    saved_change_to_active? && active?
+  end
+
+  def enroll_eligible_conversations
+    Rails.logger.info "Triggering auto-enrollment for sequence #{id} (#{name})"
+    EnrollEligibleConversationsJob.perform_later(id)
   end
 end

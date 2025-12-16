@@ -129,8 +129,12 @@ class LeadRetargeting::SendFollowUpService
       agent = @account.users.find(config['agent_id'])
       @conversation.update!(assignee: agent)
     when 'round_robin'
+      # Obtener los IDs de agentes miembros del inbox
+      allowed_agent_ids = @conversation.inbox.inbox_members.pluck(:user_id)
+
       AutoAssignment::AgentAssignmentService.new(
-        conversation: @conversation
+        conversation: @conversation,
+        allowed_agent_ids: allowed_agent_ids
       ).perform
     when 'team'
       team = @account.teams.find(config['team_id'])

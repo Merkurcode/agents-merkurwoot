@@ -1,12 +1,4 @@
 class LeadFollowUpListener < BaseListener
-  def conversation_created(event)
-    conversation = event.data[:conversation]
-
-    return unless conversation.inbox.inbox_type == 'Whatsapp'
-
-    enroll_in_active_sequence(conversation)
-  end
-
   def message_created(event)
     message = event.data[:message]
     conversation = message.conversation
@@ -22,47 +14,6 @@ class LeadFollowUpListener < BaseListener
   end
 
   private
-
-  def enroll_in_active_sequence(conversation)
-    sequence = LeadFollowUpSequence
-               .active
-               .where(account_id: conversation.account_id, inbox_id: conversation.inbox_id)
-               .first
-
-    return unless sequence
-
-    return if conversation.conversation_follow_up.present?
-
-    first_step = sequence.enabled_steps.first
-    return unless first_step
-
-    next_action_at = if first_step['type'] == 'wait'
-                       calculate_wait_time(first_step)
-                     else
-                       Time.current
-                     end
-
-    follow_up = ConversationFollowUp.create!(
-      conversation: conversation,
-      lead_follow_up_sequence: sequence,
-      current_step: 0,
-      next_action_at: next_action_at,
-      status: 'active'
-    )
-
-    Rails.logger.info "Enrolled conversation #{conversation.id} in sequence #{sequence.id}"
-
-    # Check if contact has already replied (race condition fix)
-    if sequence.settings.dig('stop_on_contact_reply') && conversation.messages.incoming.exists?
-      follow_up.mark_as_completed!('Contact replied')
-      Rails.logger.info "Immediately completed follow-up #{follow_up.id} - contact already replied"
-    else
-      # Schedule job for exact timing
-      follow_up.schedule_job!
-    end
-  rescue StandardError => e
-    Rails.logger.error "Failed to enroll conversation #{conversation.id}: #{e.message}"
-  end
 
   def pause_sequence_on_contact_reply(follow_up)
     return unless follow_up.status == 'active'

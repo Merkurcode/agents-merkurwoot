@@ -8,7 +8,10 @@ class ReactivateCompletedFollowUpsJob < ApplicationJob
   def perform
     ConversationFollowUp
       .ready_to_reactivate
-      .includes(conversation: :messages)
+      .includes(
+        lead_follow_up_sequence: {},
+        conversation: [:messages, :labels]
+      )
       .limit(BATCH_SIZE)
       .find_each(batch_size: 100) do |follow_up|
         process_follow_up(follow_up)
@@ -23,7 +26,18 @@ class ReactivateCompletedFollowUpsJob < ApplicationJob
   def process_follow_up(follow_up)
     follow_up.mark_processing!
 
+    sequence = follow_up.lead_follow_up_sequence
     conversation = follow_up.conversation
+
+    # Check if conversation matches reactivation filters
+    unless sequence.matches_reactivation_filters?(conversation)
+      Rails.logger.info(
+        "Follow-up #{follow_up.id} skipped: conversation doesn't match filters. " \
+        "Sequence: #{sequence.id}, Conversation: #{conversation.id}"
+      )
+      return follow_up.clear_processing!
+    end
+
     # Use reorder instead of order to bypass Message's default_scope { order(created_at: :asc) }
     # which would interfere with getting the actual last message
     last_message = conversation.messages.reorder(created_at: :desc).first

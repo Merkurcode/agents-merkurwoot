@@ -25,12 +25,27 @@ const labels = computed(() => getters['labels/getLabels'].value);
 
 const loading = ref(false);
 const availableTemplates = ref([]);
-const sequence = ref({
+const defaultSequence = {
   name: '',
   description: '',
   inbox_id: null,
   active: false,
   steps: [],
+  trigger_conditions: {
+    date_filter: {
+      enabled: false,
+      filter_type: 'conversation_created_at',
+      operator: 'older_than',
+      value: 30,
+      from_date: null,
+      to_date: null,
+    },
+    label_filter: {
+      enabled: false,
+      labels: [],
+      match_type: 'any',
+    },
+  },
   settings: {
     stop_on_contact_reply: true,
     stop_on_conversation_resolved: true,
@@ -42,7 +57,9 @@ const sequence = ref({
     },
     max_retries_per_step: 2,
   },
-});
+};
+
+const sequence = ref(JSON.parse(JSON.stringify(defaultSequence)));
 
 const isEdit = computed(() => !!route.params.sequenceId);
 const pageTitle = computed(() =>
@@ -74,7 +91,28 @@ const fetchSequence = async () => {
     const response = await leadFollowUpSequencesAPI.show(
       route.params.sequenceId
     );
-    sequence.value = response.data;
+    const data = response.data;
+    // Ensure nested objects exist by merging with defaults
+    sequence.value = {
+      ...defaultSequence,
+      ...data,
+      trigger_conditions: {
+        ...defaultSequence.trigger_conditions,
+        ...(data.trigger_conditions || {}),
+        date_filter: {
+          ...defaultSequence.trigger_conditions.date_filter,
+          ...(data.trigger_conditions?.date_filter || {}),
+        },
+        label_filter: {
+          ...defaultSequence.trigger_conditions.label_filter,
+          ...(data.trigger_conditions?.label_filter || {}),
+        },
+      },
+      settings: {
+        ...defaultSequence.settings,
+        ...(data.settings || {}),
+      },
+    };
     if (sequence.value.inbox_id) {
       await loadTemplates();
     }
@@ -244,6 +282,17 @@ const copyToClipboard = text => {
   useAlert('Variable copiada al portapapeles');
 };
 
+const toggleLabel = labelTitle => {
+  const labels = sequence.value.trigger_conditions.label_filter.labels;
+  const index = labels.indexOf(labelTitle);
+
+  if (index > -1) {
+    labels.splice(index, 1);
+  } else {
+    labels.push(labelTitle);
+  }
+};
+
 const saveSequence = async () => {
   if (!sequence.value.name) {
     useAlert(t('LEAD_RETARGETING.FORM.NAME_REQUIRED'));
@@ -252,6 +301,29 @@ const saveSequence = async () => {
 
   if (!sequence.value.inbox_id) {
     useAlert(t('LEAD_RETARGETING.FORM.INBOX_REQUIRED'));
+    return;
+  }
+
+  // Validar filtro de fechas
+  const dateFilter = sequence.value.trigger_conditions.date_filter;
+  if (dateFilter.enabled) {
+    if (dateFilter.operator === 'between') {
+      if (!dateFilter.from_date || !dateFilter.to_date) {
+        useAlert(t('LEAD_RETARGETING.FORM.DATE_RANGE_REQUIRED'));
+        return;
+      }
+    } else {
+      if (!dateFilter.value || dateFilter.value <= 0) {
+        useAlert(t('LEAD_RETARGETING.FORM.DATE_VALUE_REQUIRED'));
+        return;
+      }
+    }
+  }
+
+  // Validar filtro de etiquetas
+  const labelFilter = sequence.value.trigger_conditions.label_filter;
+  if (labelFilter.enabled && labelFilter.labels.length === 0) {
+    useAlert(t('LEAD_RETARGETING.FORM.LABELS_REQUIRED'));
     return;
   }
 
@@ -387,6 +459,131 @@ const saveSequence = async () => {
                 {{ t('LEAD_RETARGETING.FORM.ACTIVATE') }}
               </span>
             </label>
+          </div>
+        </SettingsSection>
+
+        <!-- Reactivation Filters -->
+        <SettingsSection
+          :title="t('LEAD_RETARGETING.FORM.REACTIVATION_FILTERS')"
+          :sub-title="t('LEAD_RETARGETING.FORM.REACTIVATION_FILTERS_SUBTITLE')"
+        >
+          <div class="space-y-6">
+            <!-- Date Filter -->
+            <div class="border border-n-weak/60 rounded-lg p-4">
+              <label class="flex items-center gap-2 cursor-pointer mb-4">
+                <input
+                  v-model="sequence.trigger_conditions.date_filter.enabled"
+                  type="checkbox"
+                  class="rounded"
+                />
+                <span class="text-sm font-medium text-n-slate-12">
+                  {{ t('LEAD_RETARGETING.FORM.ENABLE_DATE_FILTER') }}
+                </span>
+              </label>
+
+              <div v-if="sequence.trigger_conditions.date_filter.enabled" class="space-y-3 pl-6">
+                <!-- Filter Type Select -->
+                <div>
+                  <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
+                    {{ t('LEAD_RETARGETING.FORM.DATE_FILTER_TYPE') }}
+                  </label>
+                  <select v-model="sequence.trigger_conditions.date_filter.filter_type" class="w-full">
+                    <option value="conversation_created_at">{{ t('LEAD_RETARGETING.FORM.DATE_FILTER_CONVERSATION_CREATED') }}</option>
+                    <option value="last_message_at">{{ t('LEAD_RETARGETING.FORM.DATE_FILTER_LAST_MESSAGE') }}</option>
+                    <option value="inactive_days">{{ t('LEAD_RETARGETING.FORM.DATE_FILTER_INACTIVE_DAYS') }}</option>
+                  </select>
+                </div>
+
+                <!-- Operator Select -->
+                <div>
+                  <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
+                    {{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR') }}
+                  </label>
+                  <select v-model="sequence.trigger_conditions.date_filter.operator" class="w-full">
+                    <option value="older_than">{{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR_OLDER_THAN') }}</option>
+                    <option value="newer_than">{{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR_NEWER_THAN') }}</option>
+                    <option value="between">{{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR_BETWEEN') }}</option>
+                  </select>
+                </div>
+
+                <!-- Days Input (for relative operators) -->
+                <div v-if="sequence.trigger_conditions.date_filter.operator !== 'between'" class="flex gap-2 items-center">
+                  <input
+                    v-model.number="sequence.trigger_conditions.date_filter.value"
+                    type="number"
+                    min="1"
+                    class="w-32 px-3 py-2"
+                    :placeholder="t('LEAD_RETARGETING.FORM.DAYS')"
+                  />
+                  <span class="text-sm text-n-slate-11">{{ t('LEAD_RETARGETING.FORM.DAYS') }}</span>
+                </div>
+
+                <!-- Date Range (for between operator) -->
+                <div v-if="sequence.trigger_conditions.date_filter.operator === 'between'" class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                      {{ t('LEAD_RETARGETING.FORM.FROM_DATE') }}
+                    </label>
+                    <input v-model="sequence.trigger_conditions.date_filter.from_date" type="date" class="w-full" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                      {{ t('LEAD_RETARGETING.FORM.TO_DATE') }}
+                    </label>
+                    <input v-model="sequence.trigger_conditions.date_filter.to_date" type="date" class="w-full" />
+                  </div>
+                </div>
+
+                <!-- Help Text -->
+                <div class="text-xs text-n-slate-11 bg-n-blue-2 dark:bg-n-blue-3 p-3 rounded">
+                  {{ t('LEAD_RETARGETING.FORM.DATE_FILTER_HELP') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Label Filter -->
+            <div class="border border-n-weak/60 rounded-lg p-4">
+              <label class="flex items-center gap-2 cursor-pointer mb-4">
+                <input
+                  v-model="sequence.trigger_conditions.label_filter.enabled"
+                  type="checkbox"
+                  class="rounded"
+                />
+                <span class="text-sm font-medium text-n-slate-12">
+                  {{ t('LEAD_RETARGETING.FORM.ENABLE_LABEL_FILTER') }}
+                </span>
+              </label>
+
+              <div v-if="sequence.trigger_conditions.label_filter.enabled" class="space-y-3 pl-6">
+                <div>
+                  <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
+                    {{ t('LEAD_RETARGETING.FORM.SELECT_LABELS') }}
+                  </label>
+                  <div class="space-y-2">
+                    <label
+                      v-for="label in labels"
+                      :key="label.id"
+                      class="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        :value="label.title"
+                        :checked="sequence.trigger_conditions.label_filter.labels.includes(label.title)"
+                        type="checkbox"
+                        class="rounded"
+                        @change="toggleLabel(label.title)"
+                      />
+                      <span class="inline-block w-3 h-3 rounded" :style="{ backgroundColor: label.color }" />
+                      <span class="text-sm text-n-slate-12">{{ label.title }}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Help Text -->
+                <div class="text-xs text-n-slate-11 bg-n-blue-2 dark:bg-n-blue-3 p-3 rounded">
+                  {{ t('LEAD_RETARGETING.FORM.LABEL_FILTER_HELP') }}
+                </div>
+              </div>
+            </div>
           </div>
         </SettingsSection>
 

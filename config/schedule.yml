@@ -19,7 +19,7 @@ process_lead_follow_ups_job:
   queue: scheduled_jobs
 
 reactivate_completed_follow_ups_job:
-  cron: '*/15 * * * *'
+  cron: '*/5 * * * *'
   class: 'ReactivateCompletedFollowUpsJob'
   queue: scheduled_jobs
 

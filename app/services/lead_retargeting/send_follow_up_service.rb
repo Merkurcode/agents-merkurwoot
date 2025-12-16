@@ -94,23 +94,35 @@ class LeadRetargeting::SendFollowUpService
 
   def execute_add_label_step(step)
     labels = step.dig('config', 'labels') || []
+
+    # Set Current.executed_by so activity messages show "System" as the actor
+    Current.executed_by = @sequence
     @conversation.add_labels(labels)
 
     { success: true }
+  ensure
+    Current.executed_by = nil
   end
 
   def execute_remove_label_step(step)
     labels = step.dig('config', 'labels') || []
     return { success: true } if labels.empty?
 
+    # Set Current.executed_by so activity messages show "System" as the actor
+    Current.executed_by = @sequence
     updated_labels = @conversation.label_list - labels
     @conversation.update(label_list: updated_labels)
 
     { success: true }
+  ensure
+    Current.executed_by = nil
   end
 
   def execute_assign_agent_step(step)
     config = step['config']
+
+    # Set Current.executed_by so activity messages show "System" as the actor
+    Current.executed_by = @sequence
 
     case config['assignment_type']
     when 'specific_agent'
@@ -126,14 +138,21 @@ class LeadRetargeting::SendFollowUpService
     end
 
     { success: true }
+  ensure
+    Current.executed_by = nil
   end
 
   def execute_assign_team_step(step)
     team_id = step.dig('config', 'team_id')
     team = @account.teams.find(team_id)
+
+    # Set Current.executed_by so activity messages show "System" as the actor
+    Current.executed_by = @sequence
     @conversation.update!(team: team)
 
     { success: true }
+  ensure
+    Current.executed_by = nil
   end
 
   def execute_condition_step(step)
@@ -181,9 +200,14 @@ class LeadRetargeting::SendFollowUpService
 
   def execute_change_priority_step(step)
     priority = step.dig('config', 'priority')
+
+    # Set Current.executed_by so activity messages show "System" as the actor
+    Current.executed_by = @sequence
     @conversation.update!(priority: priority)
 
     { success: true }
+  ensure
+    Current.executed_by = nil
   end
 
   def build_variable_context

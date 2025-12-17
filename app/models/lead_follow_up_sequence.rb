@@ -268,14 +268,9 @@ class LeadFollowUpSequence < ApplicationRecord
   end
 
   def should_auto_enroll?
-    # Solo auto-enrollar cuando se activa una secuencia
-    # (no cuando se crea inactiva o cuando se desactiva)
     return false unless active?
 
-    # Auto-enrollar si:
-    # 1. Es un nuevo registro que se crea activo, O
-    # 2. Se acaba de activar (active cambió de false a true)
-    saved_change_to_active? && active?
+    saved_change_to_active? || saved_change_to_id?
   end
 
   def enroll_eligible_conversations

@@ -335,7 +335,7 @@ class LeadFollowUpSequence < ApplicationRecord
   def should_auto_enroll?
     return false unless active?
 
-    saved_change_to_active? || saved_change_to_id?
+    previously_new_record? || saved_change_to_active?
   end
 
   def enroll_eligible_conversations

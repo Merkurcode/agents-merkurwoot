@@ -200,10 +200,12 @@ class EnrollEligibleConversationsJob < ApplicationJob
                                  FROM messages m1
                                  WHERE m1.conversation_id IN (?)
                                    AND m1.message_type = 0
+                                   AND m1.message_type != 2
                                    AND m1.created_at = (
                                      SELECT MAX(m2.created_at)
                                      FROM messages m2
                                      WHERE m2.conversation_id = m1.conversation_id
+                                       AND m2.message_type != 2
                                    )
                                )',
                                conversation_ids

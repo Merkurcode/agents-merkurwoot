@@ -236,3 +236,6 @@
 - name: whatsapp_groups
   display_name: WhatsApp Groups
   enabled: false
+- name: channel_tiktok
+  display_name: TikTok Channel
+  enabled: true

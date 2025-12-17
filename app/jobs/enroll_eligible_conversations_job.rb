@@ -180,7 +180,7 @@ class EnrollEligibleConversationsJob < ApplicationJob
 
     if filter&.dig('enabled') && filter['labels'].present?
       query.where(
-        "string_to_array(conversations.cached_label_list, ', ') && ARRAY[?]::varchar[]",
+        "string_to_array(conversations.cached_label_list, ', ') && ARRAY[?]::text[]",
         filter['labels']
       )
     else

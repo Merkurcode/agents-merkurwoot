@@ -71,10 +71,6 @@ class LeadRetargeting::SendFollowUpService
   def execute_template_step(step)
     config = step['config']
 
-    unless within_messaging_window?
-      return { success: false, error: 'Outside 24h messaging window' }
-    end
-
     if should_respect_business_hours?(step) && !within_business_hours?
       reschedule_for_business_hours
       return { success: true, rescheduled: true }

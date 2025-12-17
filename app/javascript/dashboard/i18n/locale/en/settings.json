@@ -913,7 +913,21 @@
       "DATE_FILTER_HELP": "Only reactivate conversations that match this date criteria",
       "ENABLE_LABEL_FILTER": "Enable Label Filter",
       "SELECT_LABELS": "Select Labels",
+      "SEARCH_LABELS": "Search labels...",
+      "NO_LABELS_FOUND": "No labels found",
       "LABEL_FILTER_HELP": "Only reactivate conversations that have at least one of these labels",
+      "ENABLE_STATUS_FILTER": "Enable Status Filter",
+      "SELECT_STATUSES": "Select Statuses",
+      "SEARCH_STATUSES": "Search statuses...",
+      "NO_STATUSES_FOUND": "No statuses found",
+      "STATUS_FILTER_HELP": "Only reactivate conversations that have one of these statuses",
+      "STATUSES_REQUIRED": "Please select at least one status",
+      "ENABLE_PIPELINE_STATUS_FILTER": "Enable Pipeline Status Filter",
+      "SELECT_PIPELINE_STATUSES": "Select Pipeline Statuses",
+      "SEARCH_PIPELINE_STATUSES": "Search pipeline statuses...",
+      "NO_PIPELINE_STATUSES_FOUND": "No pipeline statuses found",
+      "PIPELINE_STATUS_FILTER_HELP": "Only reactivate conversations that have one of these pipeline statuses",
+      "PIPELINE_STATUSES_REQUIRED": "Please select at least one pipeline status",
       "DATE_RANGE_REQUIRED": "Please select both from and to dates",
       "DATE_VALUE_REQUIRED": "Please enter a valid number of days",
       "LABELS_REQUIRED": "Please select at least one label"
@@ -967,6 +981,12 @@
         "MEDIUM": "Medium",
         "HIGH": "High",
         "URGENT": "Urgent"
+      },
+      "UPDATE_PIPELINE_STATUS": {
+        "ADD": "Update Pipeline Status",
+        "DEFAULT_NAME": "Update conversation pipeline status",
+        "SELECT_STATUS": "Pipeline Status",
+        "SELECT_PLACEHOLDER": "Select a pipeline status..."
       },
       "WEBHOOK": {
         "ADD": "Webhook",

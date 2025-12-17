@@ -884,7 +884,21 @@
       "DATE_FILTER_HELP": "Solo reactivar conversaciones que cumplan este criterio de fecha",
       "ENABLE_LABEL_FILTER": "Habilitar Filtro de Etiquetas",
       "SELECT_LABELS": "Seleccionar Etiquetas",
+      "SEARCH_LABELS": "Buscar etiquetas...",
+      "NO_LABELS_FOUND": "No se encontraron etiquetas",
       "LABEL_FILTER_HELP": "Solo reactivar conversaciones que tengan al menos una de estas etiquetas",
+      "ENABLE_STATUS_FILTER": "Habilitar Filtro de Estado",
+      "SELECT_STATUSES": "Seleccionar Estados",
+      "SEARCH_STATUSES": "Buscar estados...",
+      "NO_STATUSES_FOUND": "No se encontraron estados",
+      "STATUS_FILTER_HELP": "Solo reactivar conversaciones que tengan uno de estos estados",
+      "STATUSES_REQUIRED": "Por favor selecciona al menos un estado",
+      "ENABLE_PIPELINE_STATUS_FILTER": "Habilitar Filtro de Estado del Embudo",
+      "SELECT_PIPELINE_STATUSES": "Seleccionar Estados del Embudo",
+      "SEARCH_PIPELINE_STATUSES": "Buscar estados del embudo...",
+      "NO_PIPELINE_STATUSES_FOUND": "No se encontraron estados del embudo",
+      "PIPELINE_STATUS_FILTER_HELP": "Solo reactivar conversaciones que tengan uno de estos estados del embudo",
+      "PIPELINE_STATUSES_REQUIRED": "Por favor selecciona al menos un estado del embudo",
       "DATE_RANGE_REQUIRED": "Por favor selecciona ambas fechas: desde y hasta",
       "DATE_VALUE_REQUIRED": "Por favor ingresa un número de días válido",
       "LABELS_REQUIRED": "Por favor selecciona al menos una etiqueta"
@@ -938,6 +952,12 @@
         "MEDIUM": "Media",
         "HIGH": "Alta",
         "URGENT": "Urgente"
+      },
+      "UPDATE_PIPELINE_STATUS": {
+        "ADD": "Actualizar Estado del Embudo",
+        "DEFAULT_NAME": "Actualizar estado del embudo de la conversación",
+        "SELECT_STATUS": "Estado del Embudo",
+        "SELECT_PLACEHOLDER": "Selecciona un estado del embudo..."
       },
       "WEBHOOK": {
         "ADD": "Webhook",

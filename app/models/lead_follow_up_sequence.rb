@@ -24,6 +24,7 @@ class LeadFollowUpSequence < ApplicationRecord
     condition
     webhook
     change_priority
+    update_pipeline_status
   ].freeze
 
   AVAILABLE_VARIABLES = {
@@ -55,7 +56,10 @@ class LeadFollowUpSequence < ApplicationRecord
   def matches_reactivation_filters?(conversation)
     return true if trigger_conditions.blank?
 
-    matches_date_filter?(conversation) && matches_label_filter?(conversation)
+    matches_date_filter?(conversation) &&
+      matches_label_filter?(conversation) &&
+      matches_status_filter?(conversation) &&
+      matches_pipeline_status_filter?(conversation)
   end
 
   def matches_date_filter?(conversation)
@@ -98,6 +102,24 @@ class LeadFollowUpSequence < ApplicationRecord
     conversation_labels = conversation.cached_label_list_array
     # OR logic: conversation must have at least one of the selected labels
     (filter['labels'] & conversation_labels).any?
+  end
+
+  def matches_status_filter?(conversation)
+    filter = trigger_conditions.dig('status_filter')
+    return true unless filter&.dig('enabled')
+    return true if filter['statuses'].blank?
+
+    # Check if conversation status is in the selected statuses
+    filter['statuses'].include?(conversation.status)
+  end
+
+  def matches_pipeline_status_filter?(conversation)
+    filter = trigger_conditions.dig('pipeline_status_filter')
+    return true unless filter&.dig('enabled')
+    return true if filter['pipeline_status_ids'].blank?
+
+    # Check if conversation pipeline_status_id is in the selected pipeline status IDs
+    filter['pipeline_status_ids'].include?(conversation.pipeline_status_id)
   end
 
   def render_param_value(value, context)
@@ -152,6 +174,8 @@ class LeadFollowUpSequence < ApplicationRecord
       validate_wait_step(step, index)
     when 'send_template'
       validate_template_step(step, index)
+    when 'update_pipeline_status'
+      validate_pipeline_status_step(step, index)
     end
   end
 
@@ -176,6 +200,14 @@ class LeadFollowUpSequence < ApplicationRecord
 
     unless config['language'].present?
       errors.add(:steps, "template step at index #{index} must have language")
+    end
+  end
+
+  def validate_pipeline_status_step(step, index)
+    config = step['config'] || {}
+
+    unless config['pipeline_status_id'].present?
+      errors.add(:steps, "update_pipeline_status step at index #{index} must have pipeline_status_id")
     end
   end
 
@@ -233,6 +265,8 @@ class LeadFollowUpSequence < ApplicationRecord
 
     validate_date_filter_structure if trigger_conditions['date_filter'].present?
     validate_label_filter_structure if trigger_conditions['label_filter'].present?
+    validate_status_filter_structure if trigger_conditions['status_filter'].present?
+    validate_pipeline_status_filter_structure if trigger_conditions['pipeline_status_filter'].present?
   end
 
   def validate_date_filter_structure
@@ -264,6 +298,37 @@ class LeadFollowUpSequence < ApplicationRecord
 
     unless filter['labels'].is_a?(Array) && filter['labels'].any?
       errors.add(:trigger_conditions, 'Label filter requires at least one label')
+    end
+  end
+
+  def validate_status_filter_structure
+    filter = trigger_conditions['status_filter']
+    return unless filter['enabled']
+
+    valid_statuses = %w[open resolved pending snoozed]
+    unless filter['statuses'].is_a?(Array) && filter['statuses'].any?
+      errors.add(:trigger_conditions, 'Status filter requires at least one status')
+    end
+
+    invalid_statuses = filter['statuses'] - valid_statuses
+    if invalid_statuses.any?
+      errors.add(:trigger_conditions, "Invalid statuses: #{invalid_statuses.join(', ')}")
+    end
+  end
+
+  def validate_pipeline_status_filter_structure
+    filter = trigger_conditions['pipeline_status_filter']
+    return unless filter['enabled']
+
+    unless filter['pipeline_status_ids'].is_a?(Array) && filter['pipeline_status_ids'].any?
+      errors.add(:trigger_conditions, 'Pipeline status filter requires at least one pipeline status')
+    end
+
+    # Validate that all pipeline_status_ids exist in the account
+    valid_pipeline_status_ids = account.pipeline_statuses.pluck(:id)
+    invalid_ids = filter['pipeline_status_ids'] - valid_pipeline_status_ids
+    if invalid_ids.any?
+      errors.add(:trigger_conditions, "Invalid pipeline status IDs: #{invalid_ids.join(', ')}")
     end
   end
 

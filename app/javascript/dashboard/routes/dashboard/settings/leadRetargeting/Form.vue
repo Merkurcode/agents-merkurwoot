@@ -8,6 +8,7 @@ import leadFollowUpSequencesAPI from 'dashboard/api/leadFollowUpSequences';
 import Button from 'dashboard/components-next/button/Button.vue';
 import SettingIntroBanner from 'dashboard/components/widgets/SettingIntroBanner.vue';
 import SettingsSection from 'dashboard/components/SettingsSection.vue';
+import TagMultiSelectComboBox from 'dashboard/components-next/combobox/TagMultiSelectComboBox.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -22,6 +23,41 @@ const inboxes = computed(() =>
 const agents = computed(() => getters['agents/getAgents'].value);
 const teams = computed(() => getters['teams/getTeams'].value);
 const labels = computed(() => getters['labels/getLabels'].value);
+const pipelineStatuses = computed(() => getters['pipelineStatuses/getPipelineStatuses'].value);
+
+// Transform data for TagMultiSelectComboBox
+const labelOptions = computed(() =>
+  labels.value.map(label => ({
+    value: label.title,
+    label: label.title,
+  }))
+);
+
+const statusOptions = computed(() => [
+  {
+    label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.open.TEXT'),
+    value: 'open',
+  },
+  {
+    label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.resolved.TEXT'),
+    value: 'resolved',
+  },
+  {
+    label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.pending.TEXT'),
+    value: 'pending',
+  },
+  {
+    label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.snoozed.TEXT'),
+    value: 'snoozed',
+  },
+]);
+
+const pipelineStatusOptions = computed(() =>
+  pipelineStatuses.value.map(status => ({
+    value: status.id,
+    label: status.name,
+  }))
+);
 
 const loading = ref(false);
 const availableTemplates = ref([]);
@@ -44,6 +80,14 @@ const defaultSequence = {
       enabled: false,
       labels: [],
       match_type: 'any',
+    },
+    status_filter: {
+      enabled: false,
+      statuses: [],
+    },
+    pipeline_status_filter: {
+      enabled: false,
+      pipeline_status_ids: [],
     },
   },
   settings: {
@@ -78,6 +122,7 @@ onMounted(async () => {
     store.dispatch('agents/get'),
     store.dispatch('teams/get'),
     store.dispatch('labels/get'),
+    store.dispatch('pipelineStatuses/get'),
   ]);
 
   if (isEdit.value) {
@@ -106,6 +151,14 @@ const fetchSequence = async () => {
         label_filter: {
           ...defaultSequence.trigger_conditions.label_filter,
           ...(data.trigger_conditions?.label_filter || {}),
+        },
+        status_filter: {
+          ...defaultSequence.trigger_conditions.status_filter,
+          ...(data.trigger_conditions?.status_filter || {}),
+        },
+        pipeline_status_filter: {
+          ...defaultSequence.trigger_conditions.pipeline_status_filter,
+          ...(data.trigger_conditions?.pipeline_status_filter || {}),
         },
       },
       settings: {
@@ -211,6 +264,15 @@ const addStep = type => {
         priority: 'medium',
       },
     },
+    update_pipeline_status: {
+      id: stepId,
+      type: 'update_pipeline_status',
+      name: t('LEAD_RETARGETING.STEPS.UPDATE_PIPELINE_STATUS.DEFAULT_NAME'),
+      enabled: true,
+      config: {
+        pipeline_status_id: null,
+      },
+    },
     webhook: {
       id: stepId,
       type: 'webhook',
@@ -282,17 +344,6 @@ const copyToClipboard = text => {
   useAlert('Variable copiada al portapapeles');
 };
 
-const toggleLabel = labelTitle => {
-  const labels = sequence.value.trigger_conditions.label_filter.labels;
-  const index = labels.indexOf(labelTitle);
-
-  if (index > -1) {
-    labels.splice(index, 1);
-  } else {
-    labels.push(labelTitle);
-  }
-};
-
 const saveSequence = async () => {
   if (!sequence.value.name) {
     useAlert(t('LEAD_RETARGETING.FORM.NAME_REQUIRED'));
@@ -324,6 +375,20 @@ const saveSequence = async () => {
   const labelFilter = sequence.value.trigger_conditions.label_filter;
   if (labelFilter.enabled && labelFilter.labels.length === 0) {
     useAlert(t('LEAD_RETARGETING.FORM.LABELS_REQUIRED'));
+    return;
+  }
+
+  // Validar filtro de status
+  const statusFilter = sequence.value.trigger_conditions.status_filter;
+  if (statusFilter.enabled && statusFilter.statuses.length === 0) {
+    useAlert(t('LEAD_RETARGETING.FORM.STATUSES_REQUIRED'));
+    return;
+  }
+
+  // Validar filtro de pipeline status
+  const pipelineStatusFilter = sequence.value.trigger_conditions.pipeline_status_filter;
+  if (pipelineStatusFilter.enabled && pipelineStatusFilter.pipeline_status_ids.length === 0) {
+    useAlert(t('LEAD_RETARGETING.FORM.PIPELINE_STATUSES_REQUIRED'));
     return;
   }
 
@@ -559,28 +624,86 @@ const saveSequence = async () => {
                   <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
                     {{ t('LEAD_RETARGETING.FORM.SELECT_LABELS') }}
                   </label>
-                  <div class="space-y-2">
-                    <label
-                      v-for="label in labels"
-                      :key="label.id"
-                      class="flex items-center gap-2 cursor-pointer"
-                    >
-                      <input
-                        :value="label.title"
-                        :checked="sequence.trigger_conditions.label_filter.labels.includes(label.title)"
-                        type="checkbox"
-                        class="rounded"
-                        @change="toggleLabel(label.title)"
-                      />
-                      <span class="inline-block w-3 h-3 rounded" :style="{ backgroundColor: label.color }" />
-                      <span class="text-sm text-n-slate-12">{{ label.title }}</span>
-                    </label>
-                  </div>
+                  <TagMultiSelectComboBox
+                    v-model="sequence.trigger_conditions.label_filter.labels"
+                    :options="labelOptions"
+                    :placeholder="t('LEAD_RETARGETING.FORM.SELECT_LABELS')"
+                    :search-placeholder="t('LEAD_RETARGETING.FORM.SEARCH_LABELS')"
+                    :empty-state="t('LEAD_RETARGETING.FORM.NO_LABELS_FOUND')"
+                  />
                 </div>
 
                 <!-- Help Text -->
                 <div class="text-xs text-n-slate-11 bg-n-blue-2 dark:bg-n-blue-3 p-3 rounded">
                   {{ t('LEAD_RETARGETING.FORM.LABEL_FILTER_HELP') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="border border-n-weak/60 rounded-lg p-4">
+              <label class="flex items-center gap-2 cursor-pointer mb-4">
+                <input
+                  v-model="sequence.trigger_conditions.status_filter.enabled"
+                  type="checkbox"
+                  class="rounded"
+                />
+                <span class="text-sm font-medium text-n-slate-12">
+                  {{ t('LEAD_RETARGETING.FORM.ENABLE_STATUS_FILTER') }}
+                </span>
+              </label>
+
+              <div v-if="sequence.trigger_conditions.status_filter.enabled" class="space-y-3 pl-6">
+                <div>
+                  <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
+                    {{ t('LEAD_RETARGETING.FORM.SELECT_STATUSES') }}
+                  </label>
+                  <TagMultiSelectComboBox
+                    v-model="sequence.trigger_conditions.status_filter.statuses"
+                    :options="statusOptions"
+                    :placeholder="t('LEAD_RETARGETING.FORM.SELECT_STATUSES')"
+                    :search-placeholder="t('LEAD_RETARGETING.FORM.SEARCH_STATUSES')"
+                    :empty-state="t('LEAD_RETARGETING.FORM.NO_STATUSES_FOUND')"
+                  />
+                </div>
+
+                <!-- Help Text -->
+                <div class="text-xs text-n-slate-11 bg-n-blue-2 dark:bg-n-blue-3 p-3 rounded">
+                  {{ t('LEAD_RETARGETING.FORM.STATUS_FILTER_HELP') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Pipeline Status Filter -->
+            <div class="border border-n-weak/60 rounded-lg p-4">
+              <label class="flex items-center gap-2 cursor-pointer mb-4">
+                <input
+                  v-model="sequence.trigger_conditions.pipeline_status_filter.enabled"
+                  type="checkbox"
+                  class="rounded"
+                />
+                <span class="text-sm font-medium text-n-slate-12">
+                  {{ t('LEAD_RETARGETING.FORM.ENABLE_PIPELINE_STATUS_FILTER') }}
+                </span>
+              </label>
+
+              <div v-if="sequence.trigger_conditions.pipeline_status_filter.enabled" class="space-y-3 pl-6">
+                <div>
+                  <label class="block text-sm font-medium text-n-slate-12 mb-1.5">
+                    {{ t('LEAD_RETARGETING.FORM.SELECT_PIPELINE_STATUSES') }}
+                  </label>
+                  <TagMultiSelectComboBox
+                    v-model="sequence.trigger_conditions.pipeline_status_filter.pipeline_status_ids"
+                    :options="pipelineStatusOptions"
+                    :placeholder="t('LEAD_RETARGETING.FORM.SELECT_PIPELINE_STATUSES')"
+                    :search-placeholder="t('LEAD_RETARGETING.FORM.SEARCH_PIPELINE_STATUSES')"
+                    :empty-state="t('LEAD_RETARGETING.FORM.NO_PIPELINE_STATUSES_FOUND')"
+                  />
+                </div>
+
+                <!-- Help Text -->
+                <div class="text-xs text-n-slate-11 bg-n-blue-2 dark:bg-n-blue-3 p-3 rounded">
+                  {{ t('LEAD_RETARGETING.FORM.PIPELINE_STATUS_FILTER_HELP') }}
                 </div>
               </div>
             </div>
@@ -644,6 +767,13 @@ const saveSequence = async () => {
                 faded
                 :label="'+ ' + t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.ADD')"
                 @click="addStep('change_priority')"
+              />
+              <Button
+                xs
+                slate
+                faded
+                :label="'+ ' + t('LEAD_RETARGETING.STEPS.UPDATE_PIPELINE_STATUS.ADD')"
+                @click="addStep('update_pipeline_status')"
               />
               <Button
                 xs
@@ -854,6 +984,23 @@ const saveSequence = async () => {
                         <option value="medium">{{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.MEDIUM') }}</option>
                         <option value="high">{{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.HIGH') }}</option>
                         <option value="urgent">{{ t('LEAD_RETARGETING.STEPS.CHANGE_PRIORITY.URGENT') }}</option>
+                      </select>
+                    </div>
+
+                    <!-- Update Pipeline Status Step -->
+                    <div v-else-if="step.type === 'update_pipeline_status'" class="space-y-2">
+                      <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                        {{ t('LEAD_RETARGETING.STEPS.UPDATE_PIPELINE_STATUS.SELECT_STATUS') }}
+                      </label>
+                      <select v-model="step.config.pipeline_status_id" class="w-full">
+                        <option :value="null">{{ t('LEAD_RETARGETING.STEPS.UPDATE_PIPELINE_STATUS.SELECT_PLACEHOLDER') }}</option>
+                        <option
+                          v-for="pipelineStatus in pipelineStatuses"
+                          :key="pipelineStatus.id"
+                          :value="pipelineStatus.id"
+                        >
+                          {{ pipelineStatus.name }}
+                        </option>
                       </select>
                     </div>
 

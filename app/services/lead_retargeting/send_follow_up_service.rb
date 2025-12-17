@@ -53,6 +53,8 @@ class LeadRetargeting::SendFollowUpService
       execute_webhook_step(step)
     when 'change_priority'
       execute_change_priority_step(step)
+    when 'update_pipeline_status'
+      execute_update_pipeline_status_step(step)
     else
       { success: false, error: "Unknown step type: #{step['type']}" }
     end
@@ -208,6 +210,19 @@ class LeadRetargeting::SendFollowUpService
     # Set Current.executed_by so activity messages show "System" as the actor
     Current.executed_by = @sequence
     @conversation.update!(priority: priority)
+
+    { success: true }
+  ensure
+    Current.executed_by = nil
+  end
+
+  def execute_update_pipeline_status_step(step)
+    pipeline_status_id = step.dig('config', 'pipeline_status_id')
+    pipeline_status = @account.pipeline_statuses.find(pipeline_status_id)
+
+    # Set Current.executed_by so activity messages show "System" as the actor
+    Current.executed_by = @sequence
+    @conversation.update!(pipeline_status: pipeline_status)
 
     { success: true }
   ensure

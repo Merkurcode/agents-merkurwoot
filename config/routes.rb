@@ -106,6 +106,7 @@ Rails.application.routes.draw do
             end
             collection do
               get :available_templates
+              post :preview_eligible
             end
           end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do

@@ -61,6 +61,59 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     }
   end
 
+  def preview_eligible
+    inbox_id = params[:inbox_id]
+    sequence_id = params[:sequence_id]
+    trigger_conditions = params[:trigger_conditions] || {}
+    stop_on_contact_reply = params.dig(:settings, :stop_on_contact_reply) || false
+
+    unless inbox_id
+      return render json: { error: 'inbox_id is required' }, status: :unprocessable_entity
+    end
+
+    query = LeadRetargeting::EligibleConversationsQueryBuilder.call(
+      account_id: Current.account.id,
+      inbox_id: inbox_id,
+      trigger_conditions: trigger_conditions,
+      include_cancelled: true,
+      stop_on_contact_reply: stop_on_contact_reply,
+      sequence_id: sequence_id
+    )
+
+    total_count = query.count
+
+    page = params[:page]&.to_i || 1
+    per_page = [params[:per_page]&.to_i || 20, 100].min
+    conversations = query
+                    .includes(:contact)
+                    .order(created_at: :desc)
+                    .limit(per_page)
+                    .offset((page - 1) * per_page)
+
+    render json: {
+      total_count: total_count,
+      conversations: conversations.map do |conv|
+        {
+          id: conv.id,
+          display_id: conv.display_id,
+          status: conv.status,
+          created_at: conv.created_at,
+          contact: {
+            id: conv.contact&.id,
+            name: conv.contact&.name,
+            phone_number: conv.contact&.phone_number
+          }
+        }
+      end,
+      page: page,
+      per_page: per_page,
+      total_pages: (total_count / per_page.to_f).ceil
+    }
+  rescue StandardError => e
+    Rails.logger.error "Error previewing eligible conversations: #{e.message}"
+    render json: { error: 'Failed to preview eligible conversations' }, status: :internal_server_error
+  end
+
   private
 
   def set_inbox

@@ -21,7 +21,7 @@ class EnrollEligibleConversationsJob < ApplicationJob
     start_time = Time.current
 
     conversations = build_eligible_conversations_query(sequence)
-
+    Rails.logger.info "Found #{conversations.count} eligible conversations for sequence #{sequence.id}"
     conversations.in_batches(of: BATCH_SIZE) do |batch|
       if sequence.settings.dig('stop_on_contact_reply')
         batch = filter_by_last_message(batch)
@@ -45,147 +45,17 @@ class EnrollEligibleConversationsJob < ApplicationJob
 
   private
 
-  ALLOWED_DATE_COLUMNS = {
-    'conversation_created_at' => 'conversations.created_at',
-    'inactive_days' => 'conversations.last_activity_at'
-  }.freeze
-
   def build_eligible_conversations_query(sequence)
-    query = Conversation
-            .where(account_id: sequence.account_id, inbox_id: sequence.inbox_id)
+    query = LeadRetargeting::EligibleConversationsQueryBuilder.call(
+      account_id: sequence.account_id,
+      inbox_id: sequence.inbox_id,
+      trigger_conditions: sequence.trigger_conditions,
+      include_cancelled: true,
+      stop_on_contact_reply: false
+    )
 
-    query = query
-            .left_joins(:conversation_follow_up)
-            .where(conversation_follow_up: { id: nil })
-
-    query = apply_date_filter(query, sequence)
-
-    query = apply_status_filter(query, sequence)
-
-    query = apply_pipeline_status_filter(query, sequence)
-
-    query = apply_label_filter(query, sequence)
-
+    Rails.logger.info "Found #{query.count} eligible conversations for sequence #{sequence.id}"
     query
-  end
-
-  def apply_status_filter(query, sequence)
-    filter = sequence.trigger_conditions&.dig('status_filter')
-
-    if filter&.dig('enabled') && filter['statuses'].present?
-      query.where(status: filter['statuses'])
-    else
-      query.where(status: %i[open pending])
-    end
-  end
-
-  def apply_pipeline_status_filter(query, sequence)
-    filter = sequence.trigger_conditions&.dig('pipeline_status_filter')
-
-    if filter&.dig('enabled') && filter['pipeline_status_ids'].present?
-      query.where(pipeline_status_id: filter['pipeline_status_ids'])
-    else
-      query
-    end
-  end
-
-  def apply_date_filter(query, sequence)
-    filter = sequence.trigger_conditions&.dig('date_filter')
-
-    if filter&.dig('enabled')
-      filter_type = filter['filter_type']
-
-      if filter_type == 'last_message_at'
-        apply_last_message_date_filter(query, filter)
-      elsif ALLOWED_DATE_COLUMNS.key?(filter_type)
-        column = ALLOWED_DATE_COLUMNS[filter_type]
-        apply_date_operator(query, column, filter)
-      else
-        Rails.logger.warn "Unknown date filter type: #{filter_type}"
-        query
-      end
-    else
-      query.where('conversations.created_at > ?', 30.days.ago)
-    end
-  end
-
-  def apply_date_operator(query, column, filter)
-    case filter['operator']
-    when 'older_than'
-      query.where("#{column} < ?", filter['value'].to_i.days.ago)
-    when 'newer_than'
-      query.where("#{column} > ?", filter['value'].to_i.days.ago)
-    when 'between'
-      from_date = Date.parse(filter['from_date']).beginning_of_day
-      to_date = Date.parse(filter['to_date']).end_of_day
-      query.where("#{column} BETWEEN ? AND ?", from_date, to_date)
-    else
-      query
-    end
-  rescue ArgumentError => e
-    Rails.logger.error "Invalid date in filter: #{e.message}"
-    query
-  end
-
-  def apply_last_message_date_filter(query, filter)
-    case filter['operator']
-    when 'older_than'
-      cutoff_date = filter['value'].to_i.days.ago
-      query.where(
-        'conversations.id IN (
-          SELECT conversation_id
-          FROM messages
-          WHERE messages.conversation_id = conversations.id
-          GROUP BY conversation_id
-          HAVING MAX(messages.created_at) < ?
-        )',
-        cutoff_date
-      )
-    when 'newer_than'
-      cutoff_date = filter['value'].to_i.days.ago
-      query.where(
-        'conversations.id IN (
-          SELECT conversation_id
-          FROM messages
-          WHERE messages.conversation_id = conversations.id
-          GROUP BY conversation_id
-          HAVING MAX(messages.created_at) > ?
-        )',
-        cutoff_date
-      )
-    when 'between'
-      from_date = Date.parse(filter['from_date']).beginning_of_day
-      to_date = Date.parse(filter['to_date']).end_of_day
-      query.where(
-        'conversations.id IN (
-          SELECT conversation_id
-          FROM messages
-          WHERE messages.conversation_id = conversations.id
-          GROUP BY conversation_id
-          HAVING MAX(messages.created_at) BETWEEN ? AND ?
-        )',
-        from_date,
-        to_date
-      )
-    else
-      query
-    end
-  rescue ArgumentError => e
-    Rails.logger.error "Invalid date in last_message_at filter: #{e.message}"
-    query
-  end
-
-  def apply_label_filter(query, sequence)
-    filter = sequence.trigger_conditions&.dig('label_filter')
-
-    if filter&.dig('enabled') && filter['labels'].present?
-      query.where(
-        "string_to_array(conversations.cached_label_list, ', ') && ARRAY[?]::text[]",
-        filter['labels']
-      )
-    else
-      query
-    end
   end
 
   def filter_by_last_message(batch)
@@ -216,6 +86,12 @@ class EnrollEligibleConversationsJob < ApplicationJob
   end
 
   def enroll_conversation(conversation, sequence, first_step)
+    existing_follow_up = conversation.conversation_follow_up
+    if existing_follow_up&.status == 'cancelled'
+      existing_follow_up.destroy
+      Rails.logger.info "Removed cancelled follow-up #{existing_follow_up.id} for conversation #{conversation.id}"
+    end
+
     next_action_at = if first_step['type'] == 'wait'
                        calculate_wait_time(first_step)
                      else

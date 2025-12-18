@@ -4,8 +4,10 @@ import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
+import { useEligibleConversationsPreview } from 'dashboard/composables/useEligibleConversationsPreview';
 import leadFollowUpSequencesAPI from 'dashboard/api/leadFollowUpSequences';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Modal from 'dashboard/components/Modal.vue';
 import SettingIntroBanner from 'dashboard/components/widgets/SettingIntroBanner.vue';
 import SettingsSection from 'dashboard/components/SettingsSection.vue';
 import TagMultiSelectComboBox from 'dashboard/components-next/combobox/TagMultiSelectComboBox.vue';
@@ -61,6 +63,16 @@ const pipelineStatusOptions = computed(() =>
 
 const loading = ref(false);
 const availableTemplates = ref([]);
+
+const {
+  loading: previewLoading,
+  totalCount: eligibleCount,
+  conversations: eligibleConversations,
+  fetchPreview,
+} = useEligibleConversationsPreview();
+
+const showPreviewModal = ref(false);
+
 const defaultSequence = {
   name: '',
   description: '',
@@ -228,6 +240,39 @@ watch(() => sequence.value.trigger_conditions.pipeline_status_filter.enabled, (e
   }
 });
 
+watch(
+  () => ({
+    inbox_id: sequence.value.inbox_id,
+    sequence_id: isEdit.value ? route.params.sequenceId : null,
+    trigger_conditions: sequence.value.trigger_conditions,
+    settings: { stop_on_contact_reply: sequence.value.settings.stop_on_contact_reply },
+  }),
+  (params) => {
+    if (params.inbox_id) {
+      fetchPreview(params);
+    }
+  },
+  { deep: true }
+);
+
+// Watch for route changes to reset form when navigating from edit to create
+watch(
+  () => route.params.sequenceId,
+  async (newSequenceId, oldSequenceId) => {
+    // Only reset when navigating FROM edit TO create
+    if (oldSequenceId && !newSequenceId) {
+      sequence.value = JSON.parse(JSON.stringify(defaultSequence));
+      eligibleCount.value = null;
+      eligibleConversations.value = [];
+      availableTemplates.value = [];
+    }
+    // When navigating between different edits or from create to edit, fetch the sequence
+    else if (newSequenceId && oldSequenceId !== newSequenceId) {
+      await fetchSequence();
+    }
+  }
+);
+
 const addStep = type => {
   const stepId = `step_${Date.now()}`;
 
@@ -379,6 +424,50 @@ const onTemplateChange = step => {
 const copyToClipboard = text => {
   navigator.clipboard.writeText(text);
   useAlert('Variable copiada al portapapeles');
+};
+
+const getTemplatePreview = (step) => {
+  if (!step.config.template_name) return '';
+
+  const template = availableTemplates.value.find(t => t.name === step.config.template_name);
+  if (!template) return '';
+
+  const bodyComponent = template.components?.find(c => c.type === 'BODY');
+  if (!bodyComponent || !bodyComponent.text) return '';
+
+  let previewText = bodyComponent.text;
+
+  // Replace {{1}}, {{2}}, etc. with actual values from inputs
+  const params = step.config.template_params?.body || {};
+  Object.keys(params).forEach(key => {
+    const value = params[key] || `{{${key}}}`;
+    previewText = previewText.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+  });
+
+  return previewText;
+};
+
+const getTemplateCategory = (templateName) => {
+  const template = availableTemplates.value.find(t => t.name === templateName);
+  return template?.category || '';
+};
+
+const getCategoryLabel = (category) => {
+  const labels = {
+    'UTILITY': 'Utilidad',
+    'MARKETING': 'Marketing',
+    'AUTHENTICATION': 'Autenticación'
+  };
+  return labels[category] || category;
+};
+
+const getCategoryColor = (category) => {
+  const colors = {
+    'UTILITY': 'bg-n-blue-3 text-n-blue-11',
+    'MARKETING': 'bg-n-iris-3 text-n-iris-11',
+    'AUTHENTICATION': 'bg-n-teal-3 text-n-teal-11'
+  };
+  return colors[category] || 'bg-n-slate-3 text-n-slate-11';
 };
 
 const saveSequence = async () => {
@@ -745,6 +834,49 @@ const saveSequence = async () => {
               </div>
             </div>
           </div>
+
+          <!-- Eligible Conversations Preview -->
+          <div v-if="sequence.inbox_id" class="mt-6 p-4 bg-n-blue-2 dark:bg-n-blue-3 rounded-lg border border-n-blue-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i class="i-lucide-filter text-xl text-n-blue-11" />
+                <div>
+                  <p class="text-sm font-medium text-n-slate-12">
+                    Conversaciones Elegibles
+                  </p>
+                  <p class="text-xs text-n-slate-11">
+                    Basado en los filtros configurados
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <!-- Loading Spinner -->
+                <div v-if="previewLoading" class="flex items-center gap-2">
+                  <i class="i-lucide-loader-2 animate-spin text-n-blue-11" />
+                  <span class="text-sm text-n-slate-11">Calculando...</span>
+                </div>
+
+                <!-- Count Badge -->
+                <div v-else-if="eligibleCount !== null" class="flex items-center gap-2">
+                  <span class="px-3 py-1.5 bg-n-blue-9 text-white font-semibold rounded-full text-lg">
+                    {{ eligibleCount.toLocaleString() }}
+                  </span>
+                  <span class="text-sm text-n-slate-11">conversaciones</span>
+
+                  <!-- View Details Button -->
+                  <Button
+                    xs
+                    blue
+                    faded
+                    label="Ver Detalles"
+                    icon="i-lucide-list"
+                    @click="showPreviewModal = true"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </SettingsSection>
 
         <!-- Sequence Steps -->
@@ -900,6 +1032,17 @@ const saveSequence = async () => {
                         </select>
                       </div>
 
+                      <!-- Template Category & Info -->
+                      <div v-if="step.config.template_name" class="flex items-center gap-2">
+                        <span class="text-xs text-n-slate-11">Categoría:</span>
+                        <span
+                          class="text-xs px-2 py-1 rounded font-medium"
+                          :class="getCategoryColor(getTemplateCategory(step.config.template_name))"
+                        >
+                          {{ getCategoryLabel(getTemplateCategory(step.config.template_name)) }}
+                        </span>
+                      </div>
+
                       <!-- Template Parameters -->
                       <div v-if="step.config.template_name && getTemplateParams(step.config.template_name).length > 0" class="space-y-2 p-3 bg-n-weak/30 rounded">
                         <label class="block text-xs font-medium text-n-slate-12 mb-2">Parámetros del Template</label>
@@ -928,6 +1071,17 @@ const saveSequence = async () => {
                               {{ '{' + '{' + variable + '}' + '}' }}
                             </code>
                           </div>
+                        </div>
+                      </div>
+
+                      <!-- Message Preview -->
+                      <div v-if="step.config.template_name && getTemplatePreview(step)" class="p-3 bg-n-green-2 dark:bg-n-green-3 border border-n-green-6 rounded-lg">
+                        <div class="flex items-start gap-2 mb-1">
+                          <i class="i-lucide-eye text-n-green-11 text-sm mt-0.5" />
+                          <p class="text-xs font-medium text-n-green-11">Vista previa del mensaje</p>
+                        </div>
+                        <div class="mt-2 p-3 bg-white dark:bg-n-slate-2 rounded border border-n-weak/60">
+                          <p class="text-sm text-n-slate-12 whitespace-pre-wrap">{{ getTemplatePreview(step) }}</p>
                         </div>
                       </div>
                     </div>
@@ -1104,5 +1258,68 @@ const saveSequence = async () => {
         </SettingsSection>
       </div>
     </section>
+
+    <!-- Eligible Conversations Modal -->
+    <Modal
+      v-model:show="showPreviewModal"
+      :on-close="() => showPreviewModal = false"
+    >
+      <div class="p-6 w-full max-w-3xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-n-slate-12">
+            Conversaciones Elegibles
+          </h3>
+          <span class="text-sm text-n-slate-11">
+            Total: {{ eligibleCount?.toLocaleString() }}
+          </span>
+        </div>
+
+        <!-- Conversations List -->
+        <div v-if="eligibleConversations.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
+          <div
+            v-for="conv in eligibleConversations"
+            :key="conv.id"
+            class="flex items-center gap-3 p-3 border border-n-weak/60 rounded hover:bg-n-weak/30 transition-colors"
+          >
+            <div class="flex-1">
+              <p class="font-medium text-n-slate-12">
+                {{ conv.contact?.name || 'Sin nombre' }}
+              </p>
+              <p class="text-xs text-n-slate-11">
+                {{ conv.contact?.phone_number || 'Sin número' }}
+              </p>
+            </div>
+            <span class="text-xs px-2 py-1 bg-n-weak/60 rounded font-mono">
+              #{{ conv.display_id }}
+            </span>
+            <span
+              class="text-xs px-2 py-1 rounded font-medium capitalize"
+              :class="{
+                'bg-n-green-3 text-n-green-11': conv.status === 'open',
+                'bg-n-blue-3 text-n-blue-11': conv.status === 'pending',
+                'bg-n-slate-3 text-n-slate-11': conv.status === 'resolved',
+                'bg-n-yellow-3 text-n-yellow-11': conv.status === 'snoozed',
+              }"
+            >
+              {{ conv.status }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="py-8 text-center text-n-slate-11">
+          <i class="i-lucide-inbox text-4xl mb-2" />
+          <p>No hay conversaciones para mostrar</p>
+        </div>
+
+        <!-- Note -->
+        <div class="mt-4 p-3 bg-n-blue-2 dark:bg-n-blue-3 rounded text-xs text-n-slate-11">
+          <p>
+            Mostrando las primeras {{ eligibleConversations.length }} conversaciones.
+            {{ eligibleCount > 20 ? `Hay ${eligibleCount - 20} más que coinciden con los filtros.` : '' }}
+          </p>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>

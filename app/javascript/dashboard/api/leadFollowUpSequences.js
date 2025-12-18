@@ -19,6 +19,10 @@ class LeadFollowUpSequencesAPI extends ApiClient {
       params: { inbox_id: inboxId },
     });
   }
+
+  previewEligible(params) {
+    return axios.post(`${this.url}/preview_eligible`, params);
+  }
 }
 
 export default new LeadFollowUpSequencesAPI();

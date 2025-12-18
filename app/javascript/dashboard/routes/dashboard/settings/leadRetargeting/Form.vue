@@ -191,6 +191,43 @@ const loadTemplates = async () => {
 
 watch(() => sequence.value.inbox_id, loadTemplates);
 
+// Reset filter values when disabled
+watch(() => sequence.value.trigger_conditions.date_filter.enabled, (enabled) => {
+  if (!enabled) {
+    sequence.value.trigger_conditions.date_filter = {
+      ...defaultSequence.trigger_conditions.date_filter,
+      enabled: false,
+    };
+  }
+});
+
+watch(() => sequence.value.trigger_conditions.label_filter.enabled, (enabled) => {
+  if (!enabled) {
+    sequence.value.trigger_conditions.label_filter = {
+      ...defaultSequence.trigger_conditions.label_filter,
+      enabled: false,
+    };
+  }
+});
+
+watch(() => sequence.value.trigger_conditions.status_filter.enabled, (enabled) => {
+  if (!enabled) {
+    sequence.value.trigger_conditions.status_filter = {
+      ...defaultSequence.trigger_conditions.status_filter,
+      enabled: false,
+    };
+  }
+});
+
+watch(() => sequence.value.trigger_conditions.pipeline_status_filter.enabled, (enabled) => {
+  if (!enabled) {
+    sequence.value.trigger_conditions.pipeline_status_filter = {
+      ...defaultSequence.trigger_conditions.pipeline_status_filter,
+      enabled: false,
+    };
+  }
+});
+
 const addStep = type => {
   const stepId = `step_${Date.now()}`;
 

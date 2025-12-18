@@ -213,6 +213,8 @@ class LeadFollowUpSequence < ApplicationRecord
 
   def validate_templates_exist
     return unless inbox&.channel
+    return unless steps.is_a?(Array)
+    return unless inbox.channel.respond_to?(:message_templates)
 
     template_steps = steps.select { |s| s['type'] == 'send_template' }
     available_templates = inbox.channel.message_templates || []

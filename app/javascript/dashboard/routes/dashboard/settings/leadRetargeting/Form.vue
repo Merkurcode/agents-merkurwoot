@@ -252,7 +252,7 @@ watch(
       fetchPreview(params);
     }
   },
-  { deep: true }
+  { deep: true, immediate: true }
 );
 
 // Watch for route changes to reset form when navigating from edit to create

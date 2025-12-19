@@ -180,11 +180,34 @@ const fetchSequence = async () => {
     };
     if (sequence.value.inbox_id) {
       await loadTemplates();
+      // Trigger preview after loading sequence
+      fetchPreview({
+        inbox_id: sequence.value.inbox_id,
+        sequence_id: route.params.sequenceId,
+        trigger_conditions: sequence.value.trigger_conditions,
+        settings: { stop_on_contact_reply: sequence.value.settings.stop_on_contact_reply },
+      });
     }
   } catch (error) {
     useAlert(t('LEAD_RETARGETING.FORM.LOAD_ERROR'));
   } finally {
     loading.value = false;
+  }
+};
+
+const onInboxChange = async () => {
+  if (sequence.value.inbox_id) {
+    await loadTemplates();
+    fetchPreview({
+      inbox_id: sequence.value.inbox_id,
+      sequence_id: isEdit.value ? route.params.sequenceId : null,
+      trigger_conditions: sequence.value.trigger_conditions,
+      settings: { stop_on_contact_reply: sequence.value.settings.stop_on_contact_reply },
+    });
+  } else {
+    availableTemplates.value = [];
+    eligibleCount.value = null;
+    eligibleConversations.value = [];
   }
 };
 
@@ -596,7 +619,7 @@ const saveSequence = async () => {
                 {{ t('LEAD_RETARGETING.FORM.INBOX') }}
                 <span class="text-n-red-10">*</span>
               </label>
-              <select v-model="sequence.inbox_id" class="w-full">
+              <select v-model="sequence.inbox_id" class="w-full" @change="onInboxChange">
                 <option :value="null">
                   {{ t('LEAD_RETARGETING.FORM.SELECT_INBOX') }}
                 </option>

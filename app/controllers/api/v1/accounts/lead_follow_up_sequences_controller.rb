@@ -158,6 +158,7 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
 
     render json: {
       total_count: total_count,
+      total_steps: @sequence.enabled_steps.size,
       enrolled_conversations: follow_ups.map do |follow_up|
         current_step_data = @sequence.enabled_steps[follow_up.current_step]
         {

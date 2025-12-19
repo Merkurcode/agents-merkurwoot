@@ -19,6 +19,7 @@ const statusFilter = ref(null);
 const statusCounts = ref({});
 const selectedFollowUps = ref([]);
 const cancellingFollowUps = ref(false);
+const totalSteps = ref(0);
 
 const goBack = () => {
   router.push({ name: 'lead_retargeting_list' });
@@ -31,10 +32,10 @@ const goToEdit = () => {
   });
 };
 
-const goToConversation = conversationId => {
+const goToConversation = displayId => {
   router.push({
     name: 'inbox_conversation',
-    params: { conversation_id: conversationId },
+    params: { conversation_id: displayId },
   });
 };
 
@@ -67,6 +68,7 @@ const fetchEnrolledConversations = async () => {
     );
     enrolledConversations.value = response.data.enrolled_conversations;
     statusCounts.value = response.data.status_counts;
+    totalSteps.value = response.data.total_steps || 0;
   } catch (error) {
     console.error('Error fetching enrolled conversations:', error);
     useAlert('Error al cargar conversaciones');
@@ -148,6 +150,34 @@ const getStepTypeName = type => {
     update_pipeline_status: 'Actualizar Pipeline',
   };
   return typeNames[type] || type;
+};
+
+const getStopReason = (status, metadata) => {
+  if (!metadata) return null;
+
+  if (status === 'completed' && metadata.completion_reason) {
+    const reasons = {
+      'Contact replied': 'Contacto respondió',
+      'Conversation resolved': 'Conversación resuelta',
+      'All steps completed': 'Todos los pasos completados',
+      'Condition branch: complete': 'Condición cumplida',
+    };
+    return reasons[metadata.completion_reason] || metadata.completion_reason;
+  }
+
+  if (status === 'cancelled' && metadata.cancellation_reason) {
+    const reasons = {
+      'Sequence deactivated': 'Secuencia desactivada',
+      'Manually cancelled by user': 'Cancelado manualmente',
+    };
+    return reasons[metadata.cancellation_reason] || metadata.cancellation_reason;
+  }
+
+  if (status === 'failed' && metadata.failure_reason) {
+    return metadata.failure_reason;
+  }
+
+  return null;
 };
 
 const toggleSelectAll = () => {
@@ -334,6 +364,7 @@ onMounted(async () => {
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Estado</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Step</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Próxima Acción</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Razón de Detención</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Enrollado</th>
                 </tr>
               </thead>
@@ -369,7 +400,7 @@ onMounted(async () => {
                   <td class="px-4 py-3">
                     <button
                       class="text-xs px-2 py-1 bg-n-weak/60 rounded font-mono hover:bg-n-blue-3 hover:text-n-blue-11 transition-colors"
-                      @click="goToConversation(item.conversation_id)"
+                      @click="goToConversation(item.display_id)"
                     >
                       #{{ item.display_id }}
                     </button>
@@ -382,10 +413,13 @@ onMounted(async () => {
                   <td class="px-4 py-3">
                     <div>
                       <p class="text-sm font-medium text-n-slate-12">
-                        {{ item.current_step + 1 }}
+                        {{ item.current_step + 1 }}/{{ totalSteps }}
                       </p>
                       <p v-if="item.current_step_type" class="text-xs text-n-slate-11">
                         {{ getStepTypeName(item.current_step_type) }}
+                      </p>
+                      <p v-if="item.metadata?.last_error" class="text-xs text-n-ruby-11 mt-1">
+                        Error: {{ item.metadata.last_error }}
                       </p>
                     </div>
                   </td>
@@ -398,6 +432,12 @@ onMounted(async () => {
                         {{ formatDate(item.next_action_at) }}
                       </p>
                     </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <p v-if="getStopReason(item.status, item.metadata)" class="text-xs text-n-slate-11">
+                      {{ getStopReason(item.status, item.metadata) }}
+                    </p>
+                    <span v-else class="text-xs text-n-slate-11">-</span>
                   </td>
                   <td class="px-4 py-3">
                     <p class="text-xs text-n-slate-11">

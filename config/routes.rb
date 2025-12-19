@@ -103,6 +103,8 @@ Rails.application.routes.draw do
             member do
               post :activate
               post :deactivate
+              get :enrolled_conversations
+              post :cancel_follow_ups
             end
             collection do
               get :available_templates

@@ -2,6 +2,7 @@ import { frontendURL } from '../../../../helper/URLHelper';
 import SettingsWrapper from '../SettingsWrapper.vue';
 import LeadRetargetingIndex from './Index.vue';
 import LeadRetargetingForm from './Form.vue';
+import LeadRetargetingShow from './Show.vue';
 
 export default {
   routes: [
@@ -35,6 +36,14 @@ export default {
           path: ':sequenceId/edit',
           name: 'lead_retargeting_edit',
           component: LeadRetargetingForm,
+          meta: {
+            permissions: ['administrator'],
+          },
+        },
+        {
+          path: ':sequenceId/show',
+          name: 'lead_retargeting_show',
+          component: LeadRetargetingShow,
           meta: {
             permissions: ['administrator'],
           },

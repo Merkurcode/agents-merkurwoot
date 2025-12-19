@@ -44,6 +44,13 @@ const goToEdit = sequenceId => {
   });
 };
 
+const goToShow = sequenceId => {
+  router.push({
+    name: 'lead_retargeting_show',
+    params: { sequenceId },
+  });
+};
+
 const toggleActive = async sequence => {
   try {
     if (sequence.active) {
@@ -145,6 +152,14 @@ const deleteSequence = async sequence => {
             </td>
             <td class="py-4 min-w-xs">
               <div class="flex gap-1 justify-end">
+                <Button
+                  v-tooltip.top="'Ver Detalle'"
+                  icon="i-lucide-eye"
+                  slate
+                  xs
+                  faded
+                  @click="goToShow(sequence.id)"
+                />
                 <Button
                   v-tooltip.top="t('LEAD_RETARGETING.LIST.EDIT')"
                   icon="i-lucide-pen"

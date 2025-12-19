@@ -23,6 +23,18 @@ class LeadFollowUpSequencesAPI extends ApiClient {
   previewEligible(params) {
     return axios.post(`${this.url}/preview_eligible`, params);
   }
+
+  getEnrolledConversations(sequenceId, params = {}) {
+    return axios.get(`${this.url}/${sequenceId}/enrolled_conversations`, {
+      params: params,
+    });
+  }
+
+  cancelFollowUps(sequenceId, followUpIds) {
+    return axios.post(`${this.url}/${sequenceId}/cancel_follow_ups`, {
+      follow_up_ids: followUpIds,
+    });
+  }
 }
 
 export default new LeadFollowUpSequencesAPI();

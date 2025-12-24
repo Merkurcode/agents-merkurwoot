@@ -1,0 +1,113 @@
+class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
+  before_action :faq_item, only: %i[show update destroy toggle_visibility move]
+  before_action :check_authorization
+  before_action :check_rate_limit, only: %i[create update destroy toggle_visibility move bulk_delete]
+
+  def index
+    page = params[:page] || 1
+    per_page = params[:per_page] || 50
+
+    base_query = Current.account.faq_items.includes(:faq_category)
+
+    # Filter by category if provided
+    base_query = base_query.for_category(params[:category_id]) if params[:category_id].present?
+
+    # Apply search if query parameter is present
+    @faq_items = if params[:q].present?
+                   # Search in translations JSONB
+                   search_term = "%#{params[:q].downcase}%"
+                   base_query.where(
+                     "LOWER(translations::text) LIKE ?", search_term
+                   ).ordered.page(page).per(per_page)
+                 else
+                   base_query.ordered.page(page).per(per_page)
+                 end
+
+    @total_count = @faq_items.total_count
+    @total_pages = (@total_count.to_f / per_page.to_i).ceil
+    @current_page = page.to_i
+  end
+
+  def show; end
+
+  def create
+    @faq_item = Current.account.faq_items.create!(
+      faq_item_params.merge(created_by: current_user)
+    )
+    render :show, status: :created
+  end
+
+  def update
+    @faq_item.update!(faq_item_params.merge(updated_by: current_user))
+    render :show
+  end
+
+  def destroy
+    @faq_item.destroy!
+    head :ok
+  end
+
+  def toggle_visibility
+    @faq_item.update!(is_visible: !@faq_item.is_visible, updated_by: current_user)
+    render :show
+  end
+
+  def move
+    direction = params[:direction]
+    return render json: { error: "Invalid direction" }, status: :unprocessable_entity unless %w[up down].include?(direction)
+
+    category_items = Current.account.faq_items.where(faq_category_id: @faq_item.faq_category_id).ordered.to_a
+    current_index = category_items.index(@faq_item)
+
+    new_index = direction == "up" ? current_index - 1 : current_index + 1
+    return render json: { error: "Cannot move in that direction" }, status: :unprocessable_entity if new_index.negative? || new_index >= category_items.length
+
+    # Swap positions
+    other_item = category_items[new_index]
+    current_position = @faq_item.position
+    @faq_item.update!(position: other_item.position, updated_by: current_user)
+    other_item.update!(position: current_position)
+
+    render :show
+  end
+
+  def bulk_delete
+    ids = params[:ids]
+    return render json: { error: "No FAQ IDs provided" }, status: :unprocessable_entity unless ids.present?
+
+    deleted_count = Current.account.faq_items.where(id: ids).destroy_all.count
+    render json: { deleted_count: deleted_count }
+  end
+
+  private
+
+  def faq_item
+    @faq_item ||= Current.account.faq_items.find(params[:id])
+  end
+
+  def faq_item_params
+    params.require(:faq_item).permit(:faq_category_id, :position, :is_visible, translations: {})
+  end
+
+  def check_rate_limit
+    operation_type = case action_name
+                     when 'create' then :create
+                     when 'update' then :update
+                     when 'destroy' then :delete
+                     when 'toggle_visibility' then :toggle
+                     when 'move' then :move
+                     when 'bulk_delete' then :bulk_delete
+                     else :create
+                     end
+
+    unless Faqs::RateLimiterService.acquire_lock(Current.account.id, operation_type, 'item')
+      lock_info = Faqs::RateLimiterService.lock_info(Current.account.id, operation_type, 'item')
+      remaining = lock_info&.dig(:remaining_seconds) || Faqs::RateLimiterService::RATE_LIMITS[operation_type]
+
+      render json: {
+        error: "Rate limit exceeded. Please wait #{remaining} seconds before trying again.",
+        retry_after: remaining
+      }, status: :too_many_requests
+    end
+  end
+end

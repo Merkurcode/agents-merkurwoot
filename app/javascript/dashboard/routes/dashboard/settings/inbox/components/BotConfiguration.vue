@@ -4,12 +4,14 @@ import { useAlert } from 'dashboard/composables';
 import SettingsSection from 'dashboard/components/SettingsSection.vue';
 import LoadingState from 'dashboard/components/widgets/LoadingState.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import FaqCategorySelector from './FaqCategorySelector.vue';
 
 export default {
   components: {
     LoadingState,
     SettingsSection,
     NextButton,
+    FaqCategorySelector,
   },
   props: {
     inbox: {
@@ -171,6 +173,14 @@ export default {
             </option>
           </select>
         </div>
+      </SettingsSection>
+
+      <!-- FAQ Categories Section -->
+      <SettingsSection
+        :title="$t('INBOX_MGMT.FAQ_CONFIGURATION.TITLE')"
+        :sub-title="$t('INBOX_MGMT.FAQ_CONFIGURATION.DESC')"
+      >
+        <FaqCategorySelector :inbox-id="inbox.id" />
       </SettingsSection>
 
       <div class="button-container space-x-2">

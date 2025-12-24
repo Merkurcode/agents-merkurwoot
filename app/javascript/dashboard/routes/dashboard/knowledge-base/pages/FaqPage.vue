@@ -129,7 +129,9 @@ const toggleFaqExpand = (faqId) => {
 const isFaqExpanded = (faqId) => expandedFaqs.value.has(faqId);
 
 const getFaqsForCategory = (categoryId) => {
-  return faqItems.value.filter(faq => faq.faq_category_id === categoryId);
+  return faqItems.value
+    .filter(faq => faq.faq_category_id === categoryId)
+    .sort((a, b) => a.position - b.position);
 };
 
 // Category actions
@@ -164,7 +166,8 @@ const saveCategory = async () => {
       useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.CREATE_SUCCESS'));
     }
     showCategoryForm.value = false;
-    await fetchData();
+    // Refetch tree to update category hierarchy
+    await store.dispatch('faqCategories/getTree');
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ERROR'));
   }
@@ -212,7 +215,6 @@ const saveFaq = async () => {
       useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.CREATE_SUCCESS'));
     }
     showFaqForm.value = false;
-    await fetchData();
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.ERROR'));
   }
@@ -230,12 +232,13 @@ const executeDelete = async () => {
     if (deleteType.value === 'category') {
       await store.dispatch('faqCategories/delete', itemToDelete.value.id);
       useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_SUCCESS'));
+      // Refetch tree to update category hierarchy
+      await store.dispatch('faqCategories/getTree');
     } else {
       await store.dispatch('faqItems/delete', itemToDelete.value.id);
       useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.DELETE_SUCCESS'));
     }
     showDeleteModal.value = false;
-    await fetchData();
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ERROR'));
   }
@@ -248,7 +251,6 @@ const toggleFaqVisibility = async (faq) => {
       ? t('KNOWLEDGE_BASE.FAQ.VISIBILITY.HIDDEN')
       : t('KNOWLEDGE_BASE.FAQ.VISIBILITY.SHOWN')
     );
-    await fetchData();
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.VISIBILITY.ERROR'));
   }
@@ -257,8 +259,9 @@ const toggleFaqVisibility = async (faq) => {
 const moveFaq = async (faq, direction) => {
   try {
     await store.dispatch('faqItems/move', { itemId: faq.id, direction });
+    // Fetch items after move to update both swapped items' positions
+    await store.dispatch('faqItems/get');
     useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_SUCCESS'));
-    await fetchData();
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_ERROR'));
   }
@@ -294,7 +297,7 @@ onMounted(fetchData);
       <template #action>
         <div
           v-if="showCategoryForm"
-          class="w-96 z-50 absolute top-10 right-0 bg-n-alpha-3 backdrop-blur-[100px] p-6 rounded-xl border border-n-weak shadow-md flex flex-col gap-4"
+          class="w-[calc(100vw-2rem)] sm:w-96 max-w-96 z-50 absolute top-10 right-0 bg-n-alpha-3 backdrop-blur-[100px] p-4 sm:p-6 rounded-xl border border-n-weak shadow-md flex flex-col gap-4"
         >
           <div class="flex items-start justify-between">
             <h3 class="text-base font-medium text-n-slate-12">
@@ -333,7 +336,7 @@ onMounted(fetchData);
           <!-- FAQ Form Dropdown -->
           <div
             v-if="showFaqForm"
-            class="w-[28rem] z-50 absolute top-10 right-0 bg-n-alpha-3 backdrop-blur-[100px] p-6 rounded-xl border border-n-weak shadow-md flex flex-col gap-4"
+            class="w-[calc(100vw-2rem)] sm:w-[28rem] max-w-[28rem] z-50 absolute top-10 right-0 bg-n-alpha-3 backdrop-blur-[100px] p-4 sm:p-6 rounded-xl border border-n-weak shadow-md flex flex-col gap-4"
           >
             <div class="flex items-start justify-between">
               <h3 class="text-base font-medium text-n-slate-12">
@@ -445,28 +448,32 @@ onMounted(fetchData);
         <template v-for="category in categories" :key="category.id">
           <CardLayout layout="col" class="!p-0">
             <!-- Category Header -->
-            <div class="flex items-center justify-between p-4 border-b border-n-weak">
-              <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border-b border-n-weak gap-2 sm:gap-0">
+              <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <button
-                  class="p-1 hover:bg-n-alpha-2 rounded transition-colors"
+                  class="p-1 hover:bg-n-alpha-2 rounded transition-colors flex-shrink-0"
                   :title="isExpanded(category.id) ? t('KNOWLEDGE_BASE.FAQ.CATEGORIES.COLLAPSE') : t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EXPAND')"
                   @click="toggleExpand(category.id)"
                 >
                   <i :class="['w-4 h-4', isExpanded(category.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right']" />
                 </button>
                 <div class="flex-1 min-w-0">
-                  <h3 class="text-base font-medium text-n-slate-12 truncate">{{ category.name }}</h3>
-                  <p v-if="category.description" class="text-sm text-n-slate-10 truncate">{{ category.description }}</p>
+                  <h3 class="text-sm sm:text-base font-medium text-n-slate-12 truncate">{{ category.name }}</h3>
+                  <p v-if="category.description" class="text-xs sm:text-sm text-n-slate-10 truncate">{{ category.description }}</p>
                 </div>
-                <span class="text-xs text-n-slate-10 bg-n-alpha-2 px-2 py-1 rounded">
+                <span class="text-xs text-n-slate-10 bg-n-alpha-2 px-2 py-1 rounded flex-shrink-0">
                   {{ getFaqsForCategory(category.id).length }} FAQs
                 </span>
               </div>
-              <div class="flex items-center gap-2 ml-4">
-                <Button variant="faded" size="sm" color="slate" icon="i-lucide-folder-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_SUBCATEGORY')" @click="openNewCategory(category.id)" />
-                <Button variant="faded" size="sm" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(category.id)" />
-                <Button variant="faded" size="sm" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(category)" />
-                <Button variant="faded" size="sm" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(category, 'category')" />
+              <div class="flex items-center gap-1 sm:gap-2 ml-auto sm:ml-4 flex-wrap justify-end">
+                <Button variant="faded" size="xs" class="sm:hidden" color="slate" icon="i-lucide-folder-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_SUBCATEGORY')" @click="openNewCategory(category.id)" />
+                <Button variant="faded" size="xs" class="sm:hidden" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(category.id)" />
+                <Button variant="faded" size="xs" class="sm:hidden" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(category)" />
+                <Button variant="faded" size="xs" class="sm:hidden" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(category, 'category')" />
+                <Button variant="faded" size="sm" class="hidden sm:flex" color="slate" icon="i-lucide-folder-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_SUBCATEGORY')" @click="openNewCategory(category.id)" />
+                <Button variant="faded" size="sm" class="hidden sm:flex" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(category.id)" />
+                <Button variant="faded" size="sm" class="hidden sm:flex" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(category)" />
+                <Button variant="faded" size="sm" class="hidden sm:flex" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(category, 'category')" />
               </div>
             </div>
 
@@ -475,90 +482,90 @@ onMounted(fetchData);
               <!-- Subcategories -->
               <template v-for="sub in category.children" :key="sub.id">
                 <div class="border-b border-n-weak last:border-b-0">
-                  <div class="flex items-center justify-between p-3 pl-10">
-                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                      <button class="p-1 hover:bg-n-alpha-2 rounded" :title="isExpanded(sub.id) ? t('KNOWLEDGE_BASE.FAQ.CATEGORIES.COLLAPSE') : t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EXPAND')" @click="toggleExpand(sub.id)">
+                  <div class="flex items-center justify-between p-2 sm:p-3 pl-4 sm:pl-10">
+                    <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <button class="p-1 hover:bg-n-alpha-2 rounded flex-shrink-0" :title="isExpanded(sub.id) ? t('KNOWLEDGE_BASE.FAQ.CATEGORIES.COLLAPSE') : t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EXPAND')" @click="toggleExpand(sub.id)">
                         <i :class="['w-4 h-4', isExpanded(sub.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right']" />
                       </button>
-                      <span class="text-sm font-medium text-n-slate-12">{{ sub.name }}</span>
-                      <span class="text-xs text-n-slate-10 bg-n-alpha-2 px-2 py-0.5 rounded">{{ getFaqsForCategory(sub.id).length }} FAQs</span>
+                      <span class="text-xs sm:text-sm font-medium text-n-slate-12 truncate">{{ sub.name }}</span>
+                      <span class="text-xs text-n-slate-10 bg-n-alpha-2 px-1.5 sm:px-2 py-0.5 rounded flex-shrink-0">{{ getFaqsForCategory(sub.id).length }}</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1 sm:gap-2">
                       <Button variant="faded" size="xs" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(sub.id)" />
                       <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(sub)" />
                       <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(sub, 'category')" />
                     </div>
                   </div>
                   <!-- Sub FAQs -->
-                  <div v-if="isExpanded(sub.id)" class="pl-16 pb-2">
-                    <div v-for="faq in getFaqsForCategory(sub.id)" :key="faq.id" class="py-1 px-3">
-                      <div class="flex items-center justify-between hover:bg-n-alpha-2 rounded py-1.5 px-2">
-                        <div class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer" @click="toggleFaqExpand(faq.id)">
-                          <button class="p-0.5 hover:bg-n-alpha-3 rounded">
+                  <div v-if="isExpanded(sub.id)" class="pl-6 sm:pl-16 pb-2">
+                    <div v-for="faq in getFaqsForCategory(sub.id)" :key="faq.id" class="py-1 px-1 sm:px-3">
+                      <div class="flex items-center justify-between hover:bg-n-alpha-2 rounded py-1.5 px-1 sm:px-2">
+                        <div class="flex items-center gap-1 sm:gap-2 flex-1 min-w-0 cursor-pointer" @click="toggleFaqExpand(faq.id)">
+                          <button class="p-0.5 hover:bg-n-alpha-3 rounded flex-shrink-0">
                             <i :class="['w-3.5 h-3.5 text-n-slate-10', isFaqExpanded(faq.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right']" />
                           </button>
                           <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                              <span class="text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
-                              <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
+                            <div class="flex items-center gap-1 sm:gap-2">
+                              <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
+                              <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
                             </div>
-                            <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5">
+                            <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block">
                               <span class="marquee-text text-xs text-n-slate-10">{{ faq.primary_answer }}</span>
                             </div>
                           </div>
                         </div>
-                        <div class="flex items-center gap-1 flex-shrink-0">
-                          <Button variant="faded" size="xs" color="slate" icon="i-lucide-chevron-up" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_UP')" :disabled="!canMoveUp(faq, sub.id)" @click.stop="moveFaq(faq, 'up')" />
-                          <Button variant="faded" size="xs" color="slate" icon="i-lucide-chevron-down" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_DOWN')" :disabled="!canMoveDown(faq, sub.id)" @click.stop="moveFaq(faq, 'down')" />
-                          <Button variant="faded" size="xs" color="slate" :icon="faq.is_visible ? 'i-lucide-eye-off' : 'i-lucide-eye'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
+                        <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                          <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-up" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_UP')" :disabled="!canMoveUp(faq, sub.id)" @click.stop="moveFaq(faq, 'up')" />
+                          <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-down" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_DOWN')" :disabled="!canMoveDown(faq, sub.id)" @click.stop="moveFaq(faq, 'down')" />
+                          <Button variant="faded" size="xs" class="hidden sm:flex" color="slate" :icon="faq.is_visible ? 'i-lucide-eye-off' : 'i-lucide-eye'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
                           <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.EDIT_TOOLTIP')" @click.stop="openEditFaq(faq)" />
                           <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.DELETE_TOOLTIP')" @click.stop="confirmDelete(faq, 'faq')" />
                         </div>
                       </div>
                       <!-- Expanded FAQ Content -->
-                      <div v-if="isFaqExpanded(faq.id)" class="ml-8 mt-2 p-3 bg-n-alpha-2 rounded-lg">
-                        <p class="text-sm text-n-slate-11 whitespace-pre-wrap">{{ faq.primary_answer }}</p>
+                      <div v-if="isFaqExpanded(faq.id)" class="ml-4 sm:ml-8 mt-2 p-2 sm:p-3 bg-n-alpha-2 rounded-lg overflow-hidden">
+                        <p class="text-xs sm:text-sm text-n-slate-11 whitespace-pre-wrap break-words overflow-hidden">{{ faq.primary_answer }}</p>
                       </div>
                     </div>
-                    <div v-if="getFaqsForCategory(sub.id).length === 0" class="text-sm text-n-slate-10 py-2 px-3">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.EMPTY') }}</div>
+                    <div v-if="getFaqsForCategory(sub.id).length === 0" class="text-xs sm:text-sm text-n-slate-10 py-2 px-3">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.EMPTY') }}</div>
                   </div>
                 </div>
               </template>
 
               <!-- Category FAQs -->
-              <div v-if="getFaqsForCategory(category.id).length > 0" class="pl-10 pb-2 pt-2">
-                <div v-for="faq in getFaqsForCategory(category.id)" :key="faq.id" class="py-1 px-3">
-                  <div class="flex items-center justify-between hover:bg-n-alpha-2 rounded py-1.5 px-2">
-                    <div class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer" @click="toggleFaqExpand(faq.id)">
-                      <button class="p-0.5 hover:bg-n-alpha-3 rounded">
+              <div v-if="getFaqsForCategory(category.id).length > 0" class="pl-4 sm:pl-10 pb-2 pt-2">
+                <div v-for="faq in getFaqsForCategory(category.id)" :key="faq.id" class="py-1 px-1 sm:px-3">
+                  <div class="flex items-center justify-between hover:bg-n-alpha-2 rounded py-1.5 px-1 sm:px-2">
+                    <div class="flex items-center gap-1 sm:gap-2 flex-1 min-w-0 cursor-pointer" @click="toggleFaqExpand(faq.id)">
+                      <button class="p-0.5 hover:bg-n-alpha-3 rounded flex-shrink-0">
                         <i :class="['w-3.5 h-3.5 text-n-slate-10', isFaqExpanded(faq.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right']" />
                       </button>
                       <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                          <span class="text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
-                          <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
+                        <div class="flex items-center gap-1 sm:gap-2">
+                          <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
+                          <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
                         </div>
-                        <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5">
+                        <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block">
                           <span class="marquee-text text-xs text-n-slate-10">{{ faq.primary_answer }}</span>
                         </div>
                       </div>
                     </div>
-                    <div class="flex items-center gap-1 flex-shrink-0">
-                      <Button variant="faded" size="xs" color="slate" icon="i-lucide-chevron-up" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_UP')" :disabled="!canMoveUp(faq, category.id)" @click.stop="moveFaq(faq, 'up')" />
-                      <Button variant="faded" size="xs" color="slate" icon="i-lucide-chevron-down" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_DOWN')" :disabled="!canMoveDown(faq, category.id)" @click.stop="moveFaq(faq, 'down')" />
-                      <Button variant="faded" size="xs" color="slate" :icon="faq.is_visible ? 'i-lucide-eye-off' : 'i-lucide-eye'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
+                    <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                      <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-up" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_UP')" :disabled="!canMoveUp(faq, category.id)" @click.stop="moveFaq(faq, 'up')" />
+                      <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-down" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_DOWN')" :disabled="!canMoveDown(faq, category.id)" @click.stop="moveFaq(faq, 'down')" />
+                      <Button variant="faded" size="xs" class="hidden sm:flex" color="slate" :icon="faq.is_visible ? 'i-lucide-eye-off' : 'i-lucide-eye'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
                       <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.EDIT_TOOLTIP')" @click.stop="openEditFaq(faq)" />
                       <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.DELETE_TOOLTIP')" @click.stop="confirmDelete(faq, 'faq')" />
                     </div>
                   </div>
                   <!-- Expanded FAQ Content -->
-                  <div v-if="isFaqExpanded(faq.id)" class="ml-8 mt-2 p-3 bg-n-alpha-2 rounded-lg">
-                    <p class="text-sm text-n-slate-11 whitespace-pre-wrap">{{ faq.primary_answer }}</p>
+                  <div v-if="isFaqExpanded(faq.id)" class="ml-4 sm:ml-8 mt-2 p-2 sm:p-3 bg-n-alpha-2 rounded-lg overflow-hidden">
+                    <p class="text-xs sm:text-sm text-n-slate-11 whitespace-pre-wrap break-words overflow-hidden">{{ faq.primary_answer }}</p>
                   </div>
                 </div>
               </div>
 
-              <div v-if="getFaqsForCategory(category.id).length === 0 && (!category.children || category.children.length === 0)" class="text-sm text-n-slate-10 py-4 px-10">
+              <div v-if="getFaqsForCategory(category.id).length === 0 && (!category.children || category.children.length === 0)" class="text-xs sm:text-sm text-n-slate-10 py-4 px-4 sm:px-10">
                 {{ t('KNOWLEDGE_BASE.FAQ.ITEMS.EMPTY') }}
               </div>
             </div>

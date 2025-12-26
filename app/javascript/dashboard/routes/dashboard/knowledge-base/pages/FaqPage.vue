@@ -151,6 +151,20 @@ const fetchData = async () => {
   ]);
 };
 
+// Helper to refresh data maintaining current search and pagination
+const refreshData = async () => {
+  const currentPage = meta.value?.current_page || 1;
+  await Promise.all([
+    store.dispatch('faqCategories/get'),
+    store.dispatch('faqCategories/getTree', {
+      page: currentPage,
+      per_page: 5,
+      q: searchQuery.value || undefined,
+    }),
+    store.dispatch('faqItems/get', { page: 1, per_page: 500 }),
+  ]);
+};
+
 // Search functions
 const executeSearch = async (query) => {
   if (isSearching.value) return;
@@ -260,8 +274,7 @@ const saveCategory = async () => {
       useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.CREATE_SUCCESS'));
     }
     showCategoryForm.value = false;
-    // Refetch tree to update category hierarchy
-    await store.dispatch('faqCategories/getTree');
+    await refreshData();
   } catch (error) {
     if (error.isRateLimited && !editingCategory.value) {
       useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.RATE_LIMITED', { seconds: error.retryAfter }));
@@ -313,6 +326,7 @@ const saveFaq = async () => {
       useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.CREATE_SUCCESS'));
     }
     showFaqForm.value = false;
+    await refreshData();
   } catch (error) {
     if (error.isRateLimited && !editingFaq.value) {
       useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.RATE_LIMITED', { seconds: error.retryAfter }));
@@ -334,13 +348,12 @@ const executeDelete = async () => {
     if (deleteType.value === 'category') {
       await store.dispatch('faqCategories/delete', itemToDelete.value.id);
       useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_SUCCESS'));
-      // Refetch tree to update category hierarchy
-      await store.dispatch('faqCategories/getTree');
     } else {
       await store.dispatch('faqItems/delete', itemToDelete.value.id);
       useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.DELETE_SUCCESS'));
     }
     showDeleteModal.value = false;
+    await refreshData();
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ERROR'));
   }
@@ -353,6 +366,7 @@ const toggleFaqVisibility = async (faq) => {
       ? t('KNOWLEDGE_BASE.FAQ.VISIBILITY.HIDDEN')
       : t('KNOWLEDGE_BASE.FAQ.VISIBILITY.SHOWN')
     );
+    await refreshData();
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.VISIBILITY.ERROR'));
   }
@@ -361,8 +375,7 @@ const toggleFaqVisibility = async (faq) => {
 const moveFaq = async (faq, direction) => {
   try {
     await store.dispatch('faqItems/move', { itemId: faq.id, direction });
-    // Fetch items after move to update both swapped items' positions
-    await store.dispatch('faqItems/get');
+    await refreshData();
     useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_SUCCESS'));
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_ERROR'));
@@ -648,7 +661,7 @@ onMounted(fetchData);
               />
             </template>
           </Input>
-          <div v-if="searchQuery && !isSearching" class="text-sm text-n-slate-11 whitespace-nowrap">
+          <div v-if="!isSearching && meta.total_count !== undefined" class="text-sm text-n-slate-11 whitespace-nowrap">
             {{ meta.total_count }} {{ t('KNOWLEDGE_BASE.PRODUCT_CATALOG.RESULTS') }}
           </div>
         </div>

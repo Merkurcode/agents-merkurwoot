@@ -69,7 +69,13 @@ class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
     @faq_item.update!(position: other_item.position, updated_by: current_user)
     other_item.update!(position: current_position)
 
-    render :show
+    # Return both swapped items to avoid page refresh
+    render json: {
+      items: [
+        render_faq_item(@faq_item),
+        render_faq_item(other_item)
+      ]
+    }
   end
 
   def bulk_delete
@@ -93,6 +99,20 @@ class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
       permitted[:translations] = params[:faq_item][:translations].to_unsafe_h
     end
     permitted
+  end
+
+  def render_faq_item(item)
+    {
+      id: item.id,
+      faq_category_id: item.faq_category_id,
+      position: item.position,
+      is_visible: item.is_visible,
+      translations: item.translations,
+      primary_question: item.question('es'),
+      primary_answer: item.answer('es'),
+      created_at: item.created_at,
+      updated_at: item.updated_at
+    }
   end
 
   def check_rate_limit

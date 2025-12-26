@@ -42,8 +42,18 @@ const sampleCategories = [
   },
 ];
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const store = useStore();
+
+// Get default display language from site locale, fallback to 'en'
+const getDefaultDisplayLanguage = () => {
+  const siteLocale = locale.value;
+  // Only support 'es' and 'en' for FAQ display
+  if (siteLocale === 'es' || siteLocale === 'en') {
+    return siteLocale;
+  }
+  return 'en'; // Fallback to English
+};
 
 // UI State
 const showCategoryForm = ref(false);
@@ -57,7 +67,7 @@ const deleteType = ref(null);
 const expandedCategories = ref(new Set());
 const expandedFaqs = ref(new Set());
 const activeLanguage = ref('es');
-const displayLanguage = ref('es'); // Language for displaying FAQs in the list
+const displayLanguage = ref(getDefaultDisplayLanguage());
 
 // Search and pagination state
 const searchQuery = ref('');
@@ -415,7 +425,6 @@ const toggleFaqVisibility = async (faq) => {
 const moveFaq = async (faq, direction) => {
   try {
     await store.dispatch('faqItems/move', { itemId: faq.id, direction });
-    await refreshData();
     useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_SUCCESS'));
   } catch (error) {
     useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_ERROR'));

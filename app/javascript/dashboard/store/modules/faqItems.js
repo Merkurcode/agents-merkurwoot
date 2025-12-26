@@ -131,7 +131,12 @@ export const actions = {
     commit(types.SET_FAQ_ITEM_UI_FLAG, { isUpdating: true });
     try {
       const response = await FaqItemsAPI.move(itemId, direction);
-      commit(types.EDIT_FAQ_ITEM, response.data);
+      // Update both swapped items to avoid page refresh
+      if (response.data.items) {
+        response.data.items.forEach(item => {
+          commit(types.EDIT_FAQ_ITEM, item);
+        });
+      }
       return response.data;
     } catch (error) {
       throw new Error(error);

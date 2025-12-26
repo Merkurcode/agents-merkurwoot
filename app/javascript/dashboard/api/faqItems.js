@@ -17,6 +17,14 @@ class FaqItemsAPI extends ApiClient {
     return axios.get(this.url, { params });
   }
 
+  create(data) {
+    return axios.post(this.url, { faq_item: data });
+  }
+
+  update(id, data) {
+    return axios.patch(`${this.url}/${id}`, { faq_item: data });
+  }
+
   toggleVisibility(id) {
     return axios.post(`${this.url}/${id}/toggle_visibility`);
   }

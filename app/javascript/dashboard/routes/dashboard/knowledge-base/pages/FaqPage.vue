@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
@@ -10,6 +10,7 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CardLayout from 'dashboard/components-next/CardLayout.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 // Sample data for empty state preview
 const sampleCategories = [
@@ -57,6 +58,11 @@ const expandedCategories = ref(new Set());
 const expandedFaqs = ref(new Set());
 const activeLanguage = ref('es');
 
+// Search and pagination state
+const searchQuery = ref('');
+const isSearching = ref(false);
+const searchDebounceTimer = ref(null);
+
 // Form data
 const categoryForm = ref({ name: '', description: '', parent_id: null });
 const faqForm = ref({
@@ -70,10 +76,12 @@ const faqForm = ref({
 // Getters
 const categories = computed(() => store.getters['faqCategories/getTree']);
 const faqItems = computed(() => store.getters['faqItems/getFaqItems']);
+const meta = computed(() => store.getters['faqCategories/getMeta']);
 const uiFlagsCategories = computed(() => store.getters['faqCategories/getUIFlags']);
 const uiFlagsItems = computed(() => store.getters['faqItems/getUIFlags']);
 
 const isLoading = computed(() => uiFlagsCategories.value.isFetchingTree);
+const isFetchingItems = computed(() => uiFlagsItems.value.isFetching);
 const isSaving = computed(() =>
   uiFlagsCategories.value.isCreating ||
   uiFlagsCategories.value.isUpdating ||
@@ -84,7 +92,7 @@ const isDeleting = computed(() =>
   uiFlagsCategories.value.isDeleting || uiFlagsItems.value.isDeleting
 );
 
-const isEmpty = computed(() => !isLoading.value && categories.value.length === 0);
+const isEmpty = computed(() => !isLoading.value && categories.value.length === 0 && !searchQuery.value);
 
 // Flat list for dropdown
 const flatCategories = computed(() => {
@@ -99,13 +107,99 @@ const flatCategories = computed(() => {
   return result;
 });
 
+// Pagination computed
+const visiblePages = computed(() => {
+  const current = meta.value?.current_page || 1;
+  const total = meta.value?.total_pages || 1;
+  const pages = [];
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+  } else {
+    pages.push(1);
+    if (current <= 3) {
+      for (let i = 2; i <= 5; i++) {
+        pages.push(i);
+      }
+      pages.push('ellipsis1');
+      pages.push(total);
+    } else if (current >= total - 2) {
+      pages.push('ellipsis1');
+      for (let i = total - 4; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push('ellipsis1');
+      pages.push(current - 1);
+      pages.push(current);
+      pages.push(current + 1);
+      pages.push('ellipsis2');
+      pages.push(total);
+    }
+  }
+  return pages;
+});
+
 // Methods
 const fetchData = async () => {
   await Promise.all([
     store.dispatch('faqCategories/get'),
-    store.dispatch('faqCategories/getTree'),
-    store.dispatch('faqItems/get'),
+    store.dispatch('faqCategories/getTree', { page: 1, per_page: 5 }),
+    store.dispatch('faqItems/get', { page: 1, per_page: 500 }),
   ]);
+};
+
+// Search functions
+const executeSearch = async (query) => {
+  if (isSearching.value) return;
+  isSearching.value = true;
+  try {
+    await store.dispatch('faqCategories/getTree', {
+      page: 1,
+      per_page: 5,
+      q: query || undefined
+    });
+  } finally {
+    isSearching.value = false;
+  }
+};
+
+const performSearch = (query) => {
+  if (searchDebounceTimer.value) {
+    clearTimeout(searchDebounceTimer.value);
+  }
+  searchDebounceTimer.value = setTimeout(() => {
+    executeSearch(query);
+    searchDebounceTimer.value = null;
+  }, 1500);
+};
+
+const handleSearchEnter = () => {
+  if (searchDebounceTimer.value) {
+    clearTimeout(searchDebounceTimer.value);
+    searchDebounceTimer.value = null;
+  }
+  executeSearch(searchQuery.value);
+};
+
+watch(searchQuery, (newQuery) => {
+  performSearch(newQuery);
+});
+
+// Pagination
+const handlePageChange = async (page) => {
+  const totalPages = meta.value?.total_pages || 1;
+  const currentPage = meta.value?.current_page || 1;
+  if (page < 1 || page > totalPages || page === currentPage) {
+    return;
+  }
+  await store.dispatch('faqCategories/getTree', {
+    page,
+    per_page: 5,
+    q: searchQuery.value || undefined
+  });
 };
 
 const toggleExpand = (categoryId) => {
@@ -169,7 +263,11 @@ const saveCategory = async () => {
     // Refetch tree to update category hierarchy
     await store.dispatch('faqCategories/getTree');
   } catch (error) {
-    useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ERROR'));
+    if (error.isRateLimited && !editingCategory.value) {
+      useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.RATE_LIMITED', { seconds: error.retryAfter }));
+    } else {
+      useAlert(t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ERROR'));
+    }
   }
 };
 
@@ -216,7 +314,11 @@ const saveFaq = async () => {
     }
     showFaqForm.value = false;
   } catch (error) {
-    useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.ERROR'));
+    if (error.isRateLimited && !editingFaq.value) {
+      useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.RATE_LIMITED', { seconds: error.retryAfter }));
+    } else {
+      useAlert(t('KNOWLEDGE_BASE.FAQ.ITEMS.ERROR'));
+    }
   }
 };
 
@@ -279,6 +381,88 @@ const canMoveDown = (faq, categoryId) => {
   const faqs = getFaqsForCategory(categoryId);
   const index = faqs.findIndex(f => f.id === faq.id);
   return index < faqs.length - 1;
+};
+
+// Marquee animation with constant speed (50px/s)
+const SCROLL_SPEED = 50; // pixels per second
+const WAIT_START = 4000; // ms to wait at start
+const WAIT_END = 6000; // ms to wait at end
+
+const activeMarquees = new Map(); // Track active animations
+
+const startMarquee = (event) => {
+  const container = event.currentTarget;
+  const text = container.querySelector('.marquee-text');
+  if (!text) return;
+
+  // Cancel any existing animation for this element
+  const existingTimeout = activeMarquees.get(text);
+  if (existingTimeout) {
+    clearTimeout(existingTimeout.startTimeout);
+    clearTimeout(existingTimeout.endTimeout);
+    clearTimeout(existingTimeout.resetTimeout);
+  }
+
+  const textWidth = text.scrollWidth;
+  const containerWidth = container.offsetWidth;
+  const scrollDistance = textWidth - containerWidth;
+
+  if (scrollDistance <= 0) return; // No need to scroll
+
+  const scrollDuration = (scrollDistance / SCROLL_SPEED) * 1000; // Convert to ms
+
+  // Reset position and remove transition
+  text.style.transition = 'none';
+  text.style.transform = 'translateX(0)';
+
+  // Force reflow
+  text.offsetHeight;
+
+  const runAnimation = () => {
+    // After WAIT_START, start scrolling
+    const startTimeout = setTimeout(() => {
+      text.style.transition = `transform ${scrollDuration}ms linear`;
+      text.style.transform = `translateX(-${scrollDistance}px)`;
+
+      // After scroll completes, wait WAIT_END then reset
+      const endTimeout = setTimeout(() => {
+        const resetTimeout = setTimeout(() => {
+          // Reset and restart the animation cycle
+          text.style.transition = 'none';
+          text.style.transform = 'translateX(0)';
+          text.offsetHeight; // Force reflow
+          runAnimation();
+        }, WAIT_END);
+
+        activeMarquees.set(text, { startTimeout: null, endTimeout: null, resetTimeout });
+      }, scrollDuration);
+
+      activeMarquees.set(text, { startTimeout: null, endTimeout, resetTimeout: null });
+    }, WAIT_START);
+
+    activeMarquees.set(text, { startTimeout, endTimeout: null, resetTimeout: null });
+  };
+
+  runAnimation();
+};
+
+const stopMarquee = (event) => {
+  const container = event.currentTarget;
+  const text = container.querySelector('.marquee-text');
+  if (!text) return;
+
+  // Cancel any pending timeouts
+  const timeouts = activeMarquees.get(text);
+  if (timeouts) {
+    clearTimeout(timeouts.startTimeout);
+    clearTimeout(timeouts.endTimeout);
+    clearTimeout(timeouts.resetTimeout);
+    activeMarquees.delete(text);
+  }
+
+  // Reset position smoothly
+  text.style.transition = 'transform 0.3s ease-out';
+  text.style.transform = 'translateX(0)';
 };
 
 onMounted(fetchData);
@@ -363,7 +547,7 @@ onMounted(fetchData);
             <Input v-model="faqForm.translations[activeLanguage].question" :label="t('KNOWLEDGE_BASE.FAQ.ITEMS.QUESTION')" :placeholder="t('KNOWLEDGE_BASE.FAQ.ITEMS.QUESTION_PLACEHOLDER')" />
             <div>
               <label class="block text-sm font-medium text-n-slate-12 mb-1">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.ANSWER') }}</label>
-              <textarea v-model="faqForm.translations[activeLanguage].answer" :placeholder="t('KNOWLEDGE_BASE.FAQ.ITEMS.ANSWER_PLACEHOLDER')" rows="4" class="w-full px-3 py-2 rounded-lg border border-n-weak bg-n-alpha-1 text-n-slate-12 resize-none" />
+              <textarea v-model="faqForm.translations[activeLanguage].answer" :placeholder="t('KNOWLEDGE_BASE.FAQ.ITEMS.ANSWER_PLACEHOLDER')" rows="12" class="w-full px-3 py-2 rounded-lg border border-n-weak bg-n-alpha-1 text-n-slate-12 resize-y min-h-[200px]" />
             </div>
             <div class="flex gap-3">
               <Button variant="outline" :label="t('KNOWLEDGE_BASE.FAQ.CANCEL')" class="flex-1" @click="showFaqForm = false" />
@@ -443,13 +627,53 @@ onMounted(fetchData);
         </template>
       </EmptyStateLayout>
 
-      <!-- Categories List -->
-      <div v-else class="flex flex-col gap-4">
-        <template v-for="category in categories" :key="category.id">
+      <!-- Search Bar -->
+      <div v-else class="space-y-4">
+        <div class="flex items-center gap-2">
+          <Input
+            :model-value="searchQuery"
+            type="search"
+            :placeholder="t('KNOWLEDGE_BASE.FAQ.SEARCH_PLACEHOLDER')"
+            :custom-input-class="[
+              'h-8 [&:not(.focus)]:!border-transparent bg-n-alpha-2 dark:bg-n-solid-1 ltr:!pl-8 !py-1 rtl:!pr-8',
+            ]"
+            class="w-full"
+            @input="searchQuery = $event.target.value"
+            @enter="handleSearchEnter"
+          >
+            <template #prefix>
+              <Icon
+                icon="i-lucide-search"
+                class="absolute -translate-y-1/2 text-n-slate-11 size-4 top-1/2 ltr:left-2 rtl:right-2"
+              />
+            </template>
+          </Input>
+          <div v-if="searchQuery && !isSearching" class="text-sm text-n-slate-11 whitespace-nowrap">
+            {{ meta.total_count }} {{ t('KNOWLEDGE_BASE.PRODUCT_CATALOG.RESULTS') }}
+          </div>
+        </div>
+
+        <!-- Search Loading -->
+        <div v-if="isSearching" class="flex items-center justify-center py-10">
+          <Spinner />
+        </div>
+
+        <!-- No Search Results -->
+        <div v-else-if="searchQuery && categories.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+          <i class="i-lucide-search-x w-12 h-12 text-n-slate-9 mb-4" />
+          <p class="text-n-slate-11 text-sm">
+            {{ t('KNOWLEDGE_BASE.FAQ.NO_SEARCH_RESULTS') }}
+          </p>
+        </div>
+
+        <!-- Categories List -->
+        <div v-else class="flex flex-col gap-4">
+          <template v-for="category in categories" :key="category.id">
           <CardLayout layout="col" class="!p-0">
             <!-- Category Header -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border-b border-n-weak gap-2 sm:gap-0">
-              <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+            <div class="flex flex-col p-3 sm:p-4 border-b border-n-weak gap-2">
+              <!-- Title row -->
+              <div class="flex items-center gap-2 min-w-0">
                 <button
                   class="p-1 hover:bg-n-alpha-2 rounded transition-colors flex-shrink-0"
                   :title="isExpanded(category.id) ? t('KNOWLEDGE_BASE.FAQ.CATEGORIES.COLLAPSE') : t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EXPAND')"
@@ -461,19 +685,18 @@ onMounted(fetchData);
                   <h3 class="text-sm sm:text-base font-medium text-n-slate-12 truncate">{{ category.name }}</h3>
                   <p v-if="category.description" class="text-xs sm:text-sm text-n-slate-10 truncate">{{ category.description }}</p>
                 </div>
+              </div>
+              <!-- Actions row -->
+              <div class="flex items-center justify-between gap-2 pl-7">
                 <span class="text-xs text-n-slate-10 bg-n-alpha-2 px-2 py-1 rounded flex-shrink-0">
                   {{ getFaqsForCategory(category.id).length }} FAQs
                 </span>
-              </div>
-              <div class="flex items-center gap-1 sm:gap-2 ml-auto sm:ml-4 flex-wrap justify-end">
-                <Button variant="faded" size="xs" class="sm:hidden" color="slate" icon="i-lucide-folder-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_SUBCATEGORY')" @click="openNewCategory(category.id)" />
-                <Button variant="faded" size="xs" class="sm:hidden" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(category.id)" />
-                <Button variant="faded" size="xs" class="sm:hidden" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(category)" />
-                <Button variant="faded" size="xs" class="sm:hidden" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(category, 'category')" />
-                <Button variant="faded" size="sm" class="hidden sm:flex" color="slate" icon="i-lucide-folder-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_SUBCATEGORY')" @click="openNewCategory(category.id)" />
-                <Button variant="faded" size="sm" class="hidden sm:flex" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(category.id)" />
-                <Button variant="faded" size="sm" class="hidden sm:flex" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(category)" />
-                <Button variant="faded" size="sm" class="hidden sm:flex" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(category, 'category')" />
+                <div class="flex items-center gap-1">
+                  <Button variant="faded" size="xs" color="slate" icon="i-lucide-folder-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_SUBCATEGORY')" @click="openNewCategory(category.id)" />
+                  <Button variant="faded" size="xs" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(category.id)" />
+                  <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(category)" />
+                  <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(category, 'category')" />
+                </div>
               </div>
             </div>
 
@@ -482,18 +705,22 @@ onMounted(fetchData);
               <!-- Subcategories -->
               <template v-for="sub in category.children" :key="sub.id">
                 <div class="border-b border-n-weak last:border-b-0">
-                  <div class="flex items-center justify-between p-2 sm:p-3 pl-4 sm:pl-10">
-                    <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div class="flex flex-col gap-1 p-2 sm:p-3 pl-4 sm:pl-10">
+                    <!-- Subcategory title row -->
+                    <div class="flex items-center gap-2 min-w-0">
                       <button class="p-1 hover:bg-n-alpha-2 rounded flex-shrink-0" :title="isExpanded(sub.id) ? t('KNOWLEDGE_BASE.FAQ.CATEGORIES.COLLAPSE') : t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EXPAND')" @click="toggleExpand(sub.id)">
                         <i :class="['w-4 h-4', isExpanded(sub.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right']" />
                       </button>
-                      <span class="text-xs sm:text-sm font-medium text-n-slate-12 truncate">{{ sub.name }}</span>
-                      <span class="text-xs text-n-slate-10 bg-n-alpha-2 px-1.5 sm:px-2 py-0.5 rounded flex-shrink-0">{{ getFaqsForCategory(sub.id).length }}</span>
+                      <span class="text-xs sm:text-sm font-medium text-n-slate-12 truncate flex-1">{{ sub.name }}</span>
                     </div>
-                    <div class="flex items-center gap-1 sm:gap-2">
-                      <Button variant="faded" size="xs" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(sub.id)" />
-                      <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(sub)" />
-                      <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(sub, 'category')" />
+                    <!-- Subcategory actions row -->
+                    <div class="flex items-center justify-between gap-2 pl-7">
+                      <span class="text-xs text-n-slate-10 bg-n-alpha-2 px-1.5 py-0.5 rounded flex-shrink-0">{{ getFaqsForCategory(sub.id).length }} FAQs</span>
+                      <div class="flex items-center gap-1">
+                        <Button variant="faded" size="xs" color="slate" icon="i-lucide-plus" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.ADD_FAQ')" @click="openNewFaq(sub.id)" />
+                        <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.EDIT_TOOLTIP')" @click="openEditCategory(sub)" />
+                        <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_TOOLTIP')" @click="confirmDelete(sub, 'category')" />
+                      </div>
                     </div>
                   </div>
                   <!-- Sub FAQs -->
@@ -509,7 +736,7 @@ onMounted(fetchData);
                               <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
                               <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
                             </div>
-                            <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block">
+                            <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block" @mouseenter="startMarquee" @mouseleave="stopMarquee">
                               <span class="marquee-text text-xs text-n-slate-10">{{ faq.primary_answer }}</span>
                             </div>
                           </div>
@@ -517,7 +744,7 @@ onMounted(fetchData);
                         <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                           <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-up" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_UP')" :disabled="!canMoveUp(faq, sub.id)" @click.stop="moveFaq(faq, 'up')" />
                           <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-down" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_DOWN')" :disabled="!canMoveDown(faq, sub.id)" @click.stop="moveFaq(faq, 'down')" />
-                          <Button variant="faded" size="xs" class="hidden sm:flex" color="slate" :icon="faq.is_visible ? 'i-lucide-eye-off' : 'i-lucide-eye'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
+                          <Button variant="faded" size="xs" class="hidden sm:flex" color="slate" :icon="faq.is_visible ? 'i-lucide-eye' : 'i-lucide-eye-off'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
                           <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.EDIT_TOOLTIP')" @click.stop="openEditFaq(faq)" />
                           <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.DELETE_TOOLTIP')" @click.stop="confirmDelete(faq, 'faq')" />
                         </div>
@@ -545,7 +772,7 @@ onMounted(fetchData);
                           <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
                           <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
                         </div>
-                        <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block">
+                        <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block" @mouseenter="startMarquee" @mouseleave="stopMarquee">
                           <span class="marquee-text text-xs text-n-slate-10">{{ faq.primary_answer }}</span>
                         </div>
                       </div>
@@ -553,7 +780,7 @@ onMounted(fetchData);
                     <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                       <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-up" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_UP')" :disabled="!canMoveUp(faq, category.id)" @click.stop="moveFaq(faq, 'up')" />
                       <Button variant="faded" size="xs" class="hidden md:flex" color="slate" icon="i-lucide-chevron-down" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.MOVE_DOWN')" :disabled="!canMoveDown(faq, category.id)" @click.stop="moveFaq(faq, 'down')" />
-                      <Button variant="faded" size="xs" class="hidden sm:flex" color="slate" :icon="faq.is_visible ? 'i-lucide-eye-off' : 'i-lucide-eye'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
+                      <Button variant="faded" size="xs" class="hidden sm:flex" color="slate" :icon="faq.is_visible ? 'i-lucide-eye' : 'i-lucide-eye-off'" :title="faq.is_visible ? t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDE_TOOLTIP') : t('KNOWLEDGE_BASE.FAQ.ITEMS.SHOW_TOOLTIP')" @click.stop="toggleFaqVisibility(faq)" />
                       <Button variant="faded" size="xs" color="slate" icon="i-lucide-pencil" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.EDIT_TOOLTIP')" @click.stop="openEditFaq(faq)" />
                       <Button variant="faded" size="xs" color="ruby" icon="i-lucide-trash" :title="t('KNOWLEDGE_BASE.FAQ.ITEMS.DELETE_TOOLTIP')" @click.stop="confirmDelete(faq, 'faq')" />
                     </div>
@@ -570,7 +797,96 @@ onMounted(fetchData);
               </div>
             </div>
           </CardLayout>
-        </template>
+          </template>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="!searchQuery && meta && meta.total_pages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 px-4 py-3 bg-n-solid-1 rounded-lg">
+          <div class="hidden sm:block text-sm text-n-slate-11">
+            {{ t('KNOWLEDGE_BASE.PRODUCT_CATALOG.PAGINATION.SHOWING') }}
+            <span class="font-medium text-n-slate-12">{{ (meta.current_page - 1) * 5 + 1 }}</span>
+            {{ t('KNOWLEDGE_BASE.PRODUCT_CATALOG.PAGINATION.TO') }}
+            <span class="font-medium text-n-slate-12">{{ Math.min(meta.current_page * 5, meta.total_count) }}</span>
+            {{ t('KNOWLEDGE_BASE.PRODUCT_CATALOG.PAGINATION.OF') }}
+            <span class="font-medium text-n-slate-12">{{ meta.total_count }}</span>
+            {{ t('KNOWLEDGE_BASE.PRODUCT_CATALOG.PAGINATION.RESULTS') }}
+          </div>
+          <div class="sm:hidden text-xs text-n-slate-11">
+            {{ meta.current_page }} / {{ meta.total_pages }}
+          </div>
+
+          <div class="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+            <button
+              :disabled="meta.current_page === 1"
+              :class="[
+                'px-3 py-1 rounded-md text-sm font-medium transition-colors',
+                meta.current_page === 1
+                  ? 'text-n-slate-9 cursor-not-allowed'
+                  : 'text-n-slate-12 hover:bg-n-slate-3'
+              ]"
+              @click="handlePageChange(1)"
+            >
+              <i class="i-lucide-chevrons-left w-4 h-4" />
+            </button>
+
+            <button
+              :disabled="meta.current_page === 1"
+              :class="[
+                'px-3 py-1 rounded-md text-sm font-medium transition-colors',
+                meta.current_page === 1
+                  ? 'text-n-slate-9 cursor-not-allowed'
+                  : 'text-n-slate-12 hover:bg-n-slate-3'
+              ]"
+              @click="handlePageChange(meta.current_page - 1)"
+            >
+              <i class="i-lucide-chevron-left w-4 h-4" />
+            </button>
+
+            <div class="flex items-center gap-1">
+              <template v-for="page in visiblePages" :key="page">
+                <button
+                  v-if="typeof page === 'number'"
+                  :class="[
+                    'px-3 py-1 rounded-md text-sm font-medium transition-colors',
+                    page === meta.current_page
+                      ? 'bg-n-blue-9 text-white'
+                      : 'text-n-slate-12 hover:bg-n-slate-3'
+                  ]"
+                  @click="handlePageChange(page)"
+                >
+                  {{ page }}
+                </button>
+                <span v-else class="px-2 text-n-slate-11">...</span>
+              </template>
+            </div>
+
+            <button
+              :disabled="meta.current_page === meta.total_pages"
+              :class="[
+                'px-3 py-1 rounded-md text-sm font-medium transition-colors',
+                meta.current_page === meta.total_pages
+                  ? 'text-n-slate-9 cursor-not-allowed'
+                  : 'text-n-slate-12 hover:bg-n-slate-3'
+              ]"
+              @click="handlePageChange(meta.current_page + 1)"
+            >
+              <i class="i-lucide-chevron-right w-4 h-4" />
+            </button>
+
+            <button
+              :disabled="meta.current_page === meta.total_pages"
+              :class="[
+                'px-3 py-1 rounded-md text-sm font-medium transition-colors',
+                meta.current_page === meta.total_pages
+                  ? 'text-n-slate-9 cursor-not-allowed'
+                  : 'text-n-slate-12 hover:bg-n-slate-3'
+              ]"
+              @click="handlePageChange(meta.total_pages)"
+            >
+              <i class="i-lucide-chevrons-right w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
     </KnowledgeBaseLayout>
 
@@ -610,28 +926,12 @@ onMounted(fetchData);
   overflow: hidden;
   position: relative;
   width: 100%;
-  height: 1.25rem;
-  line-height: 1.25rem;
 }
 
 .marquee-text {
   display: inline-block;
   white-space: nowrap;
-  position: relative;
-}
-
-/* Only animate on hover when text overflows */
-.marquee-container:hover .marquee-text {
-  animation: marquee-scroll 8s linear infinite;
-  animation-delay: 0.5s;
-}
-
-@keyframes marquee-scroll {
-  0%, 15% {
-    transform: translateX(0);
-  }
-  85%, 100% {
-    transform: translateX(calc(-100% + 200px));
-  }
+  transform: translateX(0);
+  will-change: transform;
 }
 </style>

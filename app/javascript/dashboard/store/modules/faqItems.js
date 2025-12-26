@@ -63,7 +63,14 @@ export const actions = {
       commit(types.ADD_FAQ_ITEM, response.data);
       return response.data;
     } catch (error) {
-      throw new Error(error);
+      if (error.response?.status === 429) {
+        const retryAfter = error.response?.data?.retry_after || 3;
+        const rateLimitError = new Error('Rate limited');
+        rateLimitError.isRateLimited = true;
+        rateLimitError.retryAfter = retryAfter;
+        throw rateLimitError;
+      }
+      throw error;
     } finally {
       commit(types.SET_FAQ_ITEM_UI_FLAG, { isCreating: false });
     }

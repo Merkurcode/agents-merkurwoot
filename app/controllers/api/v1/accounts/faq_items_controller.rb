@@ -1,7 +1,7 @@
 class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
   before_action :faq_item, only: %i[show update destroy toggle_visibility move]
   before_action :check_authorization
-  before_action :check_rate_limit, only: %i[create update destroy toggle_visibility move bulk_delete]
+  before_action :check_rate_limit, only: %i[create]
 
   def index
     page = params[:page] || 1
@@ -13,14 +13,15 @@ class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
     base_query = base_query.for_category(params[:category_id]) if params[:category_id].present?
 
     # Apply search if query parameter is present
+    # Order by created_at ascending (oldest first)
     @faq_items = if params[:q].present?
                    # Search in translations JSONB
                    search_term = "%#{params[:q].downcase}%"
                    base_query.where(
                      "LOWER(translations::text) LIKE ?", search_term
-                   ).ordered.page(page).per(per_page)
+                   ).order(created_at: :asc).page(page).per(per_page)
                  else
-                   base_query.ordered.page(page).per(per_page)
+                   base_query.order(created_at: :asc).page(page).per(per_page)
                  end
 
     @total_count = @faq_items.total_count
@@ -90,19 +91,9 @@ class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
   end
 
   def check_rate_limit
-    operation_type = case action_name
-                     when 'create' then :create
-                     when 'update' then :update
-                     when 'destroy' then :delete
-                     when 'toggle_visibility' then :toggle
-                     when 'move' then :move
-                     when 'bulk_delete' then :bulk_delete
-                     else :create
-                     end
-
-    unless Faqs::RateLimiterService.acquire_lock(Current.account.id, operation_type, 'item')
-      lock_info = Faqs::RateLimiterService.lock_info(Current.account.id, operation_type, 'item')
-      remaining = lock_info&.dig(:remaining_seconds) || Faqs::RateLimiterService::RATE_LIMITS[operation_type]
+    unless Faqs::RateLimiterService.acquire_lock(Current.account.id, :create, 'item')
+      lock_info = Faqs::RateLimiterService.lock_info(Current.account.id, :create, 'item')
+      remaining = lock_info&.dig(:remaining_seconds) || 3
 
       render json: {
         error: "Rate limit exceeded. Please wait #{remaining} seconds before trying again.",

@@ -6,11 +6,11 @@ class InboxFaqCategoriesAPI extends ApiClient {
     super('faq_categories', { accountScoped: true });
   }
 
-  getForInbox(inboxId) {
+  getCategories(inboxId) {
     return axios.get(this.getInboxUrl(inboxId));
   }
 
-  updateForInbox(inboxId, categoryIds) {
+  syncCategories(inboxId, categoryIds) {
     return axios.post(this.getInboxUrl(inboxId), {
       faq_category_ids: categoryIds,
     });

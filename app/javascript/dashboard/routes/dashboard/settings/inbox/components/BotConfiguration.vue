@@ -78,6 +78,11 @@ export default {
           botId: this.selectedAgentBotId || undefined,
         });
 
+        // Save FAQ categories selection if component is available
+        if (this.$refs.faqCategorySelector?.saveSelection) {
+          await this.$refs.faqCategorySelector.saveSelection();
+        }
+
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.SUCCESS_MESSAGE'));
       } catch (error) {
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.ERROR_MESSAGE'));
@@ -180,7 +185,7 @@ export default {
         :title="$t('INBOX_MGMT.FAQ_CONFIGURATION.TITLE')"
         :sub-title="$t('INBOX_MGMT.FAQ_CONFIGURATION.DESC')"
       >
-        <FaqCategorySelector :inbox-id="inbox.id" />
+        <FaqCategorySelector ref="faqCategorySelector" :inbox-id="inbox.id" />
       </SettingsSection>
 
       <div class="button-container space-x-2">

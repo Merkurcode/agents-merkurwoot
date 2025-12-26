@@ -6,8 +6,20 @@ class FaqCategoriesAPI extends ApiClient {
     super('faq_categories', { accountScoped: true });
   }
 
-  getTree() {
-    return axios.get(`${this.url}/tree`);
+  getTree({ page = 1, per_page = 50, q = undefined } = {}) {
+    const params = { page, per_page };
+    if (q) {
+      params.q = q;
+    }
+    return axios.get(`${this.url}/tree`, { params });
+  }
+
+  create(data) {
+    return axios.post(this.url, { faq_category: data });
+  }
+
+  update(id, data) {
+    return axios.patch(`${this.url}/${id}`, { faq_category: data });
   }
 
   toggleVisibility(id) {

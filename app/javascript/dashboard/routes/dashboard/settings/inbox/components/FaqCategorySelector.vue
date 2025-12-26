@@ -108,6 +108,12 @@ watch(categories, () => {
 onMounted(async () => {
   await Promise.all([fetchCategories(), fetchSelectedCategories()]);
 });
+
+// Expose saveSelection for parent component to call
+defineExpose({
+  saveSelection,
+  isSaving,
+});
 </script>
 
 <template>
@@ -170,17 +176,9 @@ onMounted(async () => {
             </div>
           </template>
         </div>
-        <div class="text-xs text-n-slate-10 mb-3">
+        <div class="text-xs text-n-slate-10">
           {{ t('INBOX_MGMT.FAQ_CONFIGURATION.SELECTED_COUNT', { count: selectedCategoryIds.length }) }}
         </div>
-        <woot-button
-          color-scheme="primary"
-          size="small"
-          :loading="isSaving"
-          @click="saveSelection"
-        >
-          {{ t('INBOX_MGMT.FAQ_CONFIGURATION.SAVE') }}
-        </woot-button>
       </template>
     </template>
   </div>

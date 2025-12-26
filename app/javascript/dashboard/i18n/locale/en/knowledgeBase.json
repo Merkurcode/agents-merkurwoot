@@ -200,6 +200,7 @@
       "NEW_CATEGORY": "New Category",
       "NEW_FAQ": "New FAQ",
       "SEARCH_PLACEHOLDER": "Search FAQs...",
+      "NO_SEARCH_RESULTS": "No FAQs found matching your search",
       "CANCEL": "Cancel",
       "SAVE": "Save",
       "DELETE": "Delete",

@@ -5,6 +5,11 @@ import FaqCategoriesAPI from '../../api/faqCategories';
 export const state = {
   records: [],
   tree: [],
+  meta: {
+    current_page: 1,
+    total_pages: 1,
+    total_count: 0,
+  },
   uiFlags: {
     isFetching: false,
     isFetchingTree: false,
@@ -18,6 +23,7 @@ export const getters = {
   getUIFlags: _state => _state.uiFlags,
   getCategories: _state => _state.records,
   getTree: _state => _state.tree,
+  getMeta: _state => _state.meta,
   getCategory: _state => categoryId =>
     _state.records.find(record => record.id === categoryId),
   getRootCategories: _state =>
@@ -37,17 +43,25 @@ export const actions = {
     }
   },
 
-  getTree: async function getCategoryTree({ commit }) {
+  getTree: async function getCategoryTree(
+    { commit },
+    { page = 1, per_page = 50, q = undefined } = {}
+  ) {
     commit(types.SET_FAQ_CATEGORY_UI_FLAG, { isFetchingTree: true });
     try {
-      const response = await FaqCategoriesAPI.getTree();
+      const response = await FaqCategoriesAPI.getTree({ page, per_page, q });
       commit(types.SET_FAQ_CATEGORY_TREE, response.data.data);
+      commit(types.SET_FAQ_CATEGORIES_META, response.data.meta);
       return response.data.data;
     } catch (error) {
       throw new Error(error);
     } finally {
       commit(types.SET_FAQ_CATEGORY_UI_FLAG, { isFetchingTree: false });
     }
+  },
+
+  fetchTree: async function fetchCategoryTree({ dispatch }, params = {}) {
+    return dispatch('getTree', params);
   },
 
   show: async function showCategory({ commit }, categoryId) {
@@ -69,7 +83,14 @@ export const actions = {
       commit(types.ADD_FAQ_CATEGORY, response.data);
       return response.data;
     } catch (error) {
-      throw new Error(error);
+      if (error.response?.status === 429) {
+        const retryAfter = error.response?.data?.retry_after || 5;
+        const rateLimitError = new Error('Rate limited');
+        rateLimitError.isRateLimited = true;
+        rateLimitError.retryAfter = retryAfter;
+        throw rateLimitError;
+      }
+      throw error;
     } finally {
       commit(types.SET_FAQ_CATEGORY_UI_FLAG, { isCreating: false });
     }
@@ -135,6 +156,10 @@ export const mutations = {
 
   [types.SET_FAQ_CATEGORY_TREE](_state, tree) {
     _state.tree = tree;
+  },
+
+  [types.SET_FAQ_CATEGORIES_META](_state, meta) {
+    _state.meta = meta;
   },
 
   [types.SET_FAQ_CATEGORIES]: MutationHelpers.set,

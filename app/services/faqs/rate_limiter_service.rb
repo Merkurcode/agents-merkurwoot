@@ -4,12 +4,7 @@ module Faqs
 
     # Rate limit configuration per operation type (in seconds)
     RATE_LIMITS = {
-      create: 5,        # 5 seconds between creates
-      update: 3,        # 3 seconds between updates
-      delete: 5,        # 5 seconds between deletes
-      bulk_delete: 30,  # 30 seconds between bulk deletes
-      toggle: 2,        # 2 seconds between visibility toggles
-      move: 2           # 2 seconds between reorders
+      create: 3         # 3 seconds between creates
     }.freeze
 
     class << self

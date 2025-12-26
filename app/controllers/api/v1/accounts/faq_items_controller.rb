@@ -87,7 +87,12 @@ class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
   end
 
   def faq_item_params
-    params.require(:faq_item).permit(:faq_category_id, :position, :is_visible, translations: {})
+    permitted = params.require(:faq_item).permit(:faq_category_id, :position, :is_visible)
+    # Permit nested translations hash with dynamic locale keys (es, en, etc.)
+    if params[:faq_item][:translations].present?
+      permitted[:translations] = params[:faq_item][:translations].to_unsafe_h
+    end
+    permitted
   end
 
   def check_rate_limit

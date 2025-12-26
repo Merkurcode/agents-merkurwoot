@@ -57,6 +57,7 @@ const deleteType = ref(null);
 const expandedCategories = ref(new Set());
 const expandedFaqs = ref(new Set());
 const activeLanguage = ref('es');
+const displayLanguage = ref('es'); // Language for displaying FAQs in the list
 
 // Search and pagination state
 const searchQuery = ref('');
@@ -93,6 +94,38 @@ const isDeleting = computed(() =>
 );
 
 const isEmpty = computed(() => !isLoading.value && categories.value.length === 0 && !searchQuery.value);
+
+// Computed getters/setters for translation form fields (fixes reactivity with dynamic keys)
+const currentQuestion = computed({
+  get: () => faqForm.value.translations[activeLanguage.value]?.question || '',
+  set: (val) => {
+    if (!faqForm.value.translations[activeLanguage.value]) {
+      faqForm.value.translations[activeLanguage.value] = { question: '', answer: '' };
+    }
+    faqForm.value.translations[activeLanguage.value].question = val;
+  },
+});
+
+const currentAnswer = computed({
+  get: () => faqForm.value.translations[activeLanguage.value]?.answer || '',
+  set: (val) => {
+    if (!faqForm.value.translations[activeLanguage.value]) {
+      faqForm.value.translations[activeLanguage.value] = { question: '', answer: '' };
+    }
+    faqForm.value.translations[activeLanguage.value].answer = val;
+  },
+});
+
+// Get FAQ question/answer based on display language
+const getFaqQuestion = (faq) => {
+  const translations = faq.translations || {};
+  return translations[displayLanguage.value]?.question || translations.es?.question || translations.en?.question || '';
+};
+
+const getFaqAnswer = (faq) => {
+  const translations = faq.translations || {};
+  return translations[displayLanguage.value]?.answer || translations.es?.answer || translations.en?.answer || '';
+};
 
 // Flat list for dropdown
 const flatCategories = computed(() => {
@@ -238,7 +271,13 @@ const isFaqExpanded = (faqId) => expandedFaqs.value.has(faqId);
 
 const getFaqsForCategory = (categoryId) => {
   return faqItems.value
-    .filter(faq => faq.faq_category_id === categoryId)
+    .filter(faq => {
+      if (faq.faq_category_id !== categoryId) return false;
+      // Filter by display language - only show FAQs that have content in selected language
+      const translations = faq.translations || {};
+      const langContent = translations[displayLanguage.value];
+      return langContent?.question || langContent?.answer;
+    })
     .sort((a, b) => a.position - b.position);
 };
 
@@ -301,11 +340,12 @@ const openNewFaq = (categoryId = null) => {
 
 const openEditFaq = (faq) => {
   editingFaq.value = faq;
+  const existingTranslations = faq.translations || {};
   faqForm.value = {
     faq_category_id: faq.faq_category_id,
-    translations: faq.translations || {
-      es: { question: '', answer: '' },
-      en: { question: '', answer: '' },
+    translations: {
+      es: existingTranslations.es || { question: '', answer: '' },
+      en: existingTranslations.en || { question: '', answer: '' },
     },
   };
   activeLanguage.value = 'es';
@@ -557,14 +597,14 @@ onMounted(fetchData);
               <button :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px', activeLanguage === 'es' ? 'border-n-blue-9 text-n-blue-11' : 'border-transparent text-n-slate-11']" @click="activeLanguage = 'es'">Español</button>
               <button :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px', activeLanguage === 'en' ? 'border-n-blue-9 text-n-blue-11' : 'border-transparent text-n-slate-11']" @click="activeLanguage = 'en'">English</button>
             </div>
-            <Input v-model="faqForm.translations[activeLanguage].question" :label="t('KNOWLEDGE_BASE.FAQ.ITEMS.QUESTION')" :placeholder="t('KNOWLEDGE_BASE.FAQ.ITEMS.QUESTION_PLACEHOLDER')" />
+            <Input v-model="currentQuestion" :label="t('KNOWLEDGE_BASE.FAQ.ITEMS.QUESTION')" :placeholder="t('KNOWLEDGE_BASE.FAQ.ITEMS.QUESTION_PLACEHOLDER')" />
             <div>
               <label class="block text-sm font-medium text-n-slate-12 mb-1">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.ANSWER') }}</label>
-              <textarea v-model="faqForm.translations[activeLanguage].answer" :placeholder="t('KNOWLEDGE_BASE.FAQ.ITEMS.ANSWER_PLACEHOLDER')" rows="12" class="w-full px-3 py-2 rounded-lg border border-n-weak bg-n-alpha-1 text-n-slate-12 resize-y min-h-[200px]" />
+              <textarea v-model="currentAnswer" :placeholder="t('KNOWLEDGE_BASE.FAQ.ITEMS.ANSWER_PLACEHOLDER')" rows="12" class="w-full px-3 py-2 rounded-lg border border-n-weak bg-n-alpha-1 text-n-slate-12 resize-y min-h-[200px]" />
             </div>
             <div class="flex gap-3">
               <Button variant="outline" :label="t('KNOWLEDGE_BASE.FAQ.CANCEL')" class="flex-1" @click="showFaqForm = false" />
-              <Button :label="t('KNOWLEDGE_BASE.FAQ.SAVE')" :is-loading="isSaving" :disabled="!faqForm.faq_category_id || (!faqForm.translations.es.question && !faqForm.translations.en.question)" class="flex-1" @click="saveFaq" />
+              <Button :label="t('KNOWLEDGE_BASE.FAQ.SAVE')" :is-loading="isSaving" :disabled="!faqForm.faq_category_id || (!faqForm.translations.es?.question && !faqForm.translations.en?.question)" class="flex-1" @click="saveFaq" />
             </div>
           </div>
         </div>
@@ -665,6 +705,17 @@ onMounted(fetchData);
             {{ meta.total_count }} {{ t('KNOWLEDGE_BASE.PRODUCT_CATALOG.RESULTS') }}
           </div>
         </div>
+        <!-- Language Filter -->
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-n-slate-11 leading-7">{{ t('KNOWLEDGE_BASE.FAQ.FILTER_BY_LANGUAGE') }}:</label>
+          <select
+            v-model="displayLanguage"
+            class="h-7 w-16 px-2 text-xs font-medium rounded-lg border border-n-weak bg-n-alpha-2 text-n-slate-12 hover:bg-n-alpha-3 transition-colors cursor-pointer"
+          >
+            <option value="es">ES</option>
+            <option value="en">EN</option>
+          </select>
+        </div>
 
         <!-- Search Loading -->
         <div v-if="isSearching" class="flex items-center justify-center py-10">
@@ -746,11 +797,11 @@ onMounted(fetchData);
                           </button>
                           <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-1 sm:gap-2">
-                              <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
+                              <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ getFaqQuestion(faq) }}</span>
                               <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
                             </div>
-                            <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block" @mouseenter="startMarquee" @mouseleave="stopMarquee">
-                              <span class="marquee-text text-xs text-n-slate-10">{{ faq.primary_answer }}</span>
+                            <div v-if="!isFaqExpanded(faq.id) && getFaqAnswer(faq)" class="marquee-container mt-0.5 hidden sm:block" @mouseenter="startMarquee" @mouseleave="stopMarquee">
+                              <span class="marquee-text text-xs text-n-slate-10">{{ getFaqAnswer(faq) }}</span>
                             </div>
                           </div>
                         </div>
@@ -764,7 +815,7 @@ onMounted(fetchData);
                       </div>
                       <!-- Expanded FAQ Content -->
                       <div v-if="isFaqExpanded(faq.id)" class="ml-4 sm:ml-8 mt-2 p-2 sm:p-3 bg-n-alpha-2 rounded-lg overflow-hidden">
-                        <p class="text-xs sm:text-sm text-n-slate-11 whitespace-pre-wrap break-words overflow-hidden">{{ faq.primary_answer }}</p>
+                        <p class="text-xs sm:text-sm text-n-slate-11 whitespace-pre-wrap break-words overflow-hidden">{{ getFaqAnswer(faq) }}</p>
                       </div>
                     </div>
                     <div v-if="getFaqsForCategory(sub.id).length === 0" class="text-xs sm:text-sm text-n-slate-10 py-2 px-3">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.EMPTY') }}</div>
@@ -782,11 +833,11 @@ onMounted(fetchData);
                       </button>
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-1 sm:gap-2">
-                          <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ faq.primary_question }}</span>
+                          <span class="text-xs sm:text-sm text-n-slate-12 truncate">{{ getFaqQuestion(faq) }}</span>
                           <span v-if="!faq.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">{{ t('KNOWLEDGE_BASE.FAQ.ITEMS.HIDDEN') }}</span>
                         </div>
-                        <div v-if="!isFaqExpanded(faq.id) && faq.primary_answer" class="marquee-container mt-0.5 hidden sm:block" @mouseenter="startMarquee" @mouseleave="stopMarquee">
-                          <span class="marquee-text text-xs text-n-slate-10">{{ faq.primary_answer }}</span>
+                        <div v-if="!isFaqExpanded(faq.id) && getFaqAnswer(faq)" class="marquee-container mt-0.5 hidden sm:block" @mouseenter="startMarquee" @mouseleave="stopMarquee">
+                          <span class="marquee-text text-xs text-n-slate-10">{{ getFaqAnswer(faq) }}</span>
                         </div>
                       </div>
                     </div>
@@ -800,7 +851,7 @@ onMounted(fetchData);
                   </div>
                   <!-- Expanded FAQ Content -->
                   <div v-if="isFaqExpanded(faq.id)" class="ml-4 sm:ml-8 mt-2 p-2 sm:p-3 bg-n-alpha-2 rounded-lg overflow-hidden">
-                    <p class="text-xs sm:text-sm text-n-slate-11 whitespace-pre-wrap break-words overflow-hidden">{{ faq.primary_answer }}</p>
+                    <p class="text-xs sm:text-sm text-n-slate-11 whitespace-pre-wrap break-words overflow-hidden">{{ getFaqAnswer(faq) }}</p>
                   </div>
                 </div>
               </div>
@@ -920,7 +971,7 @@ onMounted(fetchData);
           </p>
           <div class="p-3 bg-n-alpha-2 rounded-lg">
             <p class="text-sm font-medium text-n-slate-12 truncate">
-              {{ deleteType === 'category' ? itemToDelete?.name : itemToDelete?.primary_question }}
+              {{ deleteType === 'category' ? itemToDelete?.name : (itemToDelete ? getFaqQuestion(itemToDelete) : '') }}
             </p>
           </div>
           <p v-if="deleteType === 'category'" class="mt-3 text-xs text-n-ruby-11">{{ t('KNOWLEDGE_BASE.FAQ.CATEGORIES.DELETE_WARNING') }}</p>

@@ -290,6 +290,7 @@ Rails.application.routes.draw do
             post :sync_templates, on: :member
             get :health, on: :member
             resources :faq_categories, only: [:index, :create], controller: 'inbox_faq_categories'
+            resources :bot_faqs, only: [:index], controller: 'inbox_bot_faqs'
           end
           resources :inbox_members, only: [:create, :show], param: :inbox_id do
             collection do

@@ -31,14 +31,15 @@ const hasCategories = computed(
 );
 
 const fetchCategories = async () => {
-  await store.dispatch('faqCategories/fetchTree');
+  // Fetch all categories without pagination limit
+  await store.dispatch('faqCategories/fetchTree', { per_page: 1000 });
 };
 
 const fetchSelectedCategories = async () => {
   try {
     isLoading.value = true;
     const response = await InboxFaqCategoriesAPI.getCategories(props.inboxId);
-    selectedCategoryIds.value = response.data.map(cat => cat.id);
+    selectedCategoryIds.value = (response.data.data || []).map(cat => cat.id);
   } catch (error) {
     useAlert(t('INBOX_MGMT.FAQ_CONFIGURATION.FETCH_ERROR'));
   } finally {
@@ -78,7 +79,7 @@ const saveSelection = async () => {
       props.inboxId,
       selectedCategoryIds.value
     );
-    useAlert(t('INBOX_MGMT.FAQ_CONFIGURATION.SUCCESS_MESSAGE'));
+    // No alert here - parent component shows the success message
   } catch (error) {
     useAlert(t('INBOX_MGMT.FAQ_CONFIGURATION.ERROR_MESSAGE'));
   } finally {

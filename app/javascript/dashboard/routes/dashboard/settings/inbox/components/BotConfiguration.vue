@@ -188,7 +188,7 @@ export default {
         <FaqCategorySelector ref="faqCategorySelector" :inbox-id="inbox.id" />
       </SettingsSection>
 
-      <div class="button-container space-x-2">
+      <div class="button-container space-x-2 mb-8">
         <NextButton
           type="submit"
           :label="$t('AGENT_BOTS.BOT_CONFIGURATION.SUBMIT')"

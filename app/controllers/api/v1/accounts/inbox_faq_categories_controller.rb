@@ -9,6 +9,7 @@ class Api::V1::Accounts::InboxFaqCategoriesController < Api::V1::Accounts::BaseC
 
   def create
     inbox.faq_category_ids = params[:faq_category_ids] || []
+    inbox.save!
     render json: { data: inbox.faq_categories.as_json(only: %i[id name]) }
   end
 

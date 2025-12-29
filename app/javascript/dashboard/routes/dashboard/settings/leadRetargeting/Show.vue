@@ -22,12 +22,12 @@ const cancellingFollowUps = ref(false);
 const totalSteps = ref(0);
 
 const goBack = () => {
-  router.push({ name: 'lead_retargeting_list' });
+  router.push({ name: 'copilots_list' });
 };
 
 const goToEdit = () => {
   router.push({
-    name: 'lead_retargeting_edit',
+    name: 'copilots_edit',
     params: { sequenceId: route.params.sequenceId },
   });
 };
@@ -52,7 +52,7 @@ const fetchSequence = async () => {
     const response = await leadFollowUpSequencesAPI.show(route.params.sequenceId);
     sequence.value = response.data;
   } catch (error) {
-    useAlert('Error al cargar la secuencia');
+    useAlert('Error al cargar el copilot');
     goBack();
   } finally {
     loading.value = false;
@@ -167,7 +167,7 @@ const getStopReason = (status, metadata) => {
 
   if (status === 'cancelled' && metadata.cancellation_reason) {
     const reasons = {
-      'Sequence deactivated': 'Secuencia desactivada',
+      'Sequence deactivated': 'Copilot desactivado',
       'Manually cancelled by user': 'Cancelado manualmente',
     };
     return reasons[metadata.cancellation_reason] || metadata.cancellation_reason;
@@ -234,7 +234,7 @@ onMounted(async () => {
 
 <template>
   <div class="overflow-auto flex-grow flex-shrink pr-0 pl-0 w-full min-w-0 settings">
-    <SettingIntroBanner header-title="Detalle de Secuencia">
+    <SettingIntroBanner header-title="Detalle de Copilot">
       <button
         class="flex items-center gap-1 text-n-slate-11 hover:text-n-slate-12 text-sm mb-4"
         @click="goBack"

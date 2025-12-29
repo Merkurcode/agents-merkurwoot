@@ -7,10 +7,10 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
   let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
   let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
 
-  describe 'GET /api/v1/accounts/{account.id}/lead_follow_up_sequences' do
+  describe 'GET /api/v1/accounts/{account.id}/copilot_sequences' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences"
+        get "/api/v1/accounts/#{account.id}/copilot_sequences"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -22,7 +22,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       let!(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
 
       it 'returns unauthorized for agents' do
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences",
+        get "/api/v1/accounts/#{account.id}/copilot_sequences",
             headers: agent.create_new_auth_token,
             as: :json
 
@@ -30,7 +30,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       end
 
       it 'returns all sequences to administrators' do
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences",
+        get "/api/v1/accounts/#{account.id}/copilot_sequences",
             headers: administrator.create_new_auth_token,
             as: :json
 
@@ -43,7 +43,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
         other_inbox = create(:inbox, channel: create(:channel_whatsapp, account: account), account: account)
         other_sequence = create(:lead_follow_up_sequence, account: account, inbox: other_inbox)
 
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences?inbox_id=#{whatsapp_inbox.id}",
+        get "/api/v1/accounts/#{account.id}/copilot_sequences?inbox_id=#{whatsapp_inbox.id}",
             headers: administrator.create_new_auth_token,
             as: :json
 
@@ -55,12 +55,12 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
-  describe 'GET /api/v1/accounts/{account.id}/lead_follow_up_sequences/:id' do
+  describe 'GET /api/v1/accounts/{account.id}/copilot_sequences/:id' do
     let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
 
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}"
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -71,7 +71,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       let(:administrator) { create(:user, account: account, role: :administrator) }
 
       it 'returns unauthorized for agents' do
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}",
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}",
             headers: agent.create_new_auth_token,
             as: :json
 
@@ -79,7 +79,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       end
 
       it 'shows the sequence for administrators' do
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}",
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}",
             headers: administrator.create_new_auth_token,
             as: :json
 
@@ -89,10 +89,10 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
-  describe 'POST /api/v1/accounts/{account.id}/lead_follow_up_sequences' do
+  describe 'POST /api/v1/accounts/{account.id}/copilot_sequences' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences"
+        post "/api/v1/accounts/#{account.id}/copilot_sequences"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -127,7 +127,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
 
       it 'creates a new sequence' do
         expect do
-          post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences",
+          post "/api/v1/accounts/#{account.id}/copilot_sequences",
                headers: administrator.create_new_auth_token,
                params: valid_params,
                as: :json
@@ -144,7 +144,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
           }
         }
 
-        post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences",
+        post "/api/v1/accounts/#{account.id}/copilot_sequences",
              headers: administrator.create_new_auth_token,
              params: invalid_params,
              as: :json
@@ -156,12 +156,12 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
-  describe 'PATCH /api/v1/accounts/{account.id}/lead_follow_up_sequences/:id' do
+  describe 'PATCH /api/v1/accounts/{account.id}/copilot_sequences/:id' do
     let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
 
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        patch "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}"
+        patch "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -178,7 +178,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       end
 
       it 'updates the sequence' do
-        patch "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}",
+        patch "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}",
               headers: administrator.create_new_auth_token,
               params: update_params,
               as: :json
@@ -189,12 +189,12 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
-  describe 'DELETE /api/v1/accounts/{account.id}/lead_follow_up_sequences/:id' do
+  describe 'DELETE /api/v1/accounts/{account.id}/copilot_sequences/:id' do
     let!(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox, active: true) }
 
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        delete "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}"
+        delete "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -204,7 +204,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       let(:administrator) { create(:user, account: account, role: :administrator) }
 
       it 'deactivates and deletes the sequence' do
-        delete "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}",
+        delete "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}",
                headers: administrator.create_new_auth_token,
                as: :json
 
@@ -219,7 +219,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
                            lead_follow_up_sequence: sequence,
                            status: 'active')
 
-        delete "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}",
+        delete "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}",
                headers: administrator.create_new_auth_token,
                as: :json
 
@@ -229,12 +229,12 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
-  describe 'POST /api/v1/accounts/{account.id}/lead_follow_up_sequences/:id/activate' do
+  describe 'POST /api/v1/accounts/{account.id}/copilot_sequences/:id/activate' do
     let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox, active: false) }
 
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}/activate"
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/activate"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -244,7 +244,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       let(:administrator) { create(:user, account: account, role: :administrator) }
 
       it 'activates the sequence' do
-        post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}/activate",
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/activate",
              headers: administrator.create_new_auth_token,
              as: :json
 
@@ -254,12 +254,12 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
-  describe 'POST /api/v1/accounts/{account.id}/lead_follow_up_sequences/:id/deactivate' do
+  describe 'POST /api/v1/accounts/{account.id}/copilot_sequences/:id/deactivate' do
     let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox, active: true) }
 
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}/deactivate"
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/deactivate"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -269,7 +269,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       let(:administrator) { create(:user, account: account, role: :administrator) }
 
       it 'deactivates the sequence' do
-        post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}/deactivate",
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/deactivate",
              headers: administrator.create_new_auth_token,
              as: :json
 
@@ -284,7 +284,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
                            lead_follow_up_sequence: sequence,
                            status: 'active')
 
-        post "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/#{sequence.id}/deactivate",
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/deactivate",
              headers: administrator.create_new_auth_token,
              as: :json
 
@@ -293,10 +293,10 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
-  describe 'GET /api/v1/accounts/{account.id}/lead_follow_up_sequences/available_templates' do
+  describe 'GET /api/v1/accounts/{account.id}/copilot_sequences/available_templates' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/available_templates?inbox_id=#{whatsapp_inbox.id}"
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/available_templates?inbox_id=#{whatsapp_inbox.id}"
 
         expect(response).to have_http_status(:unauthorized)
       end
@@ -316,7 +316,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
                                                                              }
                                                                            ])
 
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/available_templates?inbox_id=#{whatsapp_inbox.id}",
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/available_templates?inbox_id=#{whatsapp_inbox.id}",
             headers: administrator.create_new_auth_token,
             as: :json
 
@@ -329,7 +329,7 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       it 'returns error for non-WhatsApp inbox' do
         web_inbox = create(:inbox, channel: create(:channel_widget, account: account), account: account)
 
-        get "/api/v1/accounts/#{account.id}/lead_follow_up_sequences/available_templates?inbox_id=#{web_inbox.id}",
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/available_templates?inbox_id=#{web_inbox.id}",
             headers: administrator.create_new_auth_token,
             as: :json
 

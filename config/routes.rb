@@ -99,7 +99,7 @@ Rails.application.routes.draw do
           resources :automation_rules, only: [:index, :create, :show, :update, :destroy] do
             post :clone
           end
-          resources :lead_follow_up_sequences, only: [:index, :create, :show, :update, :destroy] do
+          resources :copilot_sequences, only: [:index, :create, :show, :update, :destroy], controller: 'lead_follow_up_sequences' do
             member do
               post :activate
               post :deactivate

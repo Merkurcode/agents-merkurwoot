@@ -357,7 +357,7 @@
     "LABELS": "Labels",
     "CUSTOM_ATTRIBUTES": "Custom Attributes",
     "AUTOMATION": "Automation",
-    "LEAD_RETARGETING": "Lead Retargeting",
+    "LEAD_RETARGETING": "Copilots",
     "MACROS": "Macros",
     "TEAMS": "Teams",
     "BILLING": "Billing",
@@ -827,15 +827,15 @@
     }
   },
   "LEAD_RETARGETING": {
-    "HEADER": "Lead Retargeting Sequences",
-    "DESCRIPTION": "Automatically follow up with leads from Meta campaigns who haven't responded",
+    "HEADER": "Copilots",
+    "DESCRIPTION": "No more lost leads. Train your own AI copilots/autonomous agents to take control of your operations",
     "LEARN_MORE": "Learn more",
-    "HEADER_BTN_TXT": "Add Sequence",
+    "HEADER_BTN_TXT": "Add Copilot",
     "BREADCRUMB": {
       "BACK": "Back"
     },
     "LIST": {
-      "404": "No sequences created yet",
+      "404": "No copilots created yet",
       "STEPS": "Steps",
       "ENROLLED": "enrolled",
       "EDIT": "Edit",
@@ -849,7 +849,7 @@
         "STEPS": "Steps"
       },
       "API": {
-        "ERROR_MESSAGE": "Failed to load sequences"
+        "ERROR_MESSAGE": "Failed to load copilots"
       }
     },
     "STATUS": {
@@ -857,47 +857,47 @@
       "INACTIVE": "Inactive"
     },
     "TOGGLE": {
-      "ACTIVATED": "Sequence activated successfully",
-      "DEACTIVATED": "Sequence deactivated successfully",
-      "ERROR": "Failed to toggle sequence status"
+      "ACTIVATED": "Copilot activated successfully",
+      "DEACTIVATED": "Copilot deactivated successfully",
+      "ERROR": "Failed to toggle copilot status"
     },
     "DELETE": {
       "CONFIRM_MESSAGE": "Are you sure you want to delete {name}?",
-      "SUCCESS_MESSAGE": "Sequence deleted successfully",
-      "ERROR_MESSAGE": "Failed to delete sequence"
+      "SUCCESS_MESSAGE": "Copilot deleted successfully",
+      "ERROR_MESSAGE": "Failed to delete copilot"
     },
     "FORM": {
-      "NEW_TITLE": "New Retargeting Sequence",
-      "EDIT_TITLE": "Edit Retargeting Sequence",
+      "NEW_TITLE": "New Copilot",
+      "EDIT_TITLE": "Edit Copilot",
       "CANCEL": "Cancel",
       "SAVE": "Save",
       "BASIC_INFO": "Basic Information",
-      "BASIC_INFO_SUBTITLE": "Configure the basic details for your retargeting sequence",
+      "BASIC_INFO_SUBTITLE": "Configure the basic details for your copilot",
       "NAME": "Name",
       "NAME_PLACEHOLDER": "e.g., Meta Campaign Follow-up",
-      "NAME_REQUIRED": "Sequence name is required",
+      "NAME_REQUIRED": "Copilot name is required",
       "DESCRIPTION": "Description",
       "DESCRIPTION_PLACEHOLDER": "Describe when this sequence should run",
       "INBOX": "WhatsApp Inbox",
       "INBOX_REQUIRED": "WhatsApp inbox is required",
       "SELECT_INBOX": "Select inbox...",
       "SETTINGS": "Settings",
-      "SETTINGS_SUBTITLE": "Control when and how the sequence should execute",
-      "STOP_ON_REPLY": "Stop sequence when contact replies",
-      "STOP_ON_RESOLVED": "Stop sequence when conversation is resolved",
-      "ACTIVATE": "Activate sequence",
-      "STEPS": "Sequence Steps",
+      "SETTINGS_SUBTITLE": "Control when and how the copilot should execute",
+      "STOP_ON_REPLY": "Stop copilot when contact replies",
+      "STOP_ON_RESOLVED": "Stop copilot when conversation is resolved",
+      "ACTIVATE": "Activate copilot",
+      "STEPS": "Copilot Steps",
       "STEPS_SUBTITLE": "Define the actions that will be executed in order",
-      "NO_STEPS": "No steps added yet. Add wait periods and template messages to create your sequence.",
+      "NO_STEPS": "No steps added yet. Add wait periods and template messages to create your copilot.",
       "STEP_NAME": "Step name",
       "DELETE_STEP": "Delete step",
-      "LOAD_ERROR": "Failed to load sequence",
-      "CREATE_SUCCESS": "Sequence created successfully",
-      "CREATE_ERROR": "Failed to create sequence",
-      "UPDATE_SUCCESS": "Sequence updated successfully",
-      "UPDATE_ERROR": "Failed to update sequence",
+      "LOAD_ERROR": "Failed to load copilot",
+      "CREATE_SUCCESS": "Copilot created successfully",
+      "CREATE_ERROR": "Failed to create copilot",
+      "UPDATE_SUCCESS": "Copilot updated successfully",
+      "UPDATE_ERROR": "Failed to update copilot",
       "REACTIVATION_FILTERS": "Reactivation Filters",
-      "REACTIVATION_FILTERS_SUBTITLE": "Control which conversations get reactivated when the sequence completes",
+      "REACTIVATION_FILTERS_SUBTITLE": "Control which conversations get reactivated when the copilot completes",
       "ENABLE_DATE_FILTER": "Enable Date Filter",
       "DATE_FILTER_TYPE": "Filter Based On",
       "DATE_FILTER_CONVERSATION_CREATED": "Conversation Created Date",

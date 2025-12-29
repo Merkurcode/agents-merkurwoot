@@ -7,18 +7,18 @@ import LeadRetargetingShow from './Show.vue';
 export default {
   routes: [
     {
-      path: frontendURL('accounts/:accountId/settings/lead-retargeting'),
+      path: frontendURL('accounts/:accountId/settings/copilots'),
       component: SettingsWrapper,
       children: [
         {
           path: '',
           redirect: to => {
-            return { name: 'lead_retargeting_list', params: to.params };
+            return { name: 'copilots_list', params: to.params };
           },
         },
         {
           path: 'list',
-          name: 'lead_retargeting_list',
+          name: 'copilots_list',
           component: LeadRetargetingIndex,
           meta: {
             permissions: ['administrator'],
@@ -26,7 +26,7 @@ export default {
         },
         {
           path: 'new',
-          name: 'lead_retargeting_new',
+          name: 'copilots_new',
           component: LeadRetargetingForm,
           meta: {
             permissions: ['administrator'],
@@ -34,7 +34,7 @@ export default {
         },
         {
           path: ':sequenceId/edit',
-          name: 'lead_retargeting_edit',
+          name: 'copilots_edit',
           component: LeadRetargetingForm,
           meta: {
             permissions: ['administrator'],
@@ -42,7 +42,7 @@ export default {
         },
         {
           path: ':sequenceId/show',
-          name: 'lead_retargeting_show',
+          name: 'copilots_show',
           component: LeadRetargetingShow,
           meta: {
             permissions: ['administrator'],

@@ -355,7 +355,7 @@
     "CUSTOM_ATTRIBUTES": "Atributos personalizados",
     "AUTOMATION": "Automatización",
     "MACROS": "Macros",
-    "LEAD_RETARGETING": "Retargeting de Leads",
+    "LEAD_RETARGETING": "Copilots",
     "TEAMS": "Equipos",
     "BILLING": "Facturación",
     "CUSTOM_VIEWS_FOLDER": "Carpetas",
@@ -798,15 +798,15 @@
     }
   },
   "LEAD_RETARGETING": {
-    "HEADER": "Secuencias de Retargeting de Leads",
-    "DESCRIPTION": "Haz seguimiento automático a leads de campañas Meta que no han respondido",
+    "HEADER": "Copilots",
+    "DESCRIPTION": "No más leads perdidos. Entrena a tus propios copilotos/agentes autónomos de IA para que tomen el control de tus operaciones",
     "LEARN_MORE": "Leer más",
-    "HEADER_BTN_TXT": "Añadir Secuencia",
+    "HEADER_BTN_TXT": "Añadir Copilot",
     "BREADCRUMB": {
       "BACK": "Atrás"
     },
     "LIST": {
-      "404": "No hay secuencias creadas aún",
+      "404": "No hay copilots creados aún",
       "STEPS": "Pasos",
       "ENROLLED": "inscritos",
       "EDIT": "Editar",
@@ -820,7 +820,7 @@
         "STEPS": "Pasos"
       },
       "API": {
-        "ERROR_MESSAGE": "Error al cargar las secuencias"
+        "ERROR_MESSAGE": "Error al cargar los copilots"
       }
     },
     "STATUS": {
@@ -828,47 +828,47 @@
       "INACTIVE": "Inactiva"
     },
     "TOGGLE": {
-      "ACTIVATED": "Secuencia activada exitosamente",
-      "DEACTIVATED": "Secuencia desactivada exitosamente",
-      "ERROR": "Error al cambiar el estado de la secuencia"
+      "ACTIVATED": "Copilot activado exitosamente",
+      "DEACTIVATED": "Copilot desactivado exitosamente",
+      "ERROR": "Error al cambiar el estado del copilot"
     },
     "DELETE": {
       "CONFIRM_MESSAGE": "¿Estás seguro de que deseas eliminar {name}?",
-      "SUCCESS_MESSAGE": "Secuencia eliminada exitosamente",
-      "ERROR_MESSAGE": "Error al eliminar la secuencia"
+      "SUCCESS_MESSAGE": "Copilot eliminado exitosamente",
+      "ERROR_MESSAGE": "Error al eliminar el copilot"
     },
     "FORM": {
-      "NEW_TITLE": "Nueva Secuencia de Retargeting",
-      "EDIT_TITLE": "Editar Secuencia de Retargeting",
+      "NEW_TITLE": "Nuevo Copilot",
+      "EDIT_TITLE": "Editar Copilot",
       "CANCEL": "Cancelar",
       "SAVE": "Guardar",
       "BASIC_INFO": "Información Básica",
-      "BASIC_INFO_SUBTITLE": "Configura los detalles básicos de tu secuencia de retargeting",
+      "BASIC_INFO_SUBTITLE": "Configura los detalles básicos de tu copilot",
       "NAME": "Nombre",
       "NAME_PLACEHOLDER": "ej., Seguimiento de Campaña Meta",
-      "NAME_REQUIRED": "El nombre de la secuencia es requerido",
+      "NAME_REQUIRED": "El nombre del copilot es requerido",
       "DESCRIPTION": "Descripción",
       "DESCRIPTION_PLACEHOLDER": "Describe cuándo debería ejecutarse esta secuencia",
       "INBOX": "Bandeja de WhatsApp",
       "INBOX_REQUIRED": "La bandeja de WhatsApp es requerida",
       "SELECT_INBOX": "Seleccionar bandeja...",
       "SETTINGS": "Configuración",
-      "SETTINGS_SUBTITLE": "Controla cuándo y cómo debe ejecutarse la secuencia",
-      "STOP_ON_REPLY": "Detener secuencia cuando el contacto responda",
-      "STOP_ON_RESOLVED": "Detener secuencia cuando la conversación se resuelva",
-      "ACTIVATE": "Activar secuencia",
-      "STEPS": "Pasos de la Secuencia",
+      "SETTINGS_SUBTITLE": "Controla cuándo y cómo debe ejecutarse el copilot",
+      "STOP_ON_REPLY": "Detener copilot cuando el contacto responda",
+      "STOP_ON_RESOLVED": "Detener copilot cuando la conversación se resuelva",
+      "ACTIVATE": "Activar copilot",
+      "STEPS": "Pasos del Copilot",
       "STEPS_SUBTITLE": "Define las acciones que se ejecutarán en orden",
-      "NO_STEPS": "No hay pasos añadidos aún. Añade períodos de espera y mensajes de plantilla para crear tu secuencia.",
+      "NO_STEPS": "No hay pasos añadidos aún. Añade períodos de espera y mensajes de plantilla para crear tu copilot.",
       "STEP_NAME": "Nombre del paso",
       "DELETE_STEP": "Eliminar paso",
-      "LOAD_ERROR": "Error al cargar la secuencia",
-      "CREATE_SUCCESS": "Secuencia creada exitosamente",
-      "CREATE_ERROR": "Error al crear la secuencia",
-      "UPDATE_SUCCESS": "Secuencia actualizada exitosamente",
-      "UPDATE_ERROR": "Error al actualizar la secuencia",
+      "LOAD_ERROR": "Error al cargar el copilot",
+      "CREATE_SUCCESS": "Copilot creado exitosamente",
+      "CREATE_ERROR": "Error al crear el copilot",
+      "UPDATE_SUCCESS": "Copilot actualizado exitosamente",
+      "UPDATE_ERROR": "Error al actualizar el copilot",
       "REACTIVATION_FILTERS": "Filtros de Reactivación",
-      "REACTIVATION_FILTERS_SUBTITLE": "Controla qué conversaciones se reactivan cuando la secuencia se completa",
+      "REACTIVATION_FILTERS_SUBTITLE": "Controla qué conversaciones se reactivan cuando el copilot se completa",
       "ENABLE_DATE_FILTER": "Habilitar Filtro de Fecha",
       "DATE_FILTER_TYPE": "Filtrar Basado En",
       "DATE_FILTER_CONVERSATION_CREATED": "Fecha de Creación de Conversación",

@@ -34,19 +34,19 @@ onMounted(() => {
 });
 
 const goToNew = () => {
-  router.push({ name: 'lead_retargeting_new' });
+  router.push({ name: 'copilots_new' });
 };
 
 const goToEdit = sequenceId => {
   router.push({
-    name: 'lead_retargeting_edit',
+    name: 'copilots_edit',
     params: { sequenceId },
   });
 };
 
 const goToShow = sequenceId => {
   router.push({
-    name: 'lead_retargeting_show',
+    name: 'copilots_show',
     params: { sequenceId },
   });
 };

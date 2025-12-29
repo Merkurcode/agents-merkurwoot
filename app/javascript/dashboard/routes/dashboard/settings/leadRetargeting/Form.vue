@@ -125,7 +125,7 @@ const pageTitle = computed(() =>
 );
 
 const goBack = () => {
-  router.push({ name: 'lead_retargeting_list' });
+  router.push({ name: 'copilots_list' });
 };
 
 onMounted(async () => {
@@ -556,7 +556,7 @@ const saveSequence = async () => {
       useAlert(t('LEAD_RETARGETING.FORM.CREATE_SUCCESS'));
     }
 
-    router.push({ name: 'lead_retargeting_list' });
+    router.push({ name: 'copilots_list' });
   } catch (error) {
     useAlert(
       isEdit.value

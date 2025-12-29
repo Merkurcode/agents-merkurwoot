@@ -3,7 +3,7 @@ import ApiClient from './ApiClient';
 
 class LeadFollowUpSequencesAPI extends ApiClient {
   constructor() {
-    super('lead_follow_up_sequences', { accountScoped: true });
+    super('copilot_sequences', { accountScoped: true });
   }
 
   activate(sequenceId) {

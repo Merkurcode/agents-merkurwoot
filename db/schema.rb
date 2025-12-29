@@ -776,6 +776,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_231242) do
     t.index ["status", "next_action_at"], name: "index_conversation_follow_ups_on_status_and_next_action_at"
   end
 
+  create_table "conversation_follow_ups", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.bigint "lead_follow_up_sequence_id", null: false
+    t.integer "current_step", default: 0, null: false
+    t.datetime "next_action_at"
+    t.string "status", default: "active", null: false
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "processing_started_at"
+    t.datetime "completed_at"
+    t.string "sidekiq_job_id"
+    t.index ["completed_at"], name: "index_conversation_follow_ups_on_completed_at"
+    t.index ["conversation_id"], name: "index_conversation_follow_ups_on_conversation_id", unique: true
+    t.index ["lead_follow_up_sequence_id"], name: "index_conversation_follow_ups_on_lead_follow_up_sequence_id"
+    t.index ["processing_started_at"], name: "index_conversation_follow_ups_on_processing_started_at"
+    t.index ["sidekiq_job_id"], name: "index_conversation_follow_ups_on_sidekiq_job_id"
+    t.index ["status", "next_action_at"], name: "index_conversation_follow_ups_on_status_and_next_action_at"
+  end
+
   create_table "conversation_participants", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "user_id", null: false

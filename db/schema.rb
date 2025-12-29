@@ -742,6 +742,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_24_102005) do
     t.index ["phone_number", "account_id"], name: "index_contacts_on_phone_number_and_account_id"
   end
 
+  create_table "conversation_follow_ups", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.bigint "lead_follow_up_sequence_id", null: false
+    t.integer "current_step", default: 0, null: false
+    t.datetime "next_action_at"
+    t.string "status", default: "active", null: false
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "processing_started_at"
+    t.datetime "completed_at"
+    t.string "sidekiq_job_id"
+    t.index ["completed_at"], name: "index_conversation_follow_ups_on_completed_at"
+    t.index ["conversation_id"], name: "index_conversation_follow_ups_on_conversation_id", unique: true
+    t.index ["lead_follow_up_sequence_id"], name: "index_conversation_follow_ups_on_lead_follow_up_sequence_id"
+    t.index ["processing_started_at"], name: "index_conversation_follow_ups_on_processing_started_at"
+    t.index ["sidekiq_job_id"], name: "index_conversation_follow_ups_on_sidekiq_job_id"
+    t.index ["status", "next_action_at"], name: "index_conversation_follow_ups_on_status_and_next_action_at"
+  end
+
   create_table "conversation_participants", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "user_id", null: false
@@ -1023,6 +1043,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_24_102005) do
     t.datetime "updated_at", precision: nil, null: false
     t.index ["account_id"], name: "index_labels_on_account_id"
     t.index ["title", "account_id"], name: "index_labels_on_title_and_account_id", unique: true
+  end
+
+  create_table "lead_follow_up_sequences", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "inbox_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "active", default: false, null: false
+    t.jsonb "trigger_conditions", default: {}
+    t.jsonb "steps", default: [], null: false
+    t.jsonb "settings", default: {}
+    t.jsonb "stats", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "active"], name: "index_lead_follow_up_sequences_on_account_id_and_active"
+    t.index ["account_id"], name: "index_lead_follow_up_sequences_on_account_id"
+    t.index ["inbox_id"], name: "index_lead_follow_up_sequences_on_inbox_id"
   end
 
   create_table "leaves", force: :cascade do |t|
@@ -1554,9 +1591,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_24_102005) do
   add_foreign_key "contact_survey_completions", "accounts"
   add_foreign_key "contact_survey_completions", "contacts"
   add_foreign_key "contact_survey_completions", "surveys"
+  add_foreign_key "conversation_follow_ups", "conversations"
+  add_foreign_key "conversation_follow_ups", "lead_follow_up_sequences"
   add_foreign_key "conversations", "pipeline_statuses"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "inboxes", "surveys"
+  add_foreign_key "lead_follow_up_sequences", "accounts"
+  add_foreign_key "lead_follow_up_sequences", "inboxes"
   add_foreign_key "marketing_campaigns", "accounts"
   add_foreign_key "meta_campaign_interactions", "accounts"
   add_foreign_key "meta_campaign_interactions", "conversations"

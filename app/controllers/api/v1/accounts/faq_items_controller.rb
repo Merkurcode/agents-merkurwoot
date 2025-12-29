@@ -95,10 +95,19 @@ class Api::V1::Accounts::FaqItemsController < Api::V1::Accounts::BaseController
   def faq_item_params
     permitted = params.require(:faq_item).permit(:faq_category_id, :position, :is_visible)
     # Permit nested translations hash with dynamic locale keys (es, en, etc.)
+    # Only allow question and answer fields per locale for security
     if params[:faq_item][:translations].present?
-      permitted[:translations] = params[:faq_item][:translations].to_unsafe_h
+      permitted[:translations] = sanitize_translations(params[:faq_item][:translations])
     end
     permitted
+  end
+
+  def sanitize_translations(translations_params)
+    translations_params.to_unsafe_h.each_with_object({}) do |(locale, content), result|
+      next unless content.is_a?(Hash)
+
+      result[locale] = content.slice('question', 'answer').transform_values(&:to_s)
+    end
   end
 
   def render_faq_item(item)

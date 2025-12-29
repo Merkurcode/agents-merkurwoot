@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
@@ -528,6 +528,21 @@ const stopMarquee = (event) => {
 };
 
 onMounted(fetchData);
+
+// Cleanup timeouts on unmount to prevent memory leaks
+onUnmounted(() => {
+  // Clear search debounce timer
+  if (searchDebounceTimer.value) {
+    clearTimeout(searchDebounceTimer.value);
+  }
+  // Clear marquee animation timeouts
+  activeMarquees.forEach((timeouts) => {
+    clearTimeout(timeouts.startTimeout);
+    clearTimeout(timeouts.endTimeout);
+    clearTimeout(timeouts.resetTimeout);
+  });
+  activeMarquees.clear();
+});
 </script>
 
 <template>

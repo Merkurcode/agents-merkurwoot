@@ -5,6 +5,7 @@ import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFie
 import LoadingState from 'dashboard/components/widgets/LoadingState.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SelectInput from 'dashboard/components-next/select/Select.vue';
+import FaqCategorySelector from './FaqCategorySelector.vue';
 
 export default {
   components: {
@@ -12,6 +13,7 @@ export default {
     SettingsFieldSection,
     NextButton,
     SelectInput,
+    FaqCategorySelector,
   },
   props: {
     inbox: {
@@ -90,6 +92,11 @@ export default {
           inboxId: this.inbox.id,
           botId: this.selectedAgentBotId || undefined,
         });
+
+        // Save FAQ categories selection if component is available
+        if (this.$refs.faqCategorySelector?.saveSelection) {
+          await this.$refs.faqCategorySelector.saveSelection();
+        }
 
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.SUCCESS_MESSAGE'));
       } catch (error) {

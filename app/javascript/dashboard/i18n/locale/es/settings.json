@@ -401,7 +401,9 @@
     },
     "KNOWLEDGE_BASE": {
       "TITLE": "Base de Conocimientos",
-      "PRODUCT_CATALOG": "Catálogo de Productos"
+      "PRODUCT_CATALOG": "Catálogo de Productos",
+      "UPLOAD_HISTORY": "Historial de Cargas",
+      "FAQS": "Preguntas Frecuentes"
     },
     "CHANNELS": "Canales",
     "SET_AUTO_OFFLINE": {

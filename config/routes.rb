@@ -162,6 +162,24 @@ Rails.application.routes.draw do
               post :dismiss
             end
           end
+          resources :faq_categories do
+            collection do
+              get :tree
+            end
+            member do
+              post :toggle_visibility
+              post :move
+            end
+          end
+          resources :faq_items do
+            member do
+              post :toggle_visibility
+              post :move
+            end
+            collection do
+              post :bulk_delete
+            end
+          end
           resources :appointments, only: [:index, :create, :show, :update, :destroy] do
             collection do
               get :search
@@ -296,6 +314,8 @@ Rails.application.routes.draw do
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates' do
               post :analyze, on: :collection
             end
+            resources :faq_categories, only: [:index, :create], controller: 'inbox_faq_categories'
+            resources :bot_faqs, only: [:index], controller: 'inbox_bot_faqs'
           end
 
           resources :inbox_members, only: [:create, :show], param: :inbox_id do

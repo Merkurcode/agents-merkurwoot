@@ -1158,6 +1158,26 @@
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
       "VOICE": "Voice"
+    },
+    "WHATSAPP_GROUPS": {
+      "SUB_TITLE": "Bandeja especial para conversaciones de grupos de WhatsApp",
+      "NOTE": "<strong>Nota:</strong> Esta es una bandeja administrada por el sistema utilizada exclusivamente para conversaciones de grupos de WhatsApp. Se crea automáticamente y no se puede modificar ni eliminar.",
+      "TYPE_LABEL": "Tipo:",
+      "TYPE_VALUE": "Grupos de WhatsApp",
+      "STATUS_LABEL": "Estado:",
+      "STATUS_VALUE": "Activo",
+      "AUTO_ASSIGNMENT_LABEL": "Asignación automática:",
+      "AUTO_ASSIGNMENT_VALUE": "Deshabilitado"
+    },
+    "FAQ_CONFIGURATION": {
+      "TITLE": "Categorías de FAQs",
+      "DESC": "Selecciona las categorías de FAQs que el agente de IA puede usar para responder preguntas comunes.",
+      "NO_CATEGORIES": "No hay categorías de FAQs disponibles. Crea categorías en Base de Conocimientos > FAQs primero.",
+      "SELECTED_COUNT": "{count} categorías seleccionadas",
+      "SAVE": "Guardar Configuración",
+      "SUCCESS_MESSAGE": "Configuración de FAQs guardada exitosamente",
+      "ERROR_MESSAGE": "Error al guardar la configuración de FAQs",
+      "FETCH_ERROR": "Error al cargar las categorías de FAQs"
     }
   }
 }

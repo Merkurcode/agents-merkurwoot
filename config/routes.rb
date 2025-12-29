@@ -165,6 +165,24 @@ Rails.application.routes.draw do
               post :dismiss
             end
           end
+          resources :faq_categories do
+            collection do
+              get :tree
+            end
+            member do
+              post :toggle_visibility
+              post :move
+            end
+          end
+          resources :faq_items do
+            member do
+              post :toggle_visibility
+              post :move
+            end
+            collection do
+              post :bulk_delete
+            end
+          end
           resources :appointments, only: [:index, :create, :show, :update, :destroy] do
             collection do
               get :search

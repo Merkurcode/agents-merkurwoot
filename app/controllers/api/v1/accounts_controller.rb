@@ -48,6 +48,7 @@ class Api::V1::AccountsController < Api::BaseController
     @account.custom_attributes.merge!(custom_attributes_params)
     @account.settings.merge!(settings_params)
     @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
+    update_account_address if account_address_params.present? && administrator?
     @account.save!
   end
 
@@ -93,6 +94,27 @@ class Api::V1::AccountsController < Api::BaseController
 
   def settings_params
     params.permit(:auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting, :audio_transcriptions, :auto_resolve_label)
+  end
+
+  def account_address_params
+    params.permit(account_address: %i[id street exterior_number interior_number neighborhood postal_code city state email phone webpage
+                                      establishment_summary])[:account_address]
+  end
+
+  def update_account_address
+    address_params = account_address_params.to_h
+    address_id = address_params.delete(:id)
+
+    if address_id.present?
+      address = @account.account_addresses.find_by(id: address_id)
+      address&.update!(address_params)
+    else
+      @account.account_addresses.create!(address_params)
+    end
+  end
+
+  def administrator?
+    @current_account_user&.administrator?
   end
 
   def check_signup_enabled

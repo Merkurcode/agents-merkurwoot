@@ -123,8 +123,8 @@
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "Ahora puede recibir emails en su dominio personalizado."
       },
       "ACCOUNT_ADDRESS": {
-        "TITLE": "Dirección de la cuenta",
-        "NOTE": "Configura la información de dirección física de tu cuenta. Esta información puede usarse en plantillas y comunicaciones.",
+        "TITLE": "Dirección de la empresa",
+        "NOTE": "Configura la información de dirección física de tu empresa. Esta información puede usarse en plantillas y comunicaciones.",
         "STREET": "Calle",
         "STREET_PLACEHOLDER": "Ingresa el nombre de la calle",
         "EXTERIOR_NUMBER": "Número exterior",

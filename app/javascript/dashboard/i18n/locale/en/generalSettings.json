@@ -123,8 +123,8 @@
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "You can receive emails in your custom domain now."
       },
       "ACCOUNT_ADDRESS": {
-        "TITLE": "Account address",
-        "NOTE": "Configure the physical address information for your account. This information can be used in templates and communications.",
+        "TITLE": "Company address",
+        "NOTE": "Configure the physical address information for your company. This information can be used in templates and communications.",
         "STREET": "Street",
         "STREET_PLACEHOLDER": "Enter street name",
         "EXTERIOR_NUMBER": "Exterior number",

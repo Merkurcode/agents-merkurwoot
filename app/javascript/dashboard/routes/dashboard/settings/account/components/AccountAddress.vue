@@ -1,19 +1,23 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useStore } from 'vuex';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAlert } from 'dashboard/composables';
+import AccountAPI from 'dashboard/api/account';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'next/input/Input.vue';
 import TextArea from 'next/textarea/TextArea.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const { t } = useI18n();
-const { currentAccount, updateAccount } = useAccount();
+const store = useStore();
+const { currentAccount } = useAccount();
 
 const isExpanded = ref(false);
 const isSubmitting = ref(false);
 const addressId = ref(null);
+const fieldErrors = ref({});
 const street = ref('');
 const exteriorNumber = ref('');
 const interiorNumber = ref('');
@@ -63,7 +67,23 @@ watch(
   { deep: true, immediate: true }
 );
 
+const fieldNameMap = {
+  street: 'STREET',
+  exterior_number: 'EXTERIOR_NUMBER',
+  interior_number: 'INTERIOR_NUMBER',
+  neighborhood: 'NEIGHBORHOOD',
+  postal_code: 'POSTAL_CODE',
+  city: 'CITY',
+  state: 'STATE',
+  email: 'EMAIL',
+  phone: 'PHONE',
+  webpage: 'WEBPAGE',
+  establishment_summary: 'ESTABLISHMENT_SUMMARY',
+};
+
 const handleSubmit = async () => {
+  fieldErrors.value = {};
+
   if (!hasRequiredFields.value) {
     useAlert(t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.ERROR'));
     return;
@@ -71,28 +91,39 @@ const handleSubmit = async () => {
 
   try {
     isSubmitting.value = true;
-    await updateAccount(
-      {
-        account_address: {
-          id: addressId.value,
-          street: street.value,
-          exterior_number: exteriorNumber.value,
-          interior_number: interiorNumber.value,
-          neighborhood: neighborhood.value,
-          postal_code: postalCode.value,
-          city: city.value,
-          state: state.value,
-          email: email.value,
-          phone: phone.value,
-          webpage: webpage.value,
-          establishment_summary: establishmentSummary.value,
-        },
+    const payload = {
+      account_address: {
+        id: addressId.value,
+        street: street.value,
+        exterior_number: exteriorNumber.value,
+        interior_number: interiorNumber.value,
+        neighborhood: neighborhood.value,
+        postal_code: postalCode.value,
+        city: city.value,
+        state: state.value,
+        email: email.value,
+        phone: phone.value,
+        webpage: webpage.value,
+        establishment_summary: establishmentSummary.value,
       },
-      { silent: true }
-    );
+    };
+    const response = await AccountAPI.update('', payload);
+    store.commit('accounts/EDIT_ACCOUNT', response.data);
     useAlert(t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.API.SUCCESS'));
   } catch (error) {
-    useAlert(t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.API.ERROR'));
+    const errorData = error?.response?.data;
+
+    if (errorData?.attributes?.length) {
+      errorData.attributes.forEach(attr => {
+        fieldErrors.value[attr] = true;
+      });
+      const fieldNames = errorData.attributes
+        .map(attr => t(`GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.${fieldNameMap[attr] || attr.toUpperCase()}`))
+        .join(', ');
+      useAlert(`${errorData.message}: ${fieldNames}`);
+    } else {
+      useAlert(errorData?.message || t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.API.ERROR'));
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -229,21 +260,29 @@ const handleSubmit = async () => {
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <WithLabel :label="t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.EMAIL')">
+          <WithLabel
+            :label="t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.EMAIL')"
+            :has-error="fieldErrors.email"
+          >
             <NextInput
               v-model="email"
               type="email"
               class="w-full"
+              :message-type="fieldErrors.email ? 'error' : 'info'"
               :placeholder="
                 t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.EMAIL_PLACEHOLDER')
               "
             />
           </WithLabel>
-          <WithLabel :label="t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.PHONE')">
+          <WithLabel
+            :label="t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.PHONE')"
+            :has-error="fieldErrors.phone"
+          >
             <NextInput
               v-model="phone"
               type="tel"
               class="w-full"
+              :message-type="fieldErrors.phone ? 'error' : 'info'"
               :placeholder="
                 t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.PHONE_PLACEHOLDER')
               "
@@ -251,11 +290,15 @@ const handleSubmit = async () => {
           </WithLabel>
         </div>
 
-        <WithLabel :label="t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.WEBPAGE')">
+        <WithLabel
+          :label="t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.WEBPAGE')"
+          :has-error="fieldErrors.webpage"
+        >
           <NextInput
             v-model="webpage"
             type="url"
             class="w-full"
+            :message-type="fieldErrors.webpage ? 'error' : 'info'"
             :placeholder="
               t('GENERAL_SETTINGS.FORM.ACCOUNT_ADDRESS.WEBPAGE_PLACEHOLDER')
             "

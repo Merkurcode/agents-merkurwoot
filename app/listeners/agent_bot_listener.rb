@@ -3,16 +3,18 @@ class AgentBotListener < BaseListener
     conversation = extract_conversation_and_account(event)[0]
     inbox = conversation.inbox
     event_name = __method__.to_s
-    payload = conversation.webhook_data.merge(event: event_name)
-    agent_bots_for(inbox, conversation).each { |agent_bot| process_webhook_bot_event(agent_bot, payload) }
+    idempotency_key = generate_idempotency_key(event_name, conversation)
+    payload = conversation.webhook_data.merge(event: event_name, idempotency_key: idempotency_key)
+    agent_bots_for(inbox, conversation).each { |agent_bot| process_webhook_bot_event(agent_bot, payload, idempotency_key) }
   end
 
   def conversation_opened(event)
     conversation = extract_conversation_and_account(event)[0]
     inbox = conversation.inbox
     event_name = __method__.to_s
-    payload = conversation.webhook_data.merge(event: event_name)
-    agent_bots_for(inbox, conversation).each { |agent_bot| process_webhook_bot_event(agent_bot, payload) }
+    idempotency_key = generate_idempotency_key(event_name, conversation)
+    payload = conversation.webhook_data.merge(event: event_name, idempotency_key: idempotency_key)
+    agent_bots_for(inbox, conversation).each { |agent_bot| process_webhook_bot_event(agent_bot, payload, idempotency_key) }
   end
 
   def conversation_status_changed(event)
@@ -55,9 +57,10 @@ class AgentBotListener < BaseListener
     contact_inbox = event.data[:contact_inbox]
     inbox = contact_inbox.inbox
     event_name = __method__.to_s
-    payload = contact_inbox.webhook_data.merge(event: event_name)
+    idempotency_key = generate_idempotency_key(event_name, contact_inbox)
+    payload = contact_inbox.webhook_data.merge(event: event_name, idempotency_key: idempotency_key)
     payload[:event_info] = event.data[:event_info]
-    agent_bots_for(inbox).each { |agent_bot| process_webhook_bot_event(agent_bot, payload) }
+    agent_bots_for(inbox).each { |agent_bot| process_webhook_bot_event(agent_bot, payload, idempotency_key) }
   end
 
   private
@@ -78,11 +81,12 @@ class AgentBotListener < BaseListener
 
   def process_message_event(method_name, agent_bot, message, _event)
     # Only webhook bots are supported
-    payload = message.webhook_data.merge(event: method_name)
-    process_webhook_bot_event(agent_bot, payload)
+    idempotency_key = generate_idempotency_key(method_name, message)
+    payload = message.webhook_data.merge(event: method_name, idempotency_key: idempotency_key)
+    process_webhook_bot_event(agent_bot, payload, idempotency_key)
   end
 
-  def process_webhook_bot_event(agent_bot, payload)
+  def process_webhook_bot_event(agent_bot, payload, idempotency_key)
     return if agent_bot.outgoing_url.blank?
 
     AgentBots::WebhookJob.perform_later(agent_bot.outgoing_url, payload, :agent_bot_webhook,

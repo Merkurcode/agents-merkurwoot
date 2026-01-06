@@ -44,12 +44,14 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def update
-    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :pinecone_index))
-    @account.custom_attributes.merge!(custom_attributes_params)
-    @account.settings.merge!(settings_params)
-    @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
-    update_account_address if account_address_params.present? && administrator?
-    @account.save!
+    ActiveRecord::Base.transaction do
+      @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :pinecone_index))
+      @account.custom_attributes.merge!(custom_attributes_params)
+      @account.settings.merge!(settings_params)
+      @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
+      update_account_address if account_address_params.present? && administrator?
+      @account.save!
+    end
   end
 
   def update_active_at
@@ -102,14 +104,14 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def update_account_address
-    address_params = account_address_params.to_h
-    address_id = address_params.delete(:id)
+    address_id = account_address_params[:id]
+    address_attrs = account_address_params.except(:id)
 
     if address_id.present?
       address = @account.account_addresses.find_by(id: address_id)
-      address&.update!(address_params)
+      address ? address.update!(address_attrs) : @account.account_addresses.create!(address_attrs)
     else
-      @account.account_addresses.create!(address_params)
+      @account.account_addresses.create!(address_attrs)
     end
   end
 

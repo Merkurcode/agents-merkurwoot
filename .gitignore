@@ -122,3 +122,4 @@ BASE-DE-DATOS.md
 .husky/
 !.husky/.gitkeep
 *.md
+!docs/**/*.md

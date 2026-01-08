@@ -71,10 +71,13 @@ class AccountUser < ApplicationRecord
     subordinates.pluck(:user_id)
   end
 
-  def all_subordinate_user_ids
+  def all_subordinate_user_ids(visited = Set.new)
+    return [] if visited.include?(id)
+
+    visited.add(id)
     ids = subordinate_user_ids
-    subordinates.each do |sub|
-      ids += sub.all_subordinate_user_ids if sub.supervisor?
+    subordinates.includes(:subordinates).each do |sub|
+      ids += sub.all_subordinate_user_ids(visited) if sub.supervisor?
     end
     ids.uniq
   end

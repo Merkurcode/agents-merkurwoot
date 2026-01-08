@@ -132,12 +132,29 @@ class SearchService
   end
 
   def filter_contacts
-    @contacts = current_account.contacts.where(
+    @contacts = contact_base_query.where(
       "name ILIKE :search OR email ILIKE :search OR phone_number
       ILIKE :search OR identifier ILIKE :search", search: "%#{search_query}%"
     ).resolved_contacts(
       use_crm_v2: current_account.feature_enabled?('crm_v2')
     ).order_on_last_activity_at('desc').page(params[:page]).per(15)
+  end
+
+  def contact_base_query
+    if account_user.administrator?
+      current_account.contacts
+    elsif account_user.supervisor?
+      # Supervisor solo ve contactos con conversaciones asignadas a sí mismo o a sus subordinados
+      supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
+      contact_ids = current_account.conversations
+                                   .where(assignee_id: supervisor_assignee_ids)
+                                   .pluck(:contact_id)
+                                   .uniq
+      current_account.contacts.where(id: contact_ids)
+    else
+      # Agentes ven todos los contactos de la cuenta
+      current_account.contacts
+    end
   end
 
   def filter_articles

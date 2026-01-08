@@ -55,6 +55,8 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   def active
     contacts = Current.account.contacts.where(id: ::OnlineStatusTracker
                   .get_available_contact_ids(Current.account.id))
+    # Supervisor solo ve contactos con conversaciones asignadas a sí mismo o subordinados
+    contacts = filter_contacts_for_supervisor(contacts) if current_account_user&.supervisor?
     @contacts = fetch_contacts(contacts)
     @contacts_count = @contacts.total_count
   end
@@ -124,8 +126,24 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
     @resolved_contacts = Current.account.contacts.resolved_contacts(use_crm_v2: Current.account.feature_enabled?('crm_v2'))
 
+    # Supervisor solo ve contactos con conversaciones asignadas a sí mismo o subordinados
+    @resolved_contacts = filter_contacts_for_supervisor(@resolved_contacts) if current_account_user&.supervisor?
+
     @resolved_contacts = @resolved_contacts.tagged_with(params[:labels], any: true) if params[:labels].present?
     @resolved_contacts
+  end
+
+  def current_account_user
+    @current_account_user ||= Current.account.account_users.find_by(user_id: Current.user.id)
+  end
+
+  def filter_contacts_for_supervisor(contacts)
+    assignee_ids = current_account_user.all_subordinate_user_ids + [Current.user.id]
+    contact_ids = Current.account.conversations
+                         .where(assignee_id: assignee_ids)
+                         .pluck(:contact_id)
+                         .uniq
+    contacts.where(id: contact_ids)
   end
 
   def set_current_page

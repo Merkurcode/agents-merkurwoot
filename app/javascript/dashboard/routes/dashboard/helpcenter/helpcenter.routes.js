@@ -96,7 +96,8 @@ const portalRoutes = [
     name: 'portals_index',
     meta: {
       featureFlag: FEATURE_FLAGS.HELP_CENTER,
-      permissions: ['administrator', 'knowledge_base_manage'],
+      // TODO: Add 'supervisor', 'knowledge_base_manage' when needed
+      permissions: ['administrator'],
     },
     component: PortalsIndex,
   },

@@ -44,13 +44,9 @@ class SearchService
     if account_user.administrator?
       current_account.conversations
     elsif account_user.supervisor?
-      # Supervisor ve: sus inboxes + conversaciones asignadas a subordinados o a sí mismo
+      # Supervisor solo ve conversaciones asignadas a sí mismo o a sus subordinados
       supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
-      current_account.conversations.where(
-        'inbox_id IN (?) OR assignee_id IN (?)',
-        accessable_inbox_ids,
-        supervisor_assignee_ids
-      )
+      current_account.conversations.where(assignee_id: supervisor_assignee_ids)
     else
       current_account.conversations.where(inbox_id: accessable_inbox_ids)
     end
@@ -111,13 +107,9 @@ class SearchService
     if account_user.administrator? || user_has_access_to_all_inboxes?
       base
     elsif account_user.supervisor?
-      # Supervisor ve mensajes de: sus inboxes + conversaciones asignadas a subordinados o a sí mismo
+      # Supervisor solo ve mensajes de conversaciones asignadas a sí mismo o a sus subordinados
       supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
-      base.joins(:conversation).where(
-        'messages.inbox_id IN (?) OR conversations.assignee_id IN (?)',
-        accessable_inbox_ids,
-        supervisor_assignee_ids
-      )
+      base.joins(:conversation).where(conversations: { assignee_id: supervisor_assignee_ids })
     else
       base.where(inbox_id: accessable_inbox_ids)
     end

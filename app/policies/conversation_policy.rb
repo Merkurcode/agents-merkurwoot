@@ -24,11 +24,11 @@ class ConversationPolicy < ApplicationPolicy
   def supervisor_can_view_conversation?
     return false unless account_user&.supervisor?
 
-    return true if inbox_access? || team_access?
-
+    # Supervisor solo ve conversaciones asignadas a sí mismo o a sus subordinados
     return false if record.assignee_id.blank?
 
-    account_user.all_subordinate_user_ids.include?(record.assignee_id)
+    record.assignee_id == user.id ||
+      account_user.all_subordinate_user_ids.include?(record.assignee_id)
   end
 
   def agent_bot?

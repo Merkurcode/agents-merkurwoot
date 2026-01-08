@@ -23,11 +23,13 @@ class Conversations::PermissionFilterService
   def supervisor_accessible_conversations
     own_inbox_ids = user.inboxes.where(account_id: account.id).pluck(:id)
     subordinate_ids = account_user.all_subordinate_user_ids
+    # Incluir al propio supervisor para ver sus conversaciones asignadas
+    all_assignee_ids = subordinate_ids + [user.id]
 
     conversations.where(
       'inbox_id IN (?) OR assignee_id IN (?)',
       own_inbox_ids,
-      subordinate_ids
+      all_assignee_ids
     )
   end
 

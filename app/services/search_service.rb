@@ -104,12 +104,14 @@ class SearchService
   def message_base_query
     base = current_account.messages.where('messages.created_at >= ?', 3.months.ago)
 
-    if account_user.administrator? || user_has_access_to_all_inboxes?
+    if account_user.administrator?
       base
     elsif account_user.supervisor?
       # Supervisor solo ve mensajes de conversaciones asignadas a sí mismo o a sus subordinados
       supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
       base.joins(:conversation).where(conversations: { assignee_id: supervisor_assignee_ids })
+    elsif user_has_access_to_all_inboxes?
+      base
     else
       base.where(inbox_id: accessable_inbox_ids)
     end
@@ -124,11 +126,8 @@ class SearchService
   end
 
   # Used by enterprise advanced_search (Elasticsearch)
-  # Note: For supervisor, advanced_search has limited support - only filters by inbox_ids
-  # The full supervisor filtering (including subordinate assignee conversations) is handled
-  # in message_base_query for non-advanced search
   def should_skip_inbox_filtering?
-    account_user.administrator? || user_has_access_to_all_inboxes?
+    account_user.administrator? || (!account_user.supervisor? && user_has_access_to_all_inboxes?)
   end
 
   def filter_contacts

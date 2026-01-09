@@ -26,6 +26,7 @@ import teams from './teams/teams.routes';
 import customRoles from './customRoles/customRole.routes';
 import profile from './profile/profile.routes';
 import security from './security/security.routes';
+import { routes as locationsRoutes } from './locations/routes';
 
 export default {
   routes: [
@@ -63,6 +64,7 @@ export default {
     ...reports.routes,
     ...sla.routes,
     ...surveys.routes,
+    ...locationsRoutes,
     ...teams.routes,
     ...customRoles.routes,
     ...profile.routes,

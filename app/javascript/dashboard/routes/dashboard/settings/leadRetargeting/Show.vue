@@ -139,7 +139,7 @@ const formatDate = dateString => {
 const getStepTypeName = type => {
   const typeNames = {
     wait: 'Espera',
-    send_template: 'Enviar Plantilla',
+    send_message: 'Enviar Mensaje',
     add_label: 'Agregar Etiqueta',
     remove_label: 'Remover Etiqueta',
     assign_agent: 'Asignar Agente',
@@ -259,6 +259,16 @@ onMounted(async () => {
             <p v-if="sequence.description" class="text-sm text-n-slate-11 mt-1">
               {{ sequence.description }}
             </p>
+            <!-- Badge de auto-desactivación -->
+            <div v-if="!sequence.active && sequence.metadata?.auto_deactivation_reason === 'all_conversations_completed'" class="mt-2">
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-n-teal-2 dark:bg-n-teal-3 text-n-teal-11 rounded-md text-xs font-medium"
+                :title="`Auto-desactivado el ${formatDate(sequence.metadata.auto_deactivated_at)}`"
+              >
+                <i class="i-lucide-check-circle text-sm" />
+                Auto-desactivado: Todas las conversaciones completadas
+              </span>
+            </div>
           </div>
           <div class="flex gap-2">
             <Button
@@ -365,6 +375,7 @@ onMounted(async () => {
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Step</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Próxima Acción</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Razón de Detención</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Re-enrollments</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-n-slate-11">Enrollado</th>
                 </tr>
               </thead>
@@ -438,6 +449,22 @@ onMounted(async () => {
                       {{ getStopReason(item.status, item.metadata) }}
                     </p>
                     <span v-else class="text-xs text-n-slate-11">-</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div v-if="item.metadata?.re_enrollment_count > 0" class="flex items-center gap-1.5">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-n-iris-2 dark:bg-n-iris-3 text-n-iris-11 rounded text-xs font-medium">
+                        <i class="i-lucide-refresh-ccw text-xs" />
+                        {{ item.metadata.re_enrollment_count }}x
+                      </span>
+                      <button
+                        v-if="item.metadata?.previous_completion"
+                        class="text-xs text-n-slate-11 hover:text-n-slate-12"
+                        :title="`Última completación: ${formatDate(item.metadata.previous_completion)}`"
+                      >
+                        <i class="i-lucide-info text-xs" />
+                      </button>
+                    </div>
+                    <span v-else class="text-xs text-n-slate-11">Primera vez</span>
                   </td>
                   <td class="px-4 py-3">
                     <p class="text-xs text-n-slate-11">

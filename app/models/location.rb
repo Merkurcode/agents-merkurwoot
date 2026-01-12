@@ -27,8 +27,17 @@
 class Location < ApplicationRecord
   # Associations
   belongs_to :account
-  belongs_to :parent_location, class_name: 'Location', optional: true
-  has_many :child_locations, class_name: 'Location', foreign_key: :parent_location_id, dependent: :destroy, inverse_of: :location
+  belongs_to :parent_location,
+             class_name: 'Location',
+             optional: true,
+             inverse_of: :child_locations
+
+  has_many :child_locations,
+           class_name: 'Location',
+           foreign_key: :parent_location_id,
+           dependent: :destroy,
+           inverse_of: :parent_location
+
   has_one :address, as: :addressable, class_name: 'AccountAddress', dependent: :destroy
 
   # Nested attributes for creating/updating address in the same request

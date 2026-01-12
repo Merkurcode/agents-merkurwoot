@@ -44,7 +44,7 @@ class SearchService
     if account_user.administrator?
       current_account.conversations
     elsif account_user.supervisor?
-      # Supervisor solo ve conversaciones asignadas a sí mismo o a sus subordinados
+      # Supervisor only sees conversations assigned to themselves or their subordinates
       supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
       current_account.conversations.where(assignee_id: supervisor_assignee_ids)
     else
@@ -107,7 +107,7 @@ class SearchService
     if account_user.administrator?
       base
     elsif account_user.supervisor?
-      # Supervisor solo ve mensajes de conversaciones asignadas a sí mismo o a sus subordinados
+      # Supervisor only sees messages from conversations assigned to themselves or their subordinates
       supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
       base.joins(:conversation).where(conversations: { assignee_id: supervisor_assignee_ids })
     elsif user_has_access_to_all_inboxes?
@@ -143,7 +143,7 @@ class SearchService
     if account_user.administrator?
       current_account.contacts
     elsif account_user.supervisor?
-      # Supervisor solo ve contactos con conversaciones asignadas a sí mismo o a sus subordinados
+      # Supervisor only sees contacts with conversations assigned to themselves or their subordinates
       supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
       contact_ids = current_account.conversations
                                    .where(assignee_id: supervisor_assignee_ids)
@@ -151,7 +151,7 @@ class SearchService
                                    .uniq
       current_account.contacts.where(id: contact_ids)
     else
-      # Agentes ven todos los contactos de la cuenta
+      # Agents see all contacts in the account
       current_account.contacts
     end
   end

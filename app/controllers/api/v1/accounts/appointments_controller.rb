@@ -18,8 +18,8 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
 
   def index
     appointments = Current.account.appointments.includes(:contact)
-    # Supervisor solo ve citas de contactos con conversaciones asignadas a sí mismo o subordinados
-    appointments = filter_appointments_for_supervisor(appointments) if current_account_user&.supervisor?
+    # Supervisor only sees appointments of contacts with conversations assigned to themselves or subordinates
+    appointments = filter_appointments_for_supervisor(appointments) if Current.account_user&.supervisor?
     @appointments = fetch_appointments(appointments)
     @appointments_count = @appointments.total_count
   end
@@ -32,8 +32,8 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
        OR appointments.location ILIKE :search OR appointments.description ILIKE :search',
       search: "%#{params[:q].strip}%"
     )
-    # Supervisor solo ve citas de contactos con conversaciones asignadas a sí mismo o subordinados
-    appointments = filter_appointments_for_supervisor(appointments) if current_account_user&.supervisor?
+    # Supervisor only sees appointments of contacts with conversations assigned to themselves or subordinates
+    appointments = filter_appointments_for_supervisor(appointments) if Current.account_user&.supervisor?
     @appointments = fetch_appointments(appointments)
     @appointments_count = @appointments.total_count
   end
@@ -113,12 +113,8 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
       .per(RESULTS_PER_PAGE)
   end
 
-  def current_account_user
-    @current_account_user ||= Current.account.account_users.find_by(user_id: Current.user.id)
-  end
-
   def filter_appointments_for_supervisor(appointments)
-    assignee_ids = current_account_user.all_subordinate_user_ids + [Current.user.id]
+    assignee_ids = Current.account_user.all_subordinate_user_ids + [Current.user.id]
     contact_ids = Current.account.conversations
                          .where(assignee_id: assignee_ids)
                          .pluck(:contact_id)

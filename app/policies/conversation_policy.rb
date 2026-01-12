@@ -24,7 +24,7 @@ class ConversationPolicy < ApplicationPolicy
   def supervisor_can_view_conversation?
     return false unless account_user&.supervisor?
 
-    # Supervisor solo ve conversaciones asignadas a sí mismo o a sus subordinados
+    # Supervisor only sees conversations assigned to themselves or their subordinates
     return false if record.assignee_id.blank?
 
     record.assignee_id == user.id ||

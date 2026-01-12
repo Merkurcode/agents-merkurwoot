@@ -4,7 +4,7 @@ module Enterprise::SearchService
 
     unless should_skip_inbox_filtering?
       if account_user.supervisor?
-        # Supervisor solo ve mensajes de conversaciones asignadas a sí mismo o a sus subordinados
+        # Supervisor only sees messages from conversations assigned to themselves or their subordinates
         supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
         conversation_ids = current_account.conversations
                                           .where(assignee_id: supervisor_assignee_ids)

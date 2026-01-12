@@ -22,7 +22,7 @@ class Conversations::PermissionFilterService
 
   def supervisor_accessible_conversations
     subordinate_ids = account_user.all_subordinate_user_ids
-    # Supervisor solo ve conversaciones asignadas a sí mismo o a sus subordinados
+    # Supervisor only sees conversations assigned to themselves or their subordinates
     all_assignee_ids = subordinate_ids + [user.id]
 
     conversations.where(assignee_id: all_assignee_ids)

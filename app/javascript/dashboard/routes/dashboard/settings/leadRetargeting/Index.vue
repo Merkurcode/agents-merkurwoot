@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onActivated, ref, watch } from 'vue';
+import { computed, onMounted, onActivated, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
@@ -51,6 +51,15 @@ watch(
     }
   }
 );
+
+const resetData = () => {
+  sequences.value = [];
+  sequenceToDelete.value = null;
+};
+
+onBeforeUnmount(() => {
+  resetData();
+});
 
 const goToNew = () => {
   router.push({ name: 'copilots_new' });

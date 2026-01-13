@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
@@ -226,9 +226,37 @@ const cancelSelectedFollowUps = async () => {
   }
 };
 
-onMounted(async () => {
+const resetData = () => {
+  sequence.value = null;
+  enrolledConversations.value = [];
+  statusFilter.value = null;
+  statusCounts.value = {};
+  selectedFollowUps.value = [];
+  totalSteps.value = 0;
+};
+
+const loadData = async () => {
   await fetchSequence();
   await fetchEnrolledConversations();
+};
+
+onMounted(async () => {
+  await loadData();
+});
+
+// Watch para cambios en el sequenceId de la ruta
+watch(
+  () => route.params.sequenceId,
+  async (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      resetData();
+      await loadData();
+    }
+  }
+);
+
+onBeforeUnmount(() => {
+  resetData();
 });
 </script>
 

@@ -165,6 +165,10 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Whatsapp'
   end
 
+  def twilio_whatsapp?
+    channel_type == 'Channel::TwilioSms' && channel.medium == 'whatsapp'
+  end
+
   def assignable_agents
     member_ids = members.pluck(:user_id)
     inbox_members = account.users.where(id: member_ids)

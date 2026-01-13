@@ -637,10 +637,7 @@ class LeadRetargeting::SendFollowUpService
     idempotency_key = generate_idempotency_key(step, suffix: 'sms')
 
     begin
-      response = send_agent_bot_webhook(agent_bot, payload, idempotency_key)
-
-      # El agente de IA es responsable de enviar el SMS
-      # No creamos mensaje en Chatwoot aquí - el agente puede hacerlo vía API si lo necesita
+      send_agent_bot_webhook(agent_bot, payload, idempotency_key)
 
       { success: true }
     rescue StandardError => e
@@ -700,6 +697,9 @@ class LeadRetargeting::SendFollowUpService
 
         # Channel del mensaje
         message_channel: message_channel,
+
+        # Número de teléfono del inbox (para canales de WhatsApp)
+        inbox_phone_number: @inbox.channel&.phone_number,
 
         # Contexto OPCIONAL - puede ser nil o vacío
         context: rendered_context,

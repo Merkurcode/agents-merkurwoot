@@ -173,6 +173,17 @@ class SearchService
 
   def should_skip_inbox_filtering?
     account_user.administrator? || user_has_access_to_all_inboxes?
+    if account_user.administrator?
+      base
+    elsif account_user.supervisor?
+      # Supervisor only sees messages from conversations assigned to themselves or their subordinates
+      supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
+      base.joins(:conversation).where(conversations: { assignee_id: supervisor_assignee_ids })
+    elsif user_has_access_to_all_inboxes?
+      base
+    else
+      base.where(inbox_id: accessable_inbox_ids)
+    end
   end
 
   def user_has_access_to_all_inboxes?

@@ -46,6 +46,18 @@ class SearchService
                                         .per(15)
   end
 
+  def conversation_base_query
+    if account_user.administrator?
+      current_account.conversations
+    elsif account_user.supervisor?
+      # Supervisor only sees conversations assigned to themselves or their subordinates
+      supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
+      current_account.conversations.where(assignee_id: supervisor_assignee_ids)
+    else
+      current_account.conversations.where(inbox_id: accessable_inbox_ids)
+    end
+  end
+
   def filter_messages
     @messages = if use_gin_search
                   filter_messages_with_gin
@@ -105,10 +117,7 @@ class SearchService
   end
 
   def message_base_query
-    query = current_account.messages.where('created_at >= ?', 3.months.ago)
-    query = query.where(inbox_id: accessable_inbox_ids) unless should_skip_inbox_filtering?
-    query
-  end
+    base = current_account.messages.where('messages.created_at >= ?', 3.months.ago)
 
   def apply_message_filters(query)
     return query unless current_account.feature_enabled?('advanced_search')
@@ -161,6 +170,11 @@ class SearchService
     current_account.feature_enabled?('search_with_gin')
   end
 
+  # Used by enterprise advanced_search (Elasticsearch)
+  def should_skip_inbox_filtering?
+    account_user.administrator? || (!account_user.supervisor? && user_has_access_to_all_inboxes?)
+  end
+
   def filter_contacts
     contacts_query = current_account.contacts.where(
       "name ILIKE :search OR email ILIKE :search OR phone_number
@@ -172,6 +186,23 @@ class SearchService
     @contacts = contacts_query.resolved_contacts(
       use_crm_v2: current_account.feature_enabled?('crm_v2')
     ).order_on_last_activity_at('desc').page(params[:page]).per(15)
+  end
+
+  def contact_base_query
+    if account_user.administrator?
+      current_account.contacts
+    elsif account_user.supervisor?
+      # Supervisor only sees contacts with conversations assigned to themselves or their subordinates
+      supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
+      contact_ids = current_account.conversations
+                                   .where(assignee_id: supervisor_assignee_ids)
+                                   .pluck(:contact_id)
+                                   .uniq
+      current_account.contacts.where(id: contact_ids)
+    else
+      # Agents see all contacts in the account
+      current_account.contacts
+    end
   end
 
   def filter_articles

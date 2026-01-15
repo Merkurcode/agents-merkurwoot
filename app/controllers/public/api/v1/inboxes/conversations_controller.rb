@@ -3,7 +3,12 @@ class Public::Api::V1::Inboxes::ConversationsController < Public::Api::V1::Inbox
   before_action :set_conversation, only: [:toggle_typing, :update_last_seen, :show, :toggle_status]
 
   def index
-    @conversations = @contact_inbox.hmac_verified? ? @contact_inbox.contact.conversations : @contact_inbox.conversations
+    contact = @contact_inbox.contact
+    @conversations = if @contact_inbox.hmac_verified? && contact.present?
+                       contact.conversations
+                     else
+                       @contact_inbox.conversations
+                     end
   end
 
   def show; end
@@ -46,8 +51,9 @@ class Public::Api::V1::Inboxes::ConversationsController < Public::Api::V1::Inbox
   private
 
   def set_conversation
-    @conversation = if @contact_inbox.hmac_verified?
-                      @contact_inbox.contact.conversations.find_by!(display_id: params[:id])
+    contact = @contact_inbox.contact
+    @conversation = if @contact_inbox.hmac_verified? && contact.present?
+                      contact.conversations.find_by!(display_id: params[:id])
                     else
                       @contact_inbox.conversations.find_by!(display_id: params[:id])
                     end

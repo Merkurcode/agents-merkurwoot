@@ -197,6 +197,7 @@ Rails.application.routes.draw do
             collection do
               get :meta
               get :search
+              get :discarded
               post :filter
             end
             scope module: :conversations do
@@ -222,6 +223,7 @@ Rails.application.routes.draw do
               post :update_last_seen
               post :unread
               post :custom_attributes
+              post :restore
               get :attachments
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
@@ -246,6 +248,7 @@ Rails.application.routes.draw do
             collection do
               get :active
               get :search
+              get :discarded
               post :filter
               post :import
               post :export
@@ -253,6 +256,7 @@ Rails.application.routes.draw do
             member do
               get :contactable_inboxes
               post :destroy_custom_attributes
+              post :restore
               delete :avatar
             end
             scope module: :contacts do

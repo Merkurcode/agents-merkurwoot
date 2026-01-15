@@ -7,6 +7,14 @@ class ConversationPolicy < ApplicationPolicy
     administrator?
   end
 
+  def restore?
+    administrator?
+  end
+
+  def discarded?
+    administrator?
+  end
+
   def show?
     administrator? || agent_bot? || agent_can_view_conversation?
   end

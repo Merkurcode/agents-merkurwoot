@@ -107,8 +107,25 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
                           :unprocessable_entity)
     end
 
-    @contact.destroy!
+    @contact.discard!
     head :ok
+  end
+
+  def restore
+    @contact = Current.account.contacts.with_discarded.discarded.find(params[:id])
+    authorize @contact, :restore?
+    @contact.undiscard!
+    render :show
+  end
+
+  def discarded
+    authorize Contact, :discarded?
+    @contacts = Current.account.contacts.with_discarded.discarded
+                       .includes(avatar_attachment: [:blob])
+                       .page(params[:page] || 1)
+                       .per(RESULTS_PER_PAGE)
+    @contacts_count = @contacts.total_count
+    render :index
   end
 
   def avatar

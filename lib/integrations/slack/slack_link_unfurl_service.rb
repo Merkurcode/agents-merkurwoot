@@ -24,10 +24,10 @@ class Integrations::Slack::SlackLinkUnfurlService
   def contact_attributes(conversation)
     contact = conversation.contact
     {
-      user_name: contact.name.presence || '---',
-      email: contact.email.presence || '---',
-      phone_number: contact.phone_number.presence || '---',
-      company_name: contact.additional_attributes&.dig('company_name').presence || '---'
+      user_name: contact&.name.presence || '---',
+      email: contact&.email.presence || '---',
+      phone_number: contact&.phone_number.presence || '---',
+      company_name: contact&.additional_attributes&.dig('company_name').presence || '---'
     }
   end
 

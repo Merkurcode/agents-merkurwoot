@@ -5,7 +5,17 @@ json.message do
   json.partial! 'message', formats: [:json], message: conversation.messages.try(:first)
 end
 json.contact do
-  json.partial! 'contact', formats: [:json], contact: conversation.contact if conversation.try(:contact).present?
+  contact = conversation.contact || Contact.with_discarded.find_by(id: conversation.contact_id)
+  if contact.present?
+    json.partial! 'contact', formats: [:json], contact: contact
+  else
+    # Ultimate fallback if contact was hard deleted
+    json.id conversation.contact_id
+    json.name I18n.t('contacts.deleted.name')
+    json.email nil
+    json.phone_number nil
+    json.thumbnail ''
+  end
 end
 json.inbox do
   json.partial! 'inbox', formats: [:json], inbox: conversation.inbox if conversation.try(:inbox).present?

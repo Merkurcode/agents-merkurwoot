@@ -57,7 +57,8 @@ class Whatsapp::GroupService
     participants << format_phone_number(conversation.assignee.phone_number) if conversation.assignee&.phone_number.present?
 
     # Agregar número del cliente
-    participants << format_phone_number(conversation.contact.phone_number) if conversation.contact&.phone_number.present?
+    contact = conversation.contact
+    participants << format_phone_number(contact.phone_number) if contact&.phone_number.present?
     Rails.logger.info "[WHATSAPP GROUP] Participants: #{participants}"
     participants.compact.uniq
   end

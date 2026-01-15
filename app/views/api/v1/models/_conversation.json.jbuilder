@@ -4,8 +4,15 @@ json.id conversation.display_id
 json.uuid conversation.uuid
 json.created_at conversation.created_at.to_i
 json.contact do
-  json.id conversation.contact.id
-  json.name conversation.contact.name
+  contact = conversation.contact || Contact.with_discarded.find_by(id: conversation.contact_id)
+  if contact.present?
+    json.id contact.id
+    json.name contact.name
+  else
+    # Ultimate fallback if contact was hard deleted
+    json.id conversation.contact_id
+    json.name I18n.t('contacts.deleted.name')
+  end
 end
 json.inbox do
   json.id conversation.inbox.id

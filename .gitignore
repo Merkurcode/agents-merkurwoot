@@ -121,3 +121,4 @@ BASE-DE-DATOS.md
 *.md
 !docs/**/*.md
 /docs
+/scripts

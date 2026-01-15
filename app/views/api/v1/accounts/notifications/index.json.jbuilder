@@ -7,6 +7,8 @@ json.data do
 
   json.payload do
     json.array! @notifications do |notification|
+      next if notification.primary_actor.nil?
+
       json.id notification.id
       json.notification_type notification.notification_type
       json.push_message_title notification.push_message_title

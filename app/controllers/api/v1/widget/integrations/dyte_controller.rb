@@ -8,9 +8,12 @@ class Api::V1::Widget::Integrations::DyteController < Api::V1::Widget::BaseContr
       }, status: :unprocessable_entity
     end
 
+    contact = @conversation.contact
+    return render json: { error: 'Contact not found' }, status: :not_found if contact.blank?
+
     response = dyte_processor_service.add_participant_to_meeting(
       @message.content_attributes['data']['meeting_id'],
-      @conversation.contact
+      contact
     )
     render_response(response)
   end

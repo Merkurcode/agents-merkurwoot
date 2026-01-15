@@ -108,7 +108,8 @@ class Captain::Assistant::AgentRunnerService
 
     if @conversation
       state[:conversation] = @conversation.attributes.symbolize_keys.slice(*CONVERSATION_STATE_ATTRIBUTES)
-      state[:contact] = @conversation.contact.attributes.symbolize_keys.slice(*CONTACT_STATE_ATTRIBUTES) if @conversation.contact
+      contact = @conversation.contact
+      state[:contact] = contact.attributes.symbolize_keys.slice(*CONTACT_STATE_ATTRIBUTES) if contact
     end
 
     state

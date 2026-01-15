@@ -93,15 +93,16 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     render json: {
       total_count: total_count,
       conversations: conversations.map do |conv|
+        contact = conv.contact
         {
           id: conv.id,
           display_id: conv.display_id,
           status: conv.status,
           created_at: conv.created_at,
           contact: {
-            id: conv.contact&.id,
-            name: conv.contact&.name,
-            phone_number: conv.contact&.phone_number
+            id: contact&.id,
+            name: contact&.name,
+            phone_number: contact&.phone_number
           }
         }
       end,
@@ -161,6 +162,7 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
       total_steps: @sequence.enabled_steps.size,
       enrolled_conversations: follow_ups.map do |follow_up|
         current_step_data = @sequence.enabled_steps[follow_up.current_step]
+        contact = follow_up.conversation.contact
         {
           id: follow_up.id,
           conversation_id: follow_up.conversation.id,
@@ -174,9 +176,9 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
           updated_at: follow_up.updated_at,
           metadata: follow_up.metadata,
           contact: {
-            id: follow_up.conversation.contact&.id,
-            name: follow_up.conversation.contact&.name,
-            phone_number: follow_up.conversation.contact&.phone_number
+            id: contact&.id,
+            name: contact&.name,
+            phone_number: contact&.phone_number
           },
           conversation_status: follow_up.conversation.status
         }

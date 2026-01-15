@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_12_000003) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -714,7 +714,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
     t.string "country_code", default: ""
     t.boolean "blocked", default: false, null: false
     t.bigint "company_id"
+    t.datetime "discarded_at"
     t.index "lower((email)::text), account_id", name: "index_contacts_on_lower_email_account_id"
+    t.index "lower((email)::text), account_id", name: "uniq_email_per_account_contact", unique: true, where: "(discarded_at IS NULL)"
     t.index ["account_id", "contact_type"], name: "index_contacts_on_account_id_and_contact_type"
     t.index ["account_id", "email", "phone_number", "identifier"], name: "index_contacts_on_nonempty_fields", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["account_id", "last_activity_at"], name: "index_contacts_on_account_id_and_last_activity_at", order: { last_activity_at: "DESC NULLS LAST" }
@@ -722,8 +724,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
     t.index ["account_id"], name: "index_resolved_contact_account_id", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["blocked"], name: "index_contacts_on_blocked"
     t.index ["company_id"], name: "index_contacts_on_company_id"
-    t.index ["email", "account_id"], name: "uniq_email_per_account_contact", unique: true
-    t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true
+    t.index ["discarded_at"], name: "index_contacts_on_discarded_at"
+    t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true, where: "(discarded_at IS NULL)"
     t.index ["name", "email", "phone_number", "identifier"], name: "index_contacts_on_name_email_phone_number_identifier", opclass: :gin_trgm_ops, using: :gin
     t.index ["phone_number", "account_id"], name: "index_contacts_on_phone_number_and_account_id"
   end
@@ -790,7 +792,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
     t.bigint "pipeline_status_id"
     t.bigint "assignee_agent_bot_id"
     t.integer "conversation_type", default: 0, null: false
-    t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
+    t.datetime "discarded_at"
+    t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true, where: "(discarded_at IS NULL)"
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
     t.index ["account_id"], name: "index_conversations_on_account_id"
@@ -799,6 +802,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
     t.index ["contact_id"], name: "index_conversations_on_contact_id"
     t.index ["contact_inbox_id"], name: "index_conversations_on_contact_inbox_id"
     t.index ["conversation_type"], name: "index_conversations_on_conversation_type"
+    t.index ["discarded_at"], name: "index_conversations_on_discarded_at"
     t.index ["first_reply_created_at"], name: "index_conversations_on_first_reply_created_at"
     t.index ["identifier", "account_id"], name: "index_conversations_on_identifier_and_account_id"
     t.index ["inbox_id"], name: "index_conversations_on_inbox_id"
@@ -925,6 +929,46 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
     t.index ["name", "account_id"], name: "index_email_templates_on_name_and_account_id", unique: true
   end
 
+  create_table "faq_categories", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "parent_id"
+    t.string "name", null: false
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.boolean "is_visible", default: true, null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "parent_id"], name: "index_faq_categories_on_account_id_and_parent_id"
+    t.index ["account_id", "position"], name: "index_faq_categories_on_account_id_and_position"
+    t.index ["account_id"], name: "index_faq_categories_on_account_id"
+    t.index ["created_by_id"], name: "index_faq_categories_on_created_by_id"
+    t.index ["is_visible"], name: "index_faq_categories_on_is_visible"
+    t.index ["parent_id"], name: "index_faq_categories_on_parent_id"
+    t.index ["updated_by_id"], name: "index_faq_categories_on_updated_by_id"
+  end
+
+  create_table "faq_items", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "faq_category_id"
+    t.integer "position", default: 0, null: false
+    t.boolean "is_visible", default: true, null: false
+    t.jsonb "translations", default: {}, null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "faq_category_id"], name: "index_faq_items_on_account_id_and_faq_category_id"
+    t.index ["account_id", "position"], name: "index_faq_items_on_account_id_and_position"
+    t.index ["account_id"], name: "index_faq_items_on_account_id"
+    t.index ["created_by_id"], name: "index_faq_items_on_created_by_id"
+    t.index ["faq_category_id"], name: "index_faq_items_on_faq_category_id"
+    t.index ["is_visible"], name: "index_faq_items_on_is_visible"
+    t.index ["translations"], name: "index_faq_items_on_translations", using: :gin
+    t.index ["updated_by_id"], name: "index_faq_items_on_updated_by_id"
+  end
+
   create_table "folders", force: :cascade do |t|
     t.integer "account_id", null: false
     t.integer "category_id", null: false
@@ -951,6 +995,16 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
     t.index ["agent_capacity_policy_id", "inbox_id"], name: "idx_on_agent_capacity_policy_id_inbox_id_71c7ec4caf", unique: true
     t.index ["agent_capacity_policy_id"], name: "index_inbox_capacity_limits_on_agent_capacity_policy_id"
     t.index ["inbox_id"], name: "index_inbox_capacity_limits_on_inbox_id"
+  end
+
+  create_table "inbox_faq_categories", force: :cascade do |t|
+    t.bigint "inbox_id", null: false
+    t.bigint "faq_category_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["faq_category_id"], name: "index_inbox_faq_categories_on_faq_category_id"
+    t.index ["inbox_id", "faq_category_id"], name: "index_inbox_faq_categories_on_inbox_id_and_faq_category_id", unique: true
+    t.index ["inbox_id"], name: "index_inbox_faq_categories_on_inbox_id"
   end
 
   create_table "inbox_members", id: :serial, force: :cascade do |t|
@@ -1500,7 +1554,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
     t.text "message_signature"
     t.string "otp_secret"
     t.integer "consumed_timestep"
-    t.boolean "otp_required_for_login", default: false
+    t.boolean "otp_required_for_login", default: false, null: false
     t.text "otp_backup_codes"
     t.string "phone_number"
     t.index ["email"], name: "index_users_on_email"
@@ -1558,6 +1612,16 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_16_002044) do
   add_foreign_key "conversation_follow_ups", "conversations"
   add_foreign_key "conversation_follow_ups", "lead_follow_up_sequences"
   add_foreign_key "conversations", "pipeline_statuses"
+  add_foreign_key "faq_categories", "accounts"
+  add_foreign_key "faq_categories", "faq_categories", column: "parent_id"
+  add_foreign_key "faq_categories", "users", column: "created_by_id"
+  add_foreign_key "faq_categories", "users", column: "updated_by_id"
+  add_foreign_key "faq_items", "accounts"
+  add_foreign_key "faq_items", "faq_categories"
+  add_foreign_key "faq_items", "users", column: "created_by_id"
+  add_foreign_key "faq_items", "users", column: "updated_by_id"
+  add_foreign_key "inbox_faq_categories", "faq_categories"
+  add_foreign_key "inbox_faq_categories", "inboxes"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "inboxes", "surveys"
   add_foreign_key "lead_follow_up_sequences", "accounts"

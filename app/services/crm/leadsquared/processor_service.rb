@@ -78,7 +78,10 @@ class Crm::Leadsquared::ProcessorService < Crm::BaseProcessorService
   end
 
   def create_conversation_activity(conversation:, activity_type:, activity_code_key:, metadata_key:, activity_note:)
-    lead_id = get_lead_id(conversation.contact)
+    contact = conversation.contact
+    return if contact.blank? # Contact discarded = doesn't exist
+
+    lead_id = get_lead_id(contact)
     return if lead_id.blank?
 
     activity_code = get_activity_code(activity_code_key)

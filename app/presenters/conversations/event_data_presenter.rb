@@ -30,11 +30,31 @@ class Conversations::EventDataPresenter < SimpleDelegator
 
   def push_meta
     {
-      sender: contact.push_event_data,
+      sender: contact_event_data,
       assignee: assigned_entity&.push_event_data,
       assignee_type: assignee_type,
       team: team&.push_event_data,
       hmac_verified: contact_inbox&.hmac_verified
+    }
+  end
+
+  def contact_event_data
+    return contact.push_event_data if contact.present?
+
+    # Fallback for discarded contacts - fetch with_discarded to get real data
+    discarded_contact = Contact.with_discarded.find_by(id: contact_id)
+    return discarded_contact.push_event_data if discarded_contact.present?
+
+    # Ultimate fallback if contact was hard deleted
+    {
+      id: contact_id,
+      name: I18n.t('contacts.deleted.name'),
+      email: nil,
+      phone_number: nil,
+      thumbnail: '',
+      availability_status: nil,
+      additional_attributes: {},
+      custom_attributes: {}
     }
   end
 

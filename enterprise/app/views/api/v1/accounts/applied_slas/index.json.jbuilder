@@ -5,7 +5,8 @@ json.payload do
       conversation = applied_sla.conversation
       json.id conversation.display_id
       json.contact do
-        json.name conversation.contact.name if conversation.contact
+        contact = conversation.contact || Contact.with_discarded.find_by(id: conversation.contact_id)
+        json.name contact.present? ? contact.name : I18n.t('contacts.deleted.name')
       end
       json.labels conversation.cached_label_list
       json.assignee conversation.assignee.push_event_data if conversation.assignee

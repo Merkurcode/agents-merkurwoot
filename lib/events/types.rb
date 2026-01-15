@@ -42,6 +42,12 @@ module Events::Types
   CONTACT_MERGED = 'contact.merged'
   CONTACT_DELETED = 'contact.deleted'
 
+  # soft delete events
+  CONTACT_DISCARDED = 'contact.discarded'
+  CONTACT_RESTORED = 'contact.restored'
+  CONVERSATION_DISCARDED = 'conversation.discarded'
+  CONVERSATION_RESTORED = 'conversation.restored'
+
   # contact events
   INBOX_CREATED = 'inbox.created'
   INBOX_UPDATED = 'inbox.updated'

@@ -70,6 +70,9 @@ class Conversation < ApplicationRecord
   include SortHandler
   include PushDataHelper
   include ConversationMuteHelpers
+  include Discard::Model
+
+  default_scope -> { kept }
 
   validates :account_id, presence: true
   validates :inbox_id, presence: true
@@ -135,6 +138,9 @@ class Conversation < ApplicationRecord
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
   after_create_commit :load_attributes_created_by_db_triggers
+  after_discard :destroy_notifications
+  after_discard :dispatch_discard_event
+  after_undiscard :dispatch_undiscard_event
 
   delegate :auto_resolve_after, to: :account
 
@@ -222,6 +228,11 @@ class Conversation < ApplicationRecord
 
   def recent_messages
     messages.chat.last(5)
+  end
+
+  # Access contact bypassing default_scope (for when contact may be discarded)
+  def contact_with_discarded
+    Contact.with_discarded.find_by(id: contact_id)
   end
 
   def csat_survey_link
@@ -329,6 +340,18 @@ class Conversation < ApplicationRecord
     Rails.configuration.dispatcher.dispatch(event_name, Time.zone.now, conversation: self, notifiable_assignee_change: notifiable_assignee_change?,
                                                                        changed_attributes: changed_attributes,
                                                                        performed_by: Current.executed_by)
+  end
+
+  def destroy_notifications
+    notifications.destroy_all
+  end
+
+  def dispatch_discard_event
+    Rails.configuration.dispatcher.dispatch(CONVERSATION_DISCARDED, Time.zone.now, conversation: self)
+  end
+
+  def dispatch_undiscard_event
+    Rails.configuration.dispatcher.dispatch(CONVERSATION_RESTORED, Time.zone.now, conversation: self)
   end
 
   def conversation_status_changed_to_open?

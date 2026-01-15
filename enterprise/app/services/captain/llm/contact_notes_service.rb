@@ -4,10 +4,12 @@ class Captain::Llm::ContactNotesService < Llm::LegacyBaseOpenAiService
     @assistant = assistant
     @conversation = conversation
     @contact = conversation.contact
-    @content = "#Contact\n\n#{@contact.to_llm_text} \n\n#Conversation\n\n#{@conversation.to_llm_text}"
+    @content = "#Contact\n\n#{@contact&.to_llm_text} \n\n#Conversation\n\n#{@conversation.to_llm_text}"
   end
 
   def generate_and_update_notes
+    return if @contact.blank? # Contact discarded = doesn't exist
+
     generate_notes.each do |note|
       @contact.notes.create!(content: note)
     end

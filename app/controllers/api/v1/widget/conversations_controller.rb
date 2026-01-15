@@ -35,10 +35,11 @@ class Api::V1::Widget::ConversationsController < Api::V1::Widget::BaseController
   end
 
   def transcript
-    if conversation.present? && conversation.contact.present? && conversation.contact.email.present?
+    contact = conversation&.contact
+    if conversation.present? && contact.present? && contact.email.present?
       ConversationReplyMailer.with(account: conversation.account).conversation_transcript(
         conversation,
-        conversation.contact.email
+        contact.email
       )&.deliver_later
     end
     head :ok

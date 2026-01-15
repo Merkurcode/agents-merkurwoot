@@ -6,6 +6,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   before_action :conversation, except: [:index, :meta, :search, :create, :filter]
   before_action :inbox, :contact, :contact_inbox, only: [:create]
 
+  RESULTS_PER_PAGE = 25
   ATTACHMENT_RESULTS_PER_PAGE = 100
 
   def index
@@ -126,8 +127,25 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
 
   def destroy
     authorize @conversation, :destroy?
-    ::DeleteObjectJob.perform_later(@conversation, Current.user, request.ip)
+    @conversation.discard!
     head :ok
+  end
+
+  def restore
+    @conversation = Current.account.conversations.with_discarded.discarded.find_by!(display_id: params[:id])
+    authorize @conversation, :restore?
+    @conversation.undiscard!
+    render :show
+  end
+
+  def discarded
+    authorize Conversation, :discarded?
+    @conversations = Current.account.conversations.with_discarded.discarded
+                            .includes(:assignee, :contact, :inbox, :team)
+                            .page(params[:page] || 1)
+                            .per(RESULTS_PER_PAGE)
+    @conversations_count = @conversations.total_count
+    render :index
   end
 
   private

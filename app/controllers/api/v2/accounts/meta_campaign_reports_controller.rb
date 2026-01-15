@@ -62,7 +62,7 @@ class Api::V2::Accounts::MetaCampaignReportsController < Api::V1::Accounts::Base
       {
         id: interaction.id,
         conversation_id: interaction.conversation.display_id,
-        contact_name: interaction.conversation.contact.name,
+        contact_name: interaction.conversation.contact&.name,
         created_at: interaction.created_at,
         metadata: interaction.metadata
       }

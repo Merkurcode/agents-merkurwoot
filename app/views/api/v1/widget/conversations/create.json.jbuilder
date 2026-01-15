@@ -8,4 +8,4 @@ json.messages do
   end
 end
 json.custom_attributes @conversation.custom_attributes
-json.contact @conversation.contact
+json.contact @conversation.contact || nil

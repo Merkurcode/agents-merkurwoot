@@ -9,4 +9,4 @@ json.messages do
     json.partial! 'public/api/v1/models/message', formats: [:json], resource: message
   end
 end
-json.contact resource.contact
+json.contact resource.contact || nil

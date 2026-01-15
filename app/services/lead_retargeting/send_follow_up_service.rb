@@ -9,6 +9,8 @@ class LeadRetargeting::SendFollowUpService
   end
 
   def execute
+    # Contact discarded = doesn't exist, cancel follow-up
+    return cancel_follow_up('Contact not found') if @contact.blank?
     return cancel_follow_up('Sequence deactivated') unless @sequence.active?
 
     if @sequence.settings.dig('stop_on_contact_reply') && conversation_responded_recently?

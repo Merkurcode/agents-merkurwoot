@@ -19,7 +19,7 @@ class Messages::SendEmailNotificationService
 
   def should_send_email_notification?
     return false unless message.email_notifiable_message?
-    return false if message.conversation.contact.email.blank?
+    return false if message.conversation.contact&.email.blank?
 
     email_reply_enabled?
   end

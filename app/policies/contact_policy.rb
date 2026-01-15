@@ -50,4 +50,12 @@ class ContactPolicy < ApplicationPolicy
   def destroy?
     @account_user.administrator?
   end
+
+  def restore?
+    @account_user.administrator?
+  end
+
+  def discarded?
+    @account_user.administrator?
+  end
 end

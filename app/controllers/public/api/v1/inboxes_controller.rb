@@ -24,6 +24,9 @@ class Public::Api::V1::InboxesController < PublicController
   def set_conversation
     return if params[:conversation_id].blank?
 
-    @conversation = @contact_inbox.contact.conversations.find_by!(display_id: params[:conversation_id])
+    contact = @contact_inbox.contact
+    raise ActiveRecord::RecordNotFound, 'Contact not found' if contact.blank?
+
+    @conversation = contact.conversations.find_by!(display_id: params[:conversation_id])
   end
 end

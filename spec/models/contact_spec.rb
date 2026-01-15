@@ -196,4 +196,84 @@ RSpec.describe Contact do
       end
     end
   end
+
+  describe 'soft delete (discard)' do
+    let(:account) { create(:account) }
+    let(:contact) { create(:contact, account: account, email: 'test@example.com') }
+    let(:inbox) { create(:inbox, account: account) }
+    let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: inbox) }
+
+    before do
+      allow(Rails.configuration.dispatcher).to receive(:dispatch)
+    end
+
+    describe '#discard' do
+      it 'soft deletes the contact' do
+        contact.discard
+        expect(contact.discarded?).to be true
+        expect(contact.discarded_at).not_to be_nil
+      end
+
+      it 'excludes discarded contacts from default scope' do
+        contact.discard
+        expect(account.contacts).not_to include(contact)
+        expect(account.contacts.with_discarded).to include(contact)
+      end
+
+      it 'dispatches CONTACT_DISCARDED event' do
+        contact.discard
+        expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+          .with(Contact::CONTACT_DISCARDED, kind_of(Time), contact: contact)
+      end
+
+      it 'cascade soft deletes associated conversations' do
+        conversation = create(:conversation, account: account, contact: contact, inbox: inbox, contact_inbox: contact_inbox)
+        contact.discard
+        expect(conversation.reload.discarded?).to be true
+      end
+    end
+
+    describe '#undiscard' do
+      before { contact.discard }
+
+      it 'restores the soft deleted contact' do
+        contact.undiscard
+        expect(contact.discarded?).to be false
+        expect(contact.discarded_at).to be_nil
+      end
+
+      it 'includes restored contacts in default scope' do
+        contact.undiscard
+        expect(account.contacts).to include(contact)
+      end
+
+      it 'dispatches CONTACT_RESTORED event' do
+        contact.undiscard
+        expect(Rails.configuration.dispatcher).to have_received(:dispatch)
+          .with(Contact::CONTACT_RESTORED, kind_of(Time), contact: contact)
+      end
+
+      it 'cascade restores associated conversations' do
+        conversation = create(:conversation, account: account, contact: contact, inbox: inbox, contact_inbox: contact_inbox)
+        conversation.discard
+        contact.undiscard
+        expect(conversation.reload.discarded?).to be false
+      end
+    end
+
+    describe 'uniqueness validations with soft delete' do
+      it 'allows creating contact with same email if original is discarded' do
+        contact.discard
+        new_contact = build(:contact, account: account, email: 'test@example.com')
+        expect(new_contact).to be_valid
+      end
+
+      it 'allows creating contact with same identifier if original is discarded' do
+        contact.update!(identifier: 'unique-id-123')
+        contact.discard
+        new_contact = build(:contact, account: account, identifier: 'unique-id-123')
+        expect(new_contact).to be_valid
+      end
+    end
+  end
 end

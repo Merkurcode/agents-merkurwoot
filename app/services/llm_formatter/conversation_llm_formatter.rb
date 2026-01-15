@@ -10,7 +10,7 @@ class LlmFormatter::ConversationLlmFormatter < LlmFormatter::DefaultLlmFormatter
                   'No messages in this conversation'
                 end
 
-    sections << "Contact Details: #{@record.contact.to_llm_text}" if config[:include_contact_details]
+    sections << "Contact Details: #{@record.contact&.to_llm_text}" if config[:include_contact_details] && @record.contact.present?
 
     attributes = build_attributes
     if attributes.present?

@@ -20,6 +20,6 @@ class LocationPolicy < ApplicationPolicy
   end
 
   def user_locations?
-    @account_user.administrator?
+    true
   end
 end

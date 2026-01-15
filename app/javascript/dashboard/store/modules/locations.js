@@ -28,6 +28,9 @@ export const getters = {
   getUserLocations($state) {
     return $state.userLocations;
   },
+  getLocation: $state => id => {
+    return $state.userLocations.find(loc => loc.id === Number(id)) || {};
+  },
   getMeta($state) {
     return $state.meta;
   },

@@ -147,7 +147,7 @@
           "TEAM": "No teams found"
         },
         "PLACEHOLDER": {
-          "AGENT": "Search agents",
+          "AGENT": "Search by name or location",
           "TEAM": "Search teams",
           "INPUT": "Search for agents"
         }

@@ -127,25 +127,8 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
 
   def destroy
     authorize @conversation, :destroy?
-    @conversation.discard!
+    @conversation.destroy!
     head :ok
-  end
-
-  def restore
-    @conversation = Current.account.conversations.with_discarded.discarded.find_by!(display_id: params[:id])
-    authorize @conversation, :restore?
-    @conversation.undiscard!
-    render :show
-  end
-
-  def discarded
-    authorize Conversation, :discarded?
-    @conversations = Current.account.conversations.with_discarded.discarded
-                            .includes(:assignee, :contact, :inbox, :team)
-                            .page(params[:page] || 1)
-                            .per(RESULTS_PER_PAGE)
-    @conversations_count = @conversations.total_count
-    render :index
   end
 
   private

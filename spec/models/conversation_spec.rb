@@ -896,27 +896,6 @@ RSpec.describe Conversation do
       end
     end
 
-    describe '#undiscard' do
-      before { conversation.discard }
-
-      it 'restores the soft deleted conversation' do
-        conversation.undiscard
-        expect(conversation.discarded?).to be false
-        expect(conversation.discarded_at).to be_nil
-      end
-
-      it 'includes restored conversations in default scope' do
-        conversation.undiscard
-        expect(account.conversations).to include(conversation)
-      end
-
-      it 'dispatches CONVERSATION_RESTORED event' do
-        conversation.undiscard
-        expect(Rails.configuration.dispatcher).to have_received(:dispatch)
-          .with(described_class::CONVERSATION_RESTORED, kind_of(Time), conversation: conversation)
-      end
-    end
-
     describe '#contact_with_discarded' do
       it 'returns the contact even when discarded' do
         contact = conversation.contact

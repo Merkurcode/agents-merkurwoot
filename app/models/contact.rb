@@ -75,7 +75,6 @@ class Contact < ApplicationRecord
   after_update_commit :dispatch_update_event
   after_destroy_commit :dispatch_destroy_event
   after_discard :dispatch_discard_event
-  after_undiscard :dispatch_undiscard_event
   before_save :sync_contact_attributes
 
   enum contact_type: { visitor: 0, lead: 1, customer: 2 }
@@ -260,12 +259,6 @@ class Contact < ApplicationRecord
     # Cascade soft delete to conversations
     conversations.find_each(&:discard)
     Rails.configuration.dispatcher.dispatch(CONTACT_DISCARDED, Time.zone.now, contact: self)
-  end
-
-  def dispatch_undiscard_event
-    # Cascade restore to conversations
-    Conversation.with_discarded.discarded.where(contact_id: id).find_each(&:undiscard)
-    Rails.configuration.dispatcher.dispatch(CONTACT_RESTORED, Time.zone.now, contact: self)
   end
 end
 Contact.include_mod_with('Audit::Contact')

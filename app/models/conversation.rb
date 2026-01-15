@@ -140,7 +140,6 @@ class Conversation < ApplicationRecord
   after_create_commit :load_attributes_created_by_db_triggers
   after_discard :destroy_notifications
   after_discard :dispatch_discard_event
-  after_undiscard :dispatch_undiscard_event
 
   delegate :auto_resolve_after, to: :account
 
@@ -348,10 +347,6 @@ class Conversation < ApplicationRecord
 
   def dispatch_discard_event
     Rails.configuration.dispatcher.dispatch(CONVERSATION_DISCARDED, Time.zone.now, conversation: self)
-  end
-
-  def dispatch_undiscard_event
-    Rails.configuration.dispatcher.dispatch(CONVERSATION_RESTORED, Time.zone.now, conversation: self)
   end
 
   def conversation_status_changed_to_open?

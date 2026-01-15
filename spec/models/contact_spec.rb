@@ -233,34 +233,6 @@ RSpec.describe Contact do
       end
     end
 
-    describe '#undiscard' do
-      before { contact.discard }
-
-      it 'restores the soft deleted contact' do
-        contact.undiscard
-        expect(contact.discarded?).to be false
-        expect(contact.discarded_at).to be_nil
-      end
-
-      it 'includes restored contacts in default scope' do
-        contact.undiscard
-        expect(account.contacts).to include(contact)
-      end
-
-      it 'dispatches CONTACT_RESTORED event' do
-        contact.undiscard
-        expect(Rails.configuration.dispatcher).to have_received(:dispatch)
-          .with(Contact::CONTACT_RESTORED, kind_of(Time), contact: contact)
-      end
-
-      it 'cascade restores associated conversations' do
-        conversation = create(:conversation, account: account, contact: contact, inbox: inbox, contact_inbox: contact_inbox)
-        conversation.discard
-        contact.undiscard
-        expect(conversation.reload.discarded?).to be false
-      end
-    end
-
     describe 'uniqueness validations with soft delete' do
       it 'allows creating contact with same email if original is discarded' do
         contact.discard

@@ -44,9 +44,7 @@ module Events::Types
 
   # soft delete events
   CONTACT_DISCARDED = 'contact.discarded'
-  CONTACT_RESTORED = 'contact.restored'
   CONVERSATION_DISCARDED = 'conversation.discarded'
-  CONVERSATION_RESTORED = 'conversation.restored'
 
   # contact events
   INBOX_CREATED = 'inbox.created'

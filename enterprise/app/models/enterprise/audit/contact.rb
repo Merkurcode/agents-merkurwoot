@@ -5,17 +5,12 @@ module Enterprise::Audit::Contact
     audited associated_with: :account, on: [:destroy]
 
     after_discard :create_discard_audit
-    after_undiscard :create_restore_audit
   end
 
   private
 
   def create_discard_audit
     create_soft_delete_audit('discard', { discarded_at: [nil, discarded_at] })
-  end
-
-  def create_restore_audit
-    create_soft_delete_audit('restore', { discarded_at: [discarded_at_before_last_save, nil] })
   end
 
   def create_soft_delete_audit(action, changes)

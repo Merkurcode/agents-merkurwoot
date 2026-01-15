@@ -23,7 +23,7 @@ export default {
           path: 'list',
           name: 'locations_list',
           meta: {
-            permissions: ['administrator'],
+            permissions: ['administrator', 'supervisor'],
           },
           component: Index,
         },

@@ -53,6 +53,7 @@ const customRoles = useMapGetter('customRole/getCustomRoles');
 onMounted(() => {
   store.dispatch('agents/get');
   store.dispatch('customRole/getCustomRole');
+  store.dispatch('locations/get');
 });
 
 const findCustomRole = agent =>
@@ -294,6 +295,7 @@ const confirmDeletion = () => {
         :custom-role-id="currentAgent.custom_role_id"
         :agent="currentAgent"
         :responsible-id="currentAgent.responsible_id"
+        :location-id="currentAgent.location_id"
         @close="hideEditPopup"
       />
     </woot-modal>

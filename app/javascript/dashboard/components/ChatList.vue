@@ -69,6 +69,7 @@ import { ASSIGNEE_TYPE_TAB_PERMISSIONS } from 'dashboard/constants/permissions.j
 const props = defineProps({
   conversationInbox: { type: [String, Number], default: 0 },
   teamId: { type: [String, Number], default: 0 },
+  locationId: { type: [String, Number], default: 0 },
   label: { type: String, default: '' },
   conversationType: { type: String, default: '' },
   foldersId: { type: [String, Number], default: 0 },
@@ -277,6 +278,7 @@ const conversationFilters = computed(() => {
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
+    locationId: props.locationId || undefined,
     conversationType: props.conversationType || undefined,
   };
 });
@@ -284,6 +286,13 @@ const conversationFilters = computed(() => {
 const activeTeam = computed(() => {
   if (props.teamId) {
     return getTeamFn.value(props.teamId);
+  }
+  return {};
+});
+
+const activeLocation = computed(() => {
+  if (props.locationId) {
+    return getLocationFn.value(props.locationId);
   }
   return {};
 });
@@ -300,6 +309,9 @@ const pageTitle = computed(() => {
   }
   if (activeTeam.value.name) {
     return activeTeam.value.name;
+  }
+  if (activeLocation.value.name) {
+    return activeLocation.value.name;
   }
   if (props.label) {
     return `#${props.label}`;
@@ -643,7 +655,7 @@ function openLastItemAfterDeleteInFolder() {
 
 function redirectToConversationList() {
   const {
-    params: { accountId, inbox_id: inboxId, label, teamId },
+    params: { accountId, inbox_id: inboxId, label, teamId, locationId },
     name,
   } = route;
 
@@ -661,6 +673,7 @@ function redirectToConversationList() {
       inboxId,
       label,
       teamId,
+      locationId,
     })
   );
 }
@@ -853,6 +866,7 @@ provide('isConversationSelected', isConversationSelected);
 provide('deleteConversation', handleDelete);
 
 watch(activeTeam, () => resetAndFetchData());
+watch(activeLocation, () => resetAndFetchData());
 
 watch(
   computed(() => props.conversationInbox),

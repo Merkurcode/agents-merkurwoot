@@ -138,6 +138,7 @@ const currentAccountId = useMapGetter('getCurrentAccountId');
 const getTeamFn = useMapGetter('teams/getTeam');
 const getLocationFn = useMapGetter('locations/getLocation');
 const getConversationById = useMapGetter('getConversationById');
+const getLocationFn = useMapGetter('locations/getLocation');
 
 useChatListKeyboardEvents(conversationListRef);
 const {

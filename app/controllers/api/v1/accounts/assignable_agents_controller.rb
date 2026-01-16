@@ -35,11 +35,4 @@ class Api::V1::Accounts::AssignableAgentsController < Api::V1::Accounts::BaseCon
       (account_user.subordinate_user_ids & member_ids).any?
     end.map(&:user)
   end
-
-  # Only include supervisors whose subordinates are members of the inbox
-  def supervisors_for_inboxes(member_ids)
-    Current.account.account_users.supervisor.includes(:user).select do |account_user|
-      (account_user.subordinate_user_ids & member_ids).any?
-    end.map(&:user)
-  end
 end

@@ -109,7 +109,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
                           :unprocessable_entity)
     end
 
-    @contact.destroy!
+    ::DeleteObjectJob.perform_later(@contact, Current.user, request.ip)
     head :ok
   end
 

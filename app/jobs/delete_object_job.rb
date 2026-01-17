@@ -11,7 +11,12 @@ class DeleteObjectJob < ApplicationJob
     # Pre-purge heavy associations for large objects to avoid
     # timeouts & race conditions due to destroy_async fan-out.
     purge_heavy_associations(object)
-    object.destroy!
+    # Use soft delete for models that support Discard, otherwise hard delete
+    if object.respond_to?(:discard!)
+      object.discard!
+    else
+      object.destroy!
+    end
     process_post_deletion_tasks(object, user, ip)
   end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_09_104544) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_12_000003) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -714,7 +714,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_09_104544) do
     t.string "country_code", default: ""
     t.boolean "blocked", default: false, null: false
     t.bigint "company_id"
+    t.datetime "discarded_at"
     t.index "lower((email)::text), account_id", name: "index_contacts_on_lower_email_account_id"
+    t.index "lower((email)::text), account_id", name: "uniq_email_per_account_contact", unique: true, where: "(discarded_at IS NULL)"
     t.index ["account_id", "contact_type"], name: "index_contacts_on_account_id_and_contact_type"
     t.index ["account_id", "email", "phone_number", "identifier"], name: "index_contacts_on_nonempty_fields", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["account_id", "last_activity_at"], name: "index_contacts_on_account_id_and_last_activity_at", order: { last_activity_at: "DESC NULLS LAST" }
@@ -722,8 +724,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_09_104544) do
     t.index ["account_id"], name: "index_resolved_contact_account_id", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["blocked"], name: "index_contacts_on_blocked"
     t.index ["company_id"], name: "index_contacts_on_company_id"
-    t.index ["email", "account_id"], name: "uniq_email_per_account_contact", unique: true
-    t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true
+    t.index ["discarded_at"], name: "index_contacts_on_discarded_at"
+    t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true, where: "(discarded_at IS NULL)"
     t.index ["name", "email", "phone_number", "identifier"], name: "index_contacts_on_name_email_phone_number_identifier", opclass: :gin_trgm_ops, using: :gin
     t.index ["phone_number", "account_id"], name: "index_contacts_on_phone_number_and_account_id"
   end
@@ -791,7 +793,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_09_104544) do
     t.integer "conversation_type", default: 0, null: false
     t.bigint "assignee_agent_bot_id"
     t.datetime "last_chat_message_at"
-    t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
+    t.datetime "discarded_at"
+    t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true, where: "(discarded_at IS NULL)"
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
     t.index ["account_id"], name: "index_conversations_on_account_id"
@@ -800,6 +803,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_09_104544) do
     t.index ["contact_id"], name: "index_conversations_on_contact_id"
     t.index ["contact_inbox_id"], name: "index_conversations_on_contact_inbox_id"
     t.index ["conversation_type"], name: "index_conversations_on_conversation_type"
+    t.index ["discarded_at"], name: "index_conversations_on_discarded_at"
     t.index ["first_reply_created_at"], name: "index_conversations_on_first_reply_created_at"
     t.index ["identifier", "account_id"], name: "index_conversations_on_identifier_and_account_id"
     t.index ["inbox_id"], name: "index_conversations_on_inbox_id"

@@ -54,7 +54,7 @@ class DataImport::ContactManager
   end
 
   def find_discarded_contact(params)
-    discarded_scope = @account.contacts.discarded
+    discarded_scope = Contact.unscoped.where(account_id: @account.id).discarded
 
     contact = discarded_scope.find_by(identifier: params[:identifier]) if params[:identifier].present?
     contact ||= discarded_scope.find_by('LOWER(email) = ?', params[:email].downcase) if params[:email].present?

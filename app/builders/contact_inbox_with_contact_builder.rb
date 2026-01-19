@@ -119,7 +119,7 @@ class ContactInboxWithContactBuilder
   end
 
   def find_discarded_contact
-    discarded_scope = account.contacts.discarded
+    discarded_scope = Contact.unscoped.where(account_id: account.id).discarded
 
     contact = discarded_scope.find_by(identifier: contact_attributes[:identifier]) if contact_attributes[:identifier].present?
     contact ||= discarded_scope.find_by('LOWER(email) = ?', contact_attributes[:email].downcase) if contact_attributes[:email].present?

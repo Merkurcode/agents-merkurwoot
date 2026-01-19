@@ -212,7 +212,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def find_discarded_contact
-    discarded_scope = Current.account.contacts.discarded
+    discarded_scope = Contact.unscoped.where(account_id: Current.account.id).discarded
     attrs = permitted_params
 
     contact = discarded_scope.find_by(identifier: attrs[:identifier]) if attrs[:identifier].present?

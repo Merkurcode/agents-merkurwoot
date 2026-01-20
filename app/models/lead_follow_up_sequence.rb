@@ -32,6 +32,7 @@ class LeadFollowUpSequence < ApplicationRecord
     webhook
     change_priority
     update_pipeline_status
+    send_email
   ].freeze
 
   AVAILABLE_VARIABLES = {
@@ -206,7 +207,13 @@ class LeadFollowUpSequence < ApplicationRecord
       validate_message_step(step, index)
     when 'update_pipeline_status'
       validate_pipeline_status_step(step, index)
+    when 'send_email'
+      validate_email_step(step, index)
     end
+  end
+
+  def validate_email_step(step, index)
+    # Both subject and content are optional, AI can generate them if blank
   end
 
   def validate_wait_step(step, index)

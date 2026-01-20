@@ -58,6 +58,8 @@ class LeadRetargeting::SendFollowUpService
       execute_condition_step(step)
     when 'webhook'
       execute_webhook_step(step)
+    when 'send_email'
+      execute_email_step(step)
     when 'change_priority'
       execute_change_priority_step(step)
     when 'update_pipeline_status'
@@ -205,6 +207,42 @@ class LeadRetargeting::SendFollowUpService
     raise "Webhook failed: #{response.code} - #{response.body}" unless response.success?
 
     { success: true }
+  end
+
+  def execute_email_step(step)
+    # 1. Obtener el agent bot del inbox
+    agent_bot = @inbox.agent_bot
+
+    if agent_bot.present?
+      # Si hay un bot, lanzamos el webhook (similar a AI SMS)
+      idempotency_key = generate_idempotency_key(step, suffix: 'email')
+
+      config = step['config']
+      sender_email = config['sender_email'].presence || @account.support_email
+
+      payload = build_ai_webhook_payload(
+        step: step,
+        agent_bot: agent_bot,
+        event_type: 'lead_followup.email_request',
+        message_channel: 'email',
+        context: nil,
+        variables: {
+          sender_email: sender_email,
+          subject: config['subject'],
+          content: config['content']
+        }
+      )
+
+      begin
+        send_agent_bot_webhook(agent_bot, payload, idempotency_key)
+        return { success: true }
+      rescue StandardError => e
+        Rails.logger.error "AI Email message failed: #{e.message}"
+        return { success: false, error: "Email webhook failed: #{e.message}" }
+      end
+    else
+      return { success: false, error: "No agent bot found for this inbox" }
+    end
   end
 
   def execute_change_priority_step(step)

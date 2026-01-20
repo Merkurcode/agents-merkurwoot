@@ -521,6 +521,17 @@ const addStep = type => {
         payload: {},
       },
     },
+    send_email: {
+      id: stepId,
+      type: 'send_email',
+      name: t('LEAD_RETARGETING.STEPS.SEND_EMAIL.DEFAULT_NAME'),
+      enabled: true,
+      config: {
+        subject: '',
+        content: '',
+        sender_email: '',
+      },
+    },
   };
 
   sequence.value.steps.push(stepDefaults[type]);
@@ -2320,6 +2331,13 @@ const saveSequence = async () => {
                 :label="'+ ' + t('LEAD_RETARGETING.STEPS.WEBHOOK.ADD')"
                 @click="addStep('webhook')"
               />
+              <Button
+                xs
+                slate
+                faded
+                :label="'+ ' + t('LEAD_RETARGETING.STEPS.SEND_EMAIL.ADD')"
+                @click="addStep('send_email')"
+              />
             </div>
 
             <!-- No Steps Message -->
@@ -2920,11 +2938,80 @@ const saveSequence = async () => {
                       </div>
                     </div>
 
-                    <!-- Add Label Step -->
+                    <!-- Send Email Step -->
                     <div
-                      v-else-if="step.type === 'add_label'"
-                      class="space-y-2"
+                      v-else-if="step.type === 'send_email'"
+                      class="space-y-4"
                     >
+                      <div
+                        class="p-3 bg-n-amber-2 dark:bg-n-amber-3 border border-n-amber-6 rounded-lg space-y-3"
+                      >
+                        <!-- Sender Email -->
+                        <div>
+                          <label
+                            class="block text-xs font-medium text-n-slate-12 mb-1"
+                          >
+                            {{ t('LEAD_RETARGETING.STEPS.SEND_EMAIL.SENDER_EMAIL') }}
+                          </label>
+                          <input
+                            v-model="step.config.sender_email"
+                            type="email"
+                            class="w-full text-sm"
+                            :placeholder="
+                              t(
+                                'LEAD_RETARGETING.STEPS.SEND_EMAIL.SENDER_EMAIL_PLACEHOLDER'
+                              )
+                            "
+                          />
+                        </div>
+
+                        <!-- Subject -->
+                        <div>
+                          <label
+                            class="block text-xs font-medium text-n-slate-12 mb-1"
+                          >
+                            {{ t('LEAD_RETARGETING.STEPS.SEND_EMAIL.SUBJECT') }}
+                          </label>
+                          <input
+                            v-model="step.config.subject"
+                            type="text"
+                            class="w-full text-sm"
+                            :placeholder="
+                              t(
+                                'LEAD_RETARGETING.STEPS.SEND_EMAIL.SUBJECT_PLACEHOLDER'
+                              )
+                            "
+                          />
+                        </div>
+
+                        <!-- Content -->
+                        <div>
+                          <label
+                            class="block text-xs font-medium text-n-slate-12 mb-1"
+                          >
+                            {{ t('LEAD_RETARGETING.STEPS.SEND_EMAIL.CONTENT') }}
+                          </label>
+                          <textarea
+                            v-model="step.config.content"
+                            rows="5"
+                            class="w-full text-sm font-mono"
+                            :placeholder="
+                              t(
+                                'LEAD_RETARGETING.STEPS.SEND_EMAIL.CONTENT_PLACEHOLDER'
+                              )
+                            "
+                          />
+                          <p class="text-xs text-n-slate-11 mt-1">
+                            {{
+                              t('LEAD_RETARGETING.STEPS.SEND_EMAIL.VARIABLES_HINT')
+                            }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Add Label Step -->
+                    <div v-else-if="step.type === 'add_label'" class="space-y-2">
                       <label
                         class="block text-xs font-medium text-n-slate-12 mb-1"
                       >

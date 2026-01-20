@@ -917,6 +917,58 @@
       "DATE_VALUE_REQUIRED": "Por favor ingresa un número de días válido",
       "LABELS_REQUIRED": "Por favor selecciona al menos una etiqueta"
     },
+    "SHOW": {
+      "HEADER": "Detalle de Copilot",
+      "BACK_TO_LIST": "Volver a la lista",
+      "AUTO_DEACTIVATED_DESC": "Auto-desactivado: Todas las conversaciones completadas",
+      "AUTO_DEACTIVATED_AT": "Auto-desactivado el {date}",
+      "EDIT": "Editar",
+      "TOTAL_STATS": "Total",
+      "ENROLLED_CONVERSATIONS": "Conversaciones Enrolladas",
+      "STATUS": {
+        "active": "Activo",
+        "paused": "Pausado",
+        "completed": "Completado",
+        "cancelled": "Cancelado",
+        "failed": "Fallido"
+      },
+      "NEXT_ACTION": {
+        "NOT_SCHEDULED": "No programado",
+        "PENDING": "Pendiente",
+        "IN_MINS": "En {count}min",
+        "IN_HOURS": "En {count}h",
+        "IN_DAYS": "En {count}d"
+      },
+      "STOP_REASONS": {
+        "CONTACT_REPLIED": "Contacto respondió",
+        "CONVERSATION_RESOLVED": "Conversación resuelta",
+        "ALL_STEPS_COMPLETED": "Todos los pasos completados",
+        "CONDITION_MET": "Condición cumplida",
+        "COPILOT_DEACTIVATED": "Copilot desactivado",
+        "MANUALLY_CANCELLED": "Cancelado manualmente",
+        "MANUALLY_STOPPED": "Detenido manualmente"
+      },
+      "ENROLLMENT": {
+        "NO_PHONE": "Sin número",
+        "FIRST_TIME": "Primera vez",
+        "LAST_COMPLETION": "Última completación: {date}"
+      },
+      "ENROLLED_TABLE": {
+        "CONTACT": "Contacto",
+        "CONV_ID": "Conv. ID",
+        "STATUS": "Estado",
+        "STEP": "Paso",
+        "NEXT_ACTION": "Próxima Acción",
+        "STOP_REASON": "Razón de Detención",
+        "RE_ENROLLMENTS": "Re-enrolamientos",
+        "ENROLLED": "Enrolado",
+        "SELECTED_COUNT": "{count} seleccionado(s)",
+        "CANCEL_SELECTED": "Cancelar Seleccionados",
+        "CLEAR_FILTER": "Limpiar filtro",
+        "NO_CONVERSATIONS_FOUND": "No hay conversaciones con este estado",
+        "NO_CONVERSATIONS_ENROLLED": "No hay conversaciones enrolladas"
+      }
+    },
     "STEPS": {
       "WAIT": {
         "ADD": "Esperar",
@@ -1023,6 +1075,17 @@
       "CONDITION": {
         "ADD": "Condición",
         "DEFAULT_NAME": "Condición de rama"
+      },
+      "SEND_EMAIL": {
+        "ADD": "Enviar Email",
+        "DEFAULT_NAME": "Enviar correo electrónico",
+        "SENDER_EMAIL": "Email del emisor (opcional)",
+        "SENDER_EMAIL_PLACEHOLDER": "Ej: soporte@tuempresa.com",
+        "SUBJECT": "Asunto del correo (opcional)",
+        "SUBJECT_PLACEHOLDER": "Si se deja en blanco, la IA generará el asunto...",
+        "CONTENT": "Contenido del correo (opcional)",
+        "CONTENT_PLACEHOLDER": "Si se deja en blanco, la IA generará el contenido...",
+        "VARIABLES_HINT": "Puedes usar variables como {{contact.name}}, {{contact.email}}, {{conversation.id}}, etc."
       }
     },
     "TIMELINE": {

@@ -239,6 +239,8 @@ GEM
     diff-lcs (1.5.1)
     digest-crc (0.6.5)
       rake (>= 12.0.0, < 14.0.0)
+    discard (1.4.0)
+      activerecord (>= 4.2, < 9.0)
     docile (1.4.1)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
@@ -565,7 +567,6 @@ GEM
     mime-types-data (3.2023.0218.1)
     mini_magick (4.12.0)
     mini_mime (1.1.5)
-    mini_portile2 (2.8.9)
     minitest (5.25.5)
     mock_redis (0.36.0)
       ruby2_keywords
@@ -1042,7 +1043,6 @@ PLATFORMS
   arm64-darwin-20
   arm64-darwin-21
   arm64-darwin-22
-  ruby
   x64-mingw-ucrt
   x86_64-darwin-18
   x86_64-darwin-20
@@ -1083,6 +1083,7 @@ DEPENDENCIES
   devise-secure_password!
   devise-two-factor (>= 5.0.0)
   devise_token_auth (>= 1.2.3)
+  discard (~> 1.3)
   dotenv-rails (>= 3.0.0)
   down
   elastic-apm

@@ -721,6 +721,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_205603) do
     t.bigint "company_id"
     t.integer "source_type", default: 0, null: false
     t.jsonb "source_metadata", default: {}
+    t.datetime "discarded_at"
     t.index "lower((email)::text), account_id", name: "index_contacts_on_lower_email_account_id"
     t.index ["account_id", "contact_type"], name: "index_contacts_on_account_id_and_contact_type"
     t.index ["account_id", "email", "phone_number", "identifier"], name: "index_contacts_on_nonempty_fields", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
@@ -729,6 +730,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_205603) do
     t.index ["account_id"], name: "index_resolved_contact_account_id", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["blocked"], name: "index_contacts_on_blocked"
     t.index ["company_id"], name: "index_contacts_on_company_id"
+    t.index ["discarded_at"], name: "index_contacts_on_discarded_at"
     t.index ["email", "account_id"], name: "uniq_email_per_account_contact", unique: true
     t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true
     t.index ["name", "email", "phone_number", "identifier"], name: "index_contacts_on_name_email_phone_number_identifier", opclass: :gin_trgm_ops, using: :gin
@@ -804,6 +806,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_205603) do
     t.datetime "last_chat_message_at"
     t.integer "source_type", default: 0, null: false
     t.jsonb "source_metadata", default: {}
+    t.datetime "discarded_at"
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
@@ -813,6 +816,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_205603) do
     t.index ["contact_id"], name: "index_conversations_on_contact_id"
     t.index ["contact_inbox_id"], name: "index_conversations_on_contact_inbox_id"
     t.index ["conversation_type"], name: "index_conversations_on_conversation_type"
+    t.index ["discarded_at"], name: "index_conversations_on_discarded_at"
     t.index ["first_reply_created_at"], name: "index_conversations_on_first_reply_created_at"
     t.index ["identifier", "account_id"], name: "index_conversations_on_identifier_and_account_id"
     t.index ["inbox_id"], name: "index_conversations_on_inbox_id"

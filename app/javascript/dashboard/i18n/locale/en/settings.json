@@ -1032,7 +1032,51 @@
         "URL_PLACEHOLDER": "https://example.com/webhook",
         "METHOD": "HTTP Method",
         "VARIABLES_HINT": "You can use variables like {{contact.name}}, {{conversation.id}}, etc."
+      },
+      "FIRST_CONTACT": {
+        "ADD": "First Contact",
+        "DEFAULT_NAME": "Welcome message (Notion)",
+        "CHANNEL": "Communication Channel",
+        "INBOX": "Inbox",
+        "SELECT_INBOX": "Select an inbox...",
+        "TEMPLATE": "WhatsApp Template",
+        "SELECT_TEMPLATE": "Select a template...",
+        "PARAMS": "Template Parameters",
+        "SMS_CONTEXT": "SMS Context",
+        "SMS_CONTEXT_HELP": "The AI will generate an SMS message based on this context and contact data.",
+        "PREVIEW": "Message Preview"
+      },
+      "CONDITION": {
+        "ADD": "Condition",
+        "DEFAULT_NAME": "Condition branch"
       }
+    },
+    "TIMELINE": {
+      "LOADING": "Loading events...",
+      "EMPTY_STATE": "There are no copilot events for this conversation",
+      "JUST_NOW": "Just now",
+      "AGO": "Ago"
+    },
+    "EVENTS": {
+      "enrolled": "Enrolled in copilot",
+      "step_executed": "Step executed: {name}",
+      "step_failed": "Step failed",
+      "message_sent": "Message sent via {channel}",
+      "template_sent": "Template '{name}' sent",
+      "ai_response_received": "AI response received",
+      "sms_sent": "SMS sent",
+      "label_added": "Labels added: {labels}",
+      "label_removed": "Labels removed: {labels}",
+      "agent_assigned": "Agent assigned: {name}",
+      "team_assigned": "Team assigned: {name}",
+      "pipeline_status_updated": "Pipeline status updated to: {name}",
+      "webhook_called": "Webhook called",
+      "completed": "Copilot completed",
+      "cancelled": "Copilot cancelled",
+      "failed": "Copilot failed",
+      "re_enrolled": "Re-enrolled in copilot",
+      "paused": "Copilot paused",
+      "resumed": "Copilot resumed"
     }
   }
 }

@@ -822,7 +822,7 @@
       "TABLE_HEADER": {
         "NAME": "Nombre",
         "STATUS": "Estado",
-        "INBOX": "Bandeja",
+        "SOURCE": "Origen",
         "STEPS": "Pasos"
       },
       "API": {
@@ -1006,7 +1006,51 @@
         "URL_PLACEHOLDER": "https://ejemplo.com/webhook",
         "METHOD": "Método HTTP",
         "VARIABLES_HINT": "Puedes usar variables como {{contact.name}}, {{conversation.id}}, etc."
+      },
+      "FIRST_CONTACT": {
+        "ADD": "Primer Contacto",
+        "DEFAULT_NAME": "Mensaje de bienvenida (Notion)",
+        "CHANNEL": "Canal de Comunicación",
+        "INBOX": "Bandeja de Entrada",
+        "SELECT_INBOX": "Selecciona una bandeja...",
+        "TEMPLATE": "Plantilla de WhatsApp",
+        "SELECT_TEMPLATE": "Selecciona una plantilla...",
+        "PARAMS": "Parámetros de la Plantilla",
+        "SMS_CONTEXT": "Contexto para el SMS",
+        "SMS_CONTEXT_HELP": "El IA generará un mensaje SMS basado en este contexto y los datos del contacto.",
+        "PREVIEW": "Vista previa del mensaje"
+      },
+      "CONDITION": {
+        "ADD": "Condición",
+        "DEFAULT_NAME": "Condición de rama"
       }
+    },
+    "TIMELINE": {
+      "LOADING": "Cargando eventos...",
+      "EMPTY_STATE": "No hay eventos de copilots para esta conversación",
+      "JUST_NOW": "Hace un momento",
+      "AGO": "Hace"
+    },
+    "EVENTS": {
+      "enrolled": "Inscrito en el copilot",
+      "step_executed": "Paso ejecutado: {name}",
+      "step_failed": "El paso falló",
+      "message_sent": "Mensaje enviado vía {channel}",
+      "template_sent": "Plantilla '{name}' enviada",
+      "ai_response_received": "Respuesta de IA recibida",
+      "sms_sent": "SMS enviado",
+      "label_added": "Etiquetas añadidas: {labels}",
+      "label_removed": "Etiquetas eliminadas: {labels}",
+      "agent_assigned": "Agente asignado: {name}",
+      "team_assigned": "Equipo asignado: {name}",
+      "pipeline_status_updated": "Estado del embudo actualizado a: {name}",
+      "webhook_called": "Webhook llamado",
+      "completed": "Copilot completado",
+      "cancelled": "Copilot cancelado",
+      "failed": "Copilot fallido",
+      "re_enrolled": "Re-inscrito en el copilot",
+      "paused": "Copilot pausado",
+      "resumed": "Copilot reanudado"
     }
   }
 }

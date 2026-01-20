@@ -1,6 +1,7 @@
 class ConversationFollowUp < ApplicationRecord
   belongs_to :conversation
   belongs_to :lead_follow_up_sequence
+  belongs_to :sequence_enrollment, optional: true
 
   validates :conversation_id, uniqueness: true
   validates :status, presence: true, inclusion: { in: %w[active paused completed cancelled failed] }

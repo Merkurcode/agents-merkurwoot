@@ -1,21 +1,27 @@
 class LeadFollowUpSequence < ApplicationRecord
   belongs_to :account
-  belongs_to :inbox
+  belongs_to :inbox, optional: true
   has_many :conversation_follow_ups, dependent: :destroy
+  has_many :sequence_enrollments, dependent: :destroy
+  has_many :enrollment_events, dependent: :destroy
 
   validates :name, presence: true
-  validates :inbox, presence: true
+  validates :source_type, presence: true, inclusion: { in: %w[existing_conversations notion_database] }
+  validate :inbox_validation
   validate :inbox_must_be_whatsapp
   validate :one_active_sequence_per_inbox
   validate :steps_structure
   validate :validate_templates_exist
   validate :validate_trigger_conditions
+  validate :validate_source_config
+  validate :validate_first_contact_config
 
   after_commit :enroll_eligible_conversations, if: :should_auto_enroll?
 
   scope :active, -> { where(active: true) }
 
   STEP_TYPES = %w[
+    first_contact
     wait
     send_message
     add_label
@@ -144,8 +150,16 @@ class LeadFollowUpSequence < ApplicationRecord
 
   private
 
+  def inbox_validation
+    # Inbox is required only for existing_conversations source type
+    return unless source_type == 'existing_conversations'
+
+    errors.add(:inbox, 'is required for existing conversations') if inbox_id.blank?
+  end
+
   def inbox_must_be_whatsapp
     return unless inbox
+    return if source_type == 'notion_database' # For notion, inbox is in first_contact_config
 
     errors.add(:inbox, 'must be a WhatsApp inbox') unless inbox.inbox_type == 'Whatsapp'
   end
@@ -377,6 +391,75 @@ class LeadFollowUpSequence < ApplicationRecord
     end
   end
 
+  def validate_source_config
+    return unless source_type == 'notion_database'
+
+    errors.add(:source_config, 'is required for notion_database source') if source_config.blank?
+    return if source_config.blank?
+
+    # Validate notion database ID
+    if source_config['notion_database_id'].blank?
+      errors.add(:source_config, 'must have a notion_database_id')
+    end
+
+    # Validate field mappings
+    if source_config['field_mappings'].blank?
+      errors.add(:source_config, 'must have field_mappings')
+      return
+    end
+
+    # Phone number is required
+    if source_config.dig('field_mappings', 'phone_number').blank?
+      errors.add(:source_config, 'must have phone_number field mapping')
+    end
+  end
+
+  def validate_first_contact_config
+    return unless source_type == 'notion_database'
+
+    # Find first_contact step in steps array
+    first_contact_step = steps&.find { |s| s['type'] == 'first_contact' }
+
+    if first_contact_step.blank?
+      errors.add(:steps, 'must include a first_contact step for notion_database source')
+      return
+    end
+
+    # Validate it's the first step
+    if steps.first['type'] != 'first_contact'
+      errors.add(:steps, 'first_contact step must be the first step for notion_database source')
+      return
+    end
+
+    config = first_contact_step['config'] || {}
+
+    # Validate channel
+    unless %w[whatsapp sms].include?(config['channel'])
+      errors.add(:steps, 'first_contact step must have a valid channel (whatsapp or sms)')
+      return
+    end
+
+    # Validate inbox_id
+    if config['inbox_id'].blank?
+      errors.add(:steps, 'first_contact step must have inbox_id')
+    end
+
+    # Validate WhatsApp configuration
+    if config['channel'] == 'whatsapp'
+      if config['template_name'].blank?
+        errors.add(:steps, 'first_contact step must have template_name when channel is whatsapp')
+      end
+    end
+
+    # Validate inbox exists
+    if config['inbox_id'].present?
+      inbox = account.inboxes.find_by(id: config['inbox_id'])
+      unless inbox
+        errors.add(:steps, 'first_contact step inbox_id references non-existent inbox')
+      end
+    end
+  end
+
   def should_auto_enroll?
     return false unless active?
 
@@ -384,7 +467,44 @@ class LeadFollowUpSequence < ApplicationRecord
   end
 
   def enroll_eligible_conversations
-    Rails.logger.info "Triggering auto-enrollment for sequence #{id} (#{name})"
-    EnrollEligibleConversationsJob.perform_later(id)
+    Rails.logger.info "Triggering auto-enrollment for sequence #{id} (#{name}) - source: #{source_type}"
+
+    case source_type
+    when 'existing_conversations'
+      EnrollEligibleConversationsJob.perform_later(id)
+    when 'notion_database'
+      EnrollNotionDatabaseRecordsJob.perform_later(id)
+    else
+      Rails.logger.error "Unknown source_type: #{source_type} for sequence #{id}"
+    end
+  end
+
+  # Calculate stats from sequence_enrollments
+  def calculate_stats
+    total_enrolled = sequence_enrollments.count
+    total_active = sequence_enrollments.active.count
+    total_completed = sequence_enrollments.completed.count
+    total_cancelled = sequence_enrollments.cancelled.count
+    total_failed = sequence_enrollments.failed.count
+
+    completion_rate = if total_enrolled.positive?
+                        ((total_completed.to_f / total_enrolled) * 100).round(2)
+                      else
+                        0.0
+                      end
+
+    {
+      total_enrolled: total_enrolled,
+      total_active: total_active,
+      total_completed: total_completed,
+      total_cancelled: total_cancelled,
+      total_failed: total_failed,
+      completion_rate: completion_rate
+    }
+  end
+
+  # Update stats column with calculated values
+  def update_stats!
+    update_column(:stats, calculate_stats)
   end
 end

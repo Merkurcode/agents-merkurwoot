@@ -197,19 +197,28 @@ class LeadRetargeting::SendFollowUpService
     headers = render_hash_values(config['headers'] || {}, context)
     payload = render_hash_values(config['payload'] || {}, context)
 
-    response = HTTParty.send(
-      config['method'].downcase.to_sym,
+    # Enqueue async job instead of blocking
+    Webhooks::SequenceExecutionJob.perform_later(
       url,
-      headers: headers,
-      body: payload.to_json
+      config['method'],
+      headers,
+      payload
     )
-
-    raise "Webhook failed: #{response.code} - #{response.body}" unless response.success?
 
     { success: true }
   end
 
   def execute_email_step(step)
+    # Validate contact has email before proceeding
+    unless @contact.email.present?
+      Rails.logger.warn "Cannot send email to contact #{@contact.id}: no email address"
+      return {
+        success: false,
+        error: "Contact has no email address",
+        metadata: { contact_id: @contact.id, contact_name: @contact.name }
+      }
+    end
+
     # 1. Obtener el agent bot del inbox
     agent_bot = @inbox.agent_bot
 
@@ -474,8 +483,6 @@ class LeadRetargeting::SendFollowUpService
       case config['delay_type']
       when 'minutes'
         Time.current + delay.minutes
-      when 'hours'
-        Time.current + delay.hours
       when 'days'
         Time.current + delay.days
       else
@@ -736,7 +743,8 @@ class LeadRetargeting::SendFollowUpService
     { success: false, error: e.message }
   end
 
-  def build_ai_webhook_payload(step:, agent_bot:, event_type:, message_channel:, context:, variables:)
+  def build_ai_webhook_payload(step:, agent_bot: nil, event_type:, message_channel:, context:, variables:)
+   _agent_bot = agent_bot # Silenciar warning de rubocop si no se usa
     context_obj = build_variable_context
 
     # Renderizar el contexto con variables (si existe)

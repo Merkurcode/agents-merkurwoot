@@ -1,8 +1,12 @@
 class SequenceEnrollment < ApplicationRecord
   belongs_to :conversation
-  belongs_to :lead_follow_up_sequence
+  belongs_to :lead_follow_up_sequence, counter_cache: :enrollments_count
   has_many :enrollment_events, dependent: :destroy
   has_one :active_follow_up, class_name: 'ConversationFollowUp', dependent: :nullify
+
+  after_create :increment_status_counter
+  after_update :update_status_counter, if: :saved_change_to_status?
+  after_destroy :decrement_status_counter
 
   validates :status, presence: true, inclusion: { in: %w[active completed cancelled failed] }
   validates :enrolled_at, presence: true
@@ -100,5 +104,41 @@ class SequenceEnrollment < ApplicationRecord
     return nil unless completed_at
 
     (completed_at - enrolled_at).to_i
+  end
+
+  private
+
+  def increment_status_counter
+    update_sequence_counter(status, 1)
+  end
+
+  def decrement_status_counter
+    try_update_sequence_counter(status, -1)
+  end
+
+  def update_status_counter
+    old_status, new_status = saved_change_to_status
+    try_update_sequence_counter(old_status, -1)
+    update_sequence_counter(new_status, 1)
+  end
+
+  # Use different name for safe decrement to avoid errors if record is already deleted
+  def try_update_sequence_counter(status_name, by)
+    update_sequence_counter(status_name, by)
+  rescue ActiveRecord::RecordNotFound
+    # Ignore if sequence is missing
+  end
+
+  def update_sequence_counter(status_name, by)
+    return unless status_name.present? && lead_follow_up_sequence_id
+
+    column = "#{status_name}_enrollments_count"
+    # We can't check respond_to? on the association easily if it's not loaded,
+    # so we rely on the column naming convention.
+    
+    # Use update_counters to atomic update without triggering model callbacks
+    LeadFollowUpSequence.update_counters(lead_follow_up_sequence_id, column => by)
+  rescue StandardError => e
+    Rails.logger.warn "Failed to update counter #{column}: #{e.message}"
   end
 end

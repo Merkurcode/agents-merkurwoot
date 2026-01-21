@@ -17,6 +17,7 @@ class LeadFollowUpSequence < ApplicationRecord
   validate :validate_first_contact_config
 
   after_commit :enroll_eligible_conversations, if: :should_auto_enroll?
+  after_commit :sync_notion_custom_attributes, if: :notion_database?
 
   scope :active, -> { where(active: true) }
 
@@ -487,12 +488,11 @@ class LeadFollowUpSequence < ApplicationRecord
   end
 
   # Calculate stats from sequence_enrollments
+  # Calculate stats using cached counters
   def calculate_stats
-    total_enrolled = sequence_enrollments.count
-    total_active = sequence_enrollments.active.count
-    total_completed = sequence_enrollments.completed.count
-    total_cancelled = sequence_enrollments.cancelled.count
-    total_failed = sequence_enrollments.failed.count
+    # Use counter caches to avoid COUNT queries
+    total_enrolled = enrollments_count
+    total_completed = completed_enrollments_count
 
     completion_rate = if total_enrolled.positive?
                         ((total_completed.to_f / total_enrolled) * 100).round(2)
@@ -502,16 +502,49 @@ class LeadFollowUpSequence < ApplicationRecord
 
     {
       total_enrolled: total_enrolled,
-      total_active: total_active,
+      total_active: active_enrollments_count,
       total_completed: total_completed,
-      total_cancelled: total_cancelled,
-      total_failed: total_failed,
+      total_cancelled: cancelled_enrollments_count,
+      total_failed: failed_enrollments_count,
       completion_rate: completion_rate
     }
   end
 
-  # Update stats column with calculated values
+  # Determine if manual update is needed (usually no, if using counter_culture correctly)
+  # Keeping this method signature to avoid breaking callers, but it simply returns current stats
   def update_stats!
+    # With counter caches, we don't need to do expensive recalculations.
+    # We might just update the stats JSON column if necessary, or better yet,
+    # rely on the consumer to use the new columns + calculate_stats.
     update_column(:stats, calculate_stats)
+  end
+
+  def notion_database?
+    source_type == 'notion_database'
+  end
+
+  def sync_notion_custom_attributes
+    return unless source_config.is_a?(Hash)
+
+    custom_attrs = source_config.dig('field_mappings', 'custom_attributes')
+    return if custom_attrs.blank?
+
+    custom_attrs.each_key do |attribute_key|
+      # Skip internal/metadata keys
+      next if attribute_key.to_s.start_with?('source_', 'attr_')
+
+      # Find or create custom attribute definition
+      CustomAttributeDefinition.find_or_create_by!(
+        account: account,
+        attribute_model: :contact_attribute,
+        attribute_key: attribute_key.to_s
+      ) do |definition|
+        definition.attribute_display_name = attribute_key.to_s.titleize
+        definition.attribute_display_type = :text
+        definition.attribute_description = "Imported from Notion database"
+      end
+    end
+  rescue StandardError => e
+    Rails.logger.error "Failed to sync Notion custom attributes: #{e.message}"
   end
 end

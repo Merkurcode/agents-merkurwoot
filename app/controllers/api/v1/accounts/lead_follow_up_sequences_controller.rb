@@ -176,6 +176,9 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
       total_count: total_count,
       total_steps: @sequence.enabled_steps.size,
       enrolled_conversations: enrollments.map do |enrollment|
+        # Skip enrollments with missing conversations
+        next unless enrollment.conversation
+
         # Get active_follow_up for next_action_at if exists
         follow_up = enrollment.active_follow_up
         current_step_data = @sequence.enabled_steps[enrollment.current_step]
@@ -203,7 +206,7 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
           },
           conversation_status: enrollment.conversation.status
         }
-      end,
+      end.compact,
       page: page,
       per_page: per_page,
       total_pages: (total_count / per_page.to_f).ceil,

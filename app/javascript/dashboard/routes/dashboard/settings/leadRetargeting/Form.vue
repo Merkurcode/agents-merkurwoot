@@ -88,6 +88,7 @@ const {
   textFields: notionTextFields,
   dateFields: notionDateFields,
   phoneNumberFields: notionPhoneFields,
+  emailFields: notionEmailFields,
   allFields: notionAllFields,
   fetchDatabases: fetchNotionDatabases,
   fetchDatabaseSchema,
@@ -108,6 +109,7 @@ const defaultSequence = {
     field_mappings: {
       phone_number: '',
       name: '',
+      email: '',
       reference_date: '',
       custom_attributes: {},
     },
@@ -761,6 +763,7 @@ const onNotionDatabaseChange = async () => {
         sequence.value.source_config.field_mappings = {
           phone_number: '',
           name: '',
+          email: '',
           reference_date: '',
           custom_attributes: {},
         };
@@ -787,7 +790,7 @@ const onNotionDatabaseChange = async () => {
 };
 
 const addCustomAttribute = () => {
-  const key = `attr_${Date.now()}`;
+  const key = `custom_attr_${Date.now()}`;
   if (!sequence.value.source_config.field_mappings.custom_attributes) {
     sequence.value.source_config.field_mappings.custom_attributes = {};
   }
@@ -796,6 +799,27 @@ const addCustomAttribute = () => {
 
 const removeCustomAttribute = key => {
   delete sequence.value.source_config.field_mappings.custom_attributes[key];
+};
+
+const renameCustomAttributeKey = (oldKey, newKey) => {
+  // Sanitize new key: lowercase, no spaces, alphanumeric and underscore only
+  const sanitizedKey = newKey
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '');
+
+  if (!sanitizedKey || sanitizedKey === oldKey) return;
+
+  // Check if key already exists
+  if (sequence.value.source_config.field_mappings.custom_attributes[sanitizedKey]) {
+    useAlert('Ya existe un atributo con ese nombre');
+    return;
+  }
+
+  // Rename key
+  const value = sequence.value.source_config.field_mappings.custom_attributes[oldKey];
+  delete sequence.value.source_config.field_mappings.custom_attributes[oldKey];
+  sequence.value.source_config.field_mappings.custom_attributes[sanitizedKey] = value;
 };
 
 const previewNotionRecords = async () => {
@@ -1437,6 +1461,29 @@ const saveSequence = async () => {
                   </select>
                 </div>
 
+                <!-- Email -->
+                <div
+                  class="grid grid-cols-2 gap-3 items-center p-3 hover:bg-n-weak/30 rounded transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <i class="i-lucide-mail text-n-slate-11" />
+                    <span class="text-sm font-medium text-n-slate-12">Email</span>
+                  </div>
+                  <select
+                    v-model="sequence.source_config.field_mappings.email"
+                    class="w-full text-sm"
+                  >
+                    <option value="">Selecciona un campo</option>
+                    <option
+                      v-for="field in notionEmailFields"
+                      :key="field.name"
+                      :value="field.name"
+                    >
+                      {{ field.name }} ({{ field.type }})
+                    </option>
+                  </select>
+                </div>
+
                 <!-- Reference Date -->
                 <div
                   class="grid grid-cols-2 gap-3 items-center p-3 hover:bg-n-weak/30 rounded transition-colors"
@@ -1520,30 +1567,38 @@ const saveSequence = async () => {
                   >
                     <div class="flex-1">
                       <input
-                        :value="key.replace('attr_', 'custom_')"
-                        placeholder="Nombre del atributo"
-                        class="w-full text-sm bg-transparent border-none focus:ring-0 font-mono text-n-slate-11"
-                        readonly
+                        :value="key"
+                        placeholder="nombre_atributo"
+                        class="w-full text-sm px-2 py-1 rounded border border-n-weak/60 font-mono text-n-slate-12 focus:border-n-blue-9 focus:ring-1 focus:ring-n-blue-9"
+                        @blur="e => renameCustomAttributeKey(key, e.target.value)"
                       />
+                      <p class="text-xs text-n-slate-11 mt-0.5">
+                        Key que se guardará en custom_attributes
+                      </p>
                     </div>
                     <i class="i-lucide-arrow-right text-n-slate-11" />
-                    <select
-                      v-model="
-                        sequence.source_config.field_mappings.custom_attributes[
-                          key
-                        ]
-                      "
-                      class="flex-1 text-sm"
-                    >
-                      <option value="">Selecciona campo de Notion</option>
-                      <option
-                        v-for="field in notionAllFields"
-                        :key="field.name"
-                        :value="field.name"
+                    <div class="flex-1">
+                      <select
+                        v-model="
+                          sequence.source_config.field_mappings.custom_attributes[
+                            key
+                          ]
+                        "
+                        class="w-full text-sm"
                       >
-                        {{ field.name }} ({{ field.type }})
-                      </option>
-                    </select>
+                        <option value="">Selecciona campo de Notion</option>
+                        <option
+                          v-for="field in notionAllFields"
+                          :key="field.name"
+                          :value="field.name"
+                        >
+                          {{ field.name }} ({{ field.type }})
+                        </option>
+                      </select>
+                      <p class="text-xs text-n-slate-11 mt-0.5">
+                        Campo de Notion a mapear
+                      </p>
+                    </div>
                     <Button
                       xs
                       ruby

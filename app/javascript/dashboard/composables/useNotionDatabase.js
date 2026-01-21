@@ -84,6 +84,13 @@ export function useNotionDatabase() {
     );
   });
 
+  const emailFields = computed(() => {
+    if (!databaseSchema.value?.properties) return [];
+    return databaseSchema.value.properties.filter(p =>
+      ['email', 'rich_text', 'title'].includes(p.type)
+    );
+  });
+
   const selectFields = computed(() => {
     if (!databaseSchema.value?.properties) return [];
     return databaseSchema.value.properties.filter(p =>
@@ -111,6 +118,7 @@ export function useNotionDatabase() {
     textFields,
     dateFields,
     phoneNumberFields,
+    emailFields,
     selectFields,
     numberFields,
     allFields,

@@ -107,6 +107,12 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
       return nil
     end
 
+    contact_name = extract_field_value(record, mappings['name']) || 'Unknown'
+    contact_email = extract_field_value(record, mappings['email'])
+    custom_attrs = extract_custom_attributes(record, mappings)
+
+    Rails.logger.info "Contact attributes - name: #{contact_name}, phone: #{cleaned_phone}, email: #{contact_email}"
+
     # Find existing contact or create new one
     existing_contact = Contact.find_by(
       account: sequence.account,
@@ -115,6 +121,31 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
 
     if existing_contact
       Rails.logger.info "Found existing contact: #{existing_contact.id}"
+
+      # Update contact with new data from Notion
+      updates = {}
+      updates[:email] = contact_email if contact_email.present?
+      updates[:name] = contact_name if contact_name.present? && existing_contact.name == 'Unknown'
+
+      # Merge custom attributes
+      if custom_attrs.present?
+        merged_attrs = (existing_contact.custom_attributes || {}).merge(custom_attrs).merge(
+          source_type: 'notion_import',
+          source_metadata: {
+            notion_database_id: sequence.source_config['notion_database_id'],
+            notion_record_id: record[:id],
+            imported_at: Time.current.iso8601,
+            sequence_id: sequence.id
+          }
+        )
+        updates[:custom_attributes] = merged_attrs
+      end
+
+      if updates.any?
+        existing_contact.update!(updates)
+        Rails.logger.info "Updated contact #{existing_contact.id} with: #{updates.keys.join(', ')}"
+      end
+
       return existing_contact
     end
 
@@ -125,30 +156,64 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     Rails.logger.info "Using source_id: #{source_id} for channel type: #{inbox.channel_type}"
 
     # Create new contact and contact inbox
+    contact_attributes = {
+      name: contact_name,
+      phone_number: cleaned_phone,
+      contact_type: 'notion_import',
+      custom_attributes: custom_attrs.merge(
+        source_type: 'notion_import',
+        source_metadata: {
+          notion_database_id: sequence.source_config['notion_database_id'],
+          notion_record_id: record[:id],
+          imported_at: Time.current.iso8601,
+          sequence_id: sequence.id
+        }
+      )
+    }
+
+    # Add email if provided
+    contact_attributes[:email] = contact_email if contact_email.present?
+
     contact_inbox = ContactInboxWithContactBuilder.new(
       source_id: source_id,
       inbox: inbox,
-      contact_attributes: {
-        name: extract_field_value(record, mappings['name']) || 'Unknown',
-        phone_number: cleaned_phone,
-        custom_attributes: extract_custom_attributes(record, mappings).merge(
-          source_type: 'notion_import',
-          source_metadata: {
-            notion_database_id: sequence.source_config['notion_database_id'],
-            notion_record_id: record[:id],
-            imported_at: Time.current.iso8601,
-            sequence_id: sequence.id
-          }
-        )
-      }
+      contact_attributes: contact_attributes
     ).perform
 
+    unless contact_inbox
+      Rails.logger.error "ContactInboxWithContactBuilder returned nil for source_id: #{source_id}"
+      return nil
+    end
+
+    Rails.logger.info "ContactInbox created: #{contact_inbox.id}, contact_id: #{contact_inbox.contact_id}"
+
+    # Reload to ensure associations are loaded
+    contact_inbox.reload
     contact = contact_inbox.contact
+    unless contact
+      Rails.logger.error "ContactInbox #{contact_inbox.id} has no associated contact using default scope"
+      # Try to find the contact directly without scopes (including soft-deleted)
+      contact = Contact.unscoped.find_by(id: contact_inbox.contact_id)
+      if contact
+        if contact.discarded?
+          Rails.logger.warn "Contact #{contact.id} exists but is soft-deleted (discarded_at: #{contact.discarded_at})"
+          # Restore the contact
+          contact.undiscard
+          Rails.logger.info "Contact #{contact.id} restored successfully"
+        else
+          Rails.logger.info "Found contact #{contact.id} using unscoped query"
+        end
+      else
+        Rails.logger.error "Contact #{contact_inbox.contact_id} not found even with unscoped query"
+        return nil
+      end
+    end
+
     Rails.logger.info "Contact created successfully: #{contact.id}"
     contact
   rescue StandardError => e
     Rails.logger.error "Failed to create contact: #{e.message}"
-    Rails.logger.error "Backtrace: #{e.backtrace.first(5).join("\n")}" if e.backtrace
+    Rails.logger.error "Backtrace: #{e.backtrace.first(10).join("\n")}" if e.backtrace
     nil
   end
 
@@ -355,26 +420,6 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     Rails.logger.warn "Created failed message record for conversation #{conversation.id}"
   rescue StandardError => e
     Rails.logger.error "Failed to create failed message record: #{e.message}"
-  end
-
-  def send_sms_message(sequence, conversation, contact, _record, _config)
-    # For SMS, use AI to generate message based on context
-    # TODO: Integrate with AI service to generate SMS
-    # For now, create a simple message
-    message_text = "Hola #{contact.name}, gracias por tu interés en nuestros servicios."
-
-    conversation.messages.create!(
-      account: sequence.account,
-      inbox: conversation.inbox,
-      message_type: :outgoing,
-      content: message_text,
-      sender: sequence.account.administrators.first
-    )
-
-    Rails.logger.info "Sent SMS to conversation #{conversation.id}"
-  rescue StandardError => e
-    Rails.logger.error "Failed to send SMS: #{e.message}"
-    raise
   end
 
   def enroll_conversation(conversation, sequence, _first_step, record)

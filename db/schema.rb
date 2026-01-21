@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_20_205603) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_20_231242) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -752,12 +752,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_205603) do
     t.datetime "completed_at"
     t.string "sidekiq_job_id"
     t.bigint "sequence_enrollment_id"
+    t.string "completion_reason"
     t.index ["completed_at"], name: "index_conversation_follow_ups_on_completed_at"
+    t.index ["completion_reason"], name: "index_conversation_follow_ups_on_completion_reason"
     t.index ["conversation_id"], name: "index_conversation_follow_ups_on_conversation_id", unique: true
     t.index ["lead_follow_up_sequence_id"], name: "index_conversation_follow_ups_on_lead_follow_up_sequence_id"
     t.index ["processing_started_at"], name: "index_conversation_follow_ups_on_processing_started_at"
     t.index ["sequence_enrollment_id"], name: "index_conversation_follow_ups_on_sequence_enrollment_id"
     t.index ["sidekiq_job_id"], name: "index_conversation_follow_ups_on_sidekiq_job_id"
+    t.index ["status", "next_action_at", "processing_started_at"], name: "index_follow_ups_dispatcher_optimization"
     t.index ["status", "next_action_at"], name: "index_conversation_follow_ups_on_status_and_next_action_at"
   end
 
@@ -1134,6 +1137,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_205603) do
     t.string "source_type", default: "existing_conversations", null: false
     t.jsonb "source_config", default: {}, null: false
     t.jsonb "first_contact_config", default: {}, null: false
+    t.integer "enrollments_count", default: 0
+    t.integer "active_enrollments_count", default: 0
+    t.integer "completed_enrollments_count", default: 0
+    t.integer "cancelled_enrollments_count", default: 0
+    t.integer "failed_enrollments_count", default: 0
     t.index ["account_id", "active"], name: "index_lead_follow_up_sequences_on_account_id_and_active"
     t.index ["account_id"], name: "index_lead_follow_up_sequences_on_account_id"
     t.index ["inbox_id"], name: "index_lead_follow_up_sequences_on_inbox_id"

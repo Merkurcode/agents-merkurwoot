@@ -11,7 +11,6 @@ class FaqItem < ApplicationRecord
   # Skip callbacks for bulk operations (handled separately in controllers)
   attr_accessor :skip_catalog_callbacks
 
-  before_destroy :cache_destroy_data
   after_create_commit :dispatch_create_event, unless: :skip_catalog_callbacks
   after_update_commit :dispatch_update_event, unless: :skip_catalog_callbacks
   after_destroy_commit :dispatch_destroy_event, unless: :skip_catalog_callbacks
@@ -41,53 +40,33 @@ class FaqItem < ApplicationRecord
     errors.add(:translations, 'must have at least one question')
   end
 
-  def cache_destroy_data
-    @cached_destroy_data = {
-      id: id,
-      faq_category_id: faq_category_id,
-      account: account
-    }
+  def faq_item_payload
+    { id: id, faq_category_id: faq_category_id }
+  end
+
+  def dispatch_faq_event(target_account:, added: 0, updated: 0, deleted: 0, added_items: [], updated_items: [], deleted_items: [])
+    Rails.configuration.dispatcher.dispatch(
+      FAQ_CATALOG_UPDATED,
+      Time.zone.now,
+      account: target_account,
+      added_count: added,
+      updated_count: updated,
+      deleted_count: deleted,
+      added_faq_items: added_items,
+      updated_faq_items: updated_items,
+      deleted_faq_items: deleted_items
+    )
   end
 
   def dispatch_create_event
-    Rails.configuration.dispatcher.dispatch(
-      FAQ_CATALOG_UPDATED,
-      Time.zone.now,
-      account: account,
-      added_count: 1,
-      updated_count: 0,
-      deleted_count: 0,
-      added_faq_items: [{ id: id, faq_category_id: faq_category_id }],
-      updated_faq_items: [],
-      deleted_faq_items: []
-    )
+    dispatch_faq_event(target_account: account, added: 1, added_items: [faq_item_payload])
   end
 
   def dispatch_update_event
-    Rails.configuration.dispatcher.dispatch(
-      FAQ_CATALOG_UPDATED,
-      Time.zone.now,
-      account: account,
-      added_count: 0,
-      updated_count: 1,
-      deleted_count: 0,
-      added_faq_items: [],
-      updated_faq_items: [{ id: id, faq_category_id: faq_category_id }],
-      deleted_faq_items: []
-    )
+    dispatch_faq_event(target_account: account, updated: 1, updated_items: [faq_item_payload])
   end
 
   def dispatch_destroy_event
-    Rails.configuration.dispatcher.dispatch(
-      FAQ_CATALOG_UPDATED,
-      Time.zone.now,
-      account: @cached_destroy_data[:account],
-      added_count: 0,
-      updated_count: 0,
-      deleted_count: 1,
-      added_faq_items: [],
-      updated_faq_items: [],
-      deleted_faq_items: [{ id: @cached_destroy_data[:id], faq_category_id: @cached_destroy_data[:faq_category_id] }]
-    )
+    dispatch_faq_event(target_account: account, deleted: 1, deleted_items: [faq_item_payload])
   end
 end

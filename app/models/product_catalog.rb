@@ -82,7 +82,6 @@ class ProductCatalog < ApplicationRecord
   # Skip callbacks for bulk operations (handled separately in jobs/controllers)
   attr_accessor :skip_catalog_callbacks
 
-  before_destroy :cache_destroy_data
   after_create_commit :dispatch_create_event, unless: :skip_catalog_callbacks
   after_update_commit :dispatch_update_event, unless: :skip_catalog_callbacks
   after_destroy_commit :dispatch_destroy_event, unless: :skip_catalog_callbacks
@@ -126,53 +125,30 @@ class ProductCatalog < ApplicationRecord
     errors.add(:payment_options, "contains invalid options: #{invalid_options.join(', ')}")
   end
 
-  def cache_destroy_data
-    @cached_destroy_data = {
-      product_id: product_id,
-      account: account
-    }
+  def dispatch_product_event(target_account:, added: 0, updated: 0, deleted: 0, added_ids: [], updated_ids: [], deleted_ids: [])
+    Rails.configuration.dispatcher.dispatch(
+      PRODUCT_CATALOG_UPDATED,
+      Time.zone.now,
+      account: target_account,
+      added_count: added,
+      updated_count: updated,
+      deleted_count: deleted,
+      added_product_ids: added_ids,
+      updated_product_ids: updated_ids,
+      deleted_product_ids: deleted_ids
+    )
   end
 
   def dispatch_create_event
-    Rails.configuration.dispatcher.dispatch(
-      PRODUCT_CATALOG_UPDATED,
-      Time.zone.now,
-      account: account,
-      added_count: 1,
-      updated_count: 0,
-      deleted_count: 0,
-      added_product_ids: [product_id],
-      updated_product_ids: [],
-      deleted_product_ids: []
-    )
+    dispatch_product_event(target_account: account, added: 1, added_ids: [product_id])
   end
 
   def dispatch_update_event
-    Rails.configuration.dispatcher.dispatch(
-      PRODUCT_CATALOG_UPDATED,
-      Time.zone.now,
-      account: account,
-      added_count: 0,
-      updated_count: 1,
-      deleted_count: 0,
-      added_product_ids: [],
-      updated_product_ids: [product_id],
-      deleted_product_ids: []
-    )
+    dispatch_product_event(target_account: account, updated: 1, updated_ids: [product_id])
   end
 
   def dispatch_destroy_event
-    Rails.configuration.dispatcher.dispatch(
-      PRODUCT_CATALOG_UPDATED,
-      Time.zone.now,
-      account: @cached_destroy_data[:account],
-      added_count: 0,
-      updated_count: 0,
-      deleted_count: 1,
-      added_product_ids: [],
-      updated_product_ids: [],
-      deleted_product_ids: [@cached_destroy_data[:product_id]]
-    )
+    dispatch_product_event(target_account: account, deleted: 1, deleted_ids: [product_id])
   end
 end
 

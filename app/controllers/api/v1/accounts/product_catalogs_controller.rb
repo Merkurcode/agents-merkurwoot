@@ -161,30 +161,8 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
       return
     end
 
-    # Get products to delete and their product_ids for webhook payload
-    products_to_delete = Current.account.product_catalogs.where(id: ids)
-    deleted_product_ids = products_to_delete.pluck(:product_id)
-
-    # Skip individual callbacks, we'll dispatch one bulk event
-    deleted_count = 0
-    products_to_delete.find_each do |product|
-      product.skip_catalog_callbacks = true
-      product.destroy
-      deleted_count += 1
-    end
-
-    # Dispatch one bulk event
-    Rails.configuration.dispatcher.dispatch(
-      PRODUCT_CATALOG_UPDATED,
-      Time.zone.now,
-      account: Current.account,
-      added_count: 0,
-      updated_count: 0,
-      deleted_count: deleted_count,
-      added_product_ids: [],
-      updated_product_ids: [],
-      deleted_product_ids: deleted_product_ids
-    )
+    deleted_product_ids, deleted_count = destroy_products_with_skip_callbacks(ids)
+    dispatch_bulk_delete_event(deleted_product_ids, deleted_count)
 
     head :ok
   end
@@ -401,4 +379,31 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
     end
   end
 
+  def destroy_products_with_skip_callbacks(ids)
+    products_to_delete = Current.account.product_catalogs.where(id: ids)
+    deleted_product_ids = products_to_delete.pluck(:product_id)
+
+    deleted_count = 0
+    products_to_delete.find_each do |product|
+      product.skip_catalog_callbacks = true
+      product.destroy
+      deleted_count += 1
+    end
+
+    [deleted_product_ids, deleted_count]
+  end
+
+  def dispatch_bulk_delete_event(deleted_product_ids, deleted_count)
+    Rails.configuration.dispatcher.dispatch(
+      PRODUCT_CATALOG_UPDATED,
+      Time.zone.now,
+      account: Current.account,
+      added_count: 0,
+      updated_count: 0,
+      deleted_count: deleted_count,
+      added_product_ids: [],
+      updated_product_ids: [],
+      deleted_product_ids: deleted_product_ids
+    )
+  end
 end

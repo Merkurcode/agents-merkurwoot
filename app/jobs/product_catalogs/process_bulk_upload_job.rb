@@ -246,72 +246,79 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
   end
 
   def update_final_status(excel_result, media_result)
-    # If both phases succeeded
     if excel_result[:success] && media_result[:success]
-      # Get products processed in this bulk request and categorize as added vs updated
-      processed_products = @bulk_request.product_catalogs.pluck(:product_id)
-
-      added_product_ids = []
-      updated_product_ids = []
-
-      processed_products.each do |product_id|
-        if @existing_product_ids_before&.include?(product_id)
-          updated_product_ids << product_id
-        else
-          added_product_ids << product_id
-        end
-      end
-
-      # Check if all records were processed successfully
-      if @bulk_request.failed_records.zero? && @bulk_request.processed_records.positive?
-        @bulk_request.update!(
-          status: 'COMPLETED',
-          progress: 100.0,
-          error_message: nil
-        )
-        dispatch_catalog_updated_event(
-          added_count: added_product_ids.size,
-          updated_count: updated_product_ids.size,
-          deleted_count: 0,
-          added_product_ids: added_product_ids,
-          updated_product_ids: updated_product_ids,
-          deleted_product_ids: []
-        )
-      elsif @bulk_request.failed_records.positive? && @bulk_request.processed_records.positive?
-        # Some records succeeded, some failed
-        @bulk_request.update!(
-          status: 'PARTIALLY_COMPLETED',
-          progress: 100.0,
-          error_message: "Processed #{@bulk_request.processed_records} of #{@bulk_request.total_records} records. #{@bulk_request.failed_records} failed."
-        )
-        dispatch_catalog_updated_event(
-          added_count: added_product_ids.size,
-          updated_count: updated_product_ids.size,
-          deleted_count: 0,
-          added_product_ids: added_product_ids,
-          updated_product_ids: updated_product_ids,
-          deleted_product_ids: []
-        )
-      else
-        # No records were processed
-        @bulk_request.update!(
-          status: 'FAILED',
-          progress: 0.0,
-          error_message: 'No records were processed successfully'
-        )
-      end
+      handle_successful_processing
     else
-      # One of the phases failed
-      error_msg = []
-      error_msg << "Excel: #{excel_result[:error]}" unless excel_result[:success]
-      error_msg << "Media: #{media_result[:error]}" unless media_result[:success]
-
-      @bulk_request.update!(
-        status: 'FAILED',
-        progress: 0.0,
-        error_message: error_msg.join('; ')
-      )
+      handle_failed_processing(excel_result, media_result)
     end
+  end
+
+  def handle_successful_processing
+    added_product_ids, updated_product_ids = categorize_processed_products
+
+    if @bulk_request.failed_records.zero? && @bulk_request.processed_records.positive?
+      complete_bulk_request(added_product_ids, updated_product_ids)
+    elsif @bulk_request.failed_records.positive? && @bulk_request.processed_records.positive?
+      partially_complete_bulk_request(added_product_ids, updated_product_ids)
+    else
+      fail_bulk_request('No records were processed successfully')
+    end
+  end
+
+  def categorize_processed_products
+    processed_products = @bulk_request.product_catalogs.pluck(:product_id)
+    added_product_ids = []
+    updated_product_ids = []
+
+    processed_products.each do |product_id|
+      if @existing_product_ids_before&.include?(product_id)
+        updated_product_ids << product_id
+      else
+        added_product_ids << product_id
+      end
+    end
+
+    [added_product_ids, updated_product_ids]
+  end
+
+  def complete_bulk_request(added_product_ids, updated_product_ids)
+    @bulk_request.update!(status: 'COMPLETED', progress: 100.0, error_message: nil)
+    dispatch_catalog_updated_event(
+      added_count: added_product_ids.size,
+      updated_count: updated_product_ids.size,
+      deleted_count: 0,
+      added_product_ids: added_product_ids,
+      updated_product_ids: updated_product_ids,
+      deleted_product_ids: []
+    )
+  end
+
+  def partially_complete_bulk_request(added_product_ids, updated_product_ids)
+    @bulk_request.update!(
+      status: 'PARTIALLY_COMPLETED',
+      progress: 100.0,
+      error_message: "Processed #{@bulk_request.processed_records} of #{@bulk_request.total_records} records. #{@bulk_request.failed_records} failed."
+    )
+    dispatch_catalog_updated_event(
+      added_count: added_product_ids.size,
+      updated_count: updated_product_ids.size,
+      deleted_count: 0,
+      added_product_ids: added_product_ids,
+      updated_product_ids: updated_product_ids,
+      deleted_product_ids: []
+    )
+  end
+
+  def fail_bulk_request(error_message)
+    @bulk_request.update!(status: 'FAILED', progress: 0.0, error_message: error_message)
+  end
+
+  def handle_failed_processing(excel_result, media_result)
+    error_msg = []
+    error_msg << "Excel: #{excel_result[:error]}" unless excel_result[:success]
+    error_msg << "Media: #{media_result[:error]}" unless media_result[:success]
+
+    fail_bulk_request(error_msg.join('; '))
   end
 
   def dispatch_catalog_updated_event(added_count:, updated_count:, deleted_count:, added_product_ids:, updated_product_ids:, deleted_product_ids:)

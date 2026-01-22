@@ -31,13 +31,13 @@ class Notion::ApiClient
 
     unless response.success?
       Rails.logger.error "Notion API Error: #{response.code} - #{response.body}"
-      raise Notion::ApiError, extract_error_message(response)
+      raise CustomExceptions::Notion::ApiError, extract_error_message(response)
     end
 
     response.parsed_response
   rescue HTTParty::Error, Timeout::Error => e
     Rails.logger.error "Notion API Request Failed: #{e.message}"
-    raise Notion::ApiError, "Failed to connect to Notion API: #{e.message}"
+    raise CustomExceptions::Notion::ApiError, "Failed to connect to Notion API: #{e.message}"
   end
 
   def headers

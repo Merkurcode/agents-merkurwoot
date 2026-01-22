@@ -1,3 +1,5 @@
-module Notion
-  class ApiError < StandardError; end
+module CustomExceptions
+  module Notion
+    class ApiError < StandardError; end
+  end
 end

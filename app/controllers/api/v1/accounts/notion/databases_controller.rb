@@ -6,7 +6,7 @@ class Api::V1::Accounts::Notion::DatabasesController < Api::V1::Accounts::BaseCo
     databases = service.list_databases
 
     render json: { databases: databases }
-  rescue Notion::ApiError => e
+  rescue CustomExceptions::Notion::ApiError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
@@ -15,7 +15,7 @@ class Api::V1::Accounts::Notion::DatabasesController < Api::V1::Accounts::BaseCo
     schema = service.get_database_schema(params[:id])
 
     render json: schema
-  rescue Notion::ApiError => e
+  rescue CustomExceptions::Notion::ApiError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
@@ -24,7 +24,7 @@ class Api::V1::Accounts::Notion::DatabasesController < Api::V1::Accounts::BaseCo
     records = service.query_database(params[:id], query_params)
 
     render json: { records: records, count: records.size }
-  rescue Notion::ApiError => e
+  rescue CustomExceptions::Notion::ApiError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 

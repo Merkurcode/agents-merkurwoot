@@ -28,7 +28,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
       Rails.logger.info "Applying Notion filters: #{filters.inspect}"
       records = notion_service.query_database(database_id, filters.merge(limit: BATCH_SIZE))
       Rails.logger.info "Found #{records.count} records in Notion database #{database_id} with filters applied"
-    rescue Notion::ApiError => e
+    rescue CustomExceptions::Notion::ApiError => e
       Rails.logger.error "Failed to fetch Notion records: #{e.message}"
       return
     end

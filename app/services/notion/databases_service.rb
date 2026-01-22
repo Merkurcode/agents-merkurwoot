@@ -3,8 +3,8 @@ class Notion::DatabasesService
     @account = account
     @hook = Integrations::Hook.where(account: account).find_by(app_id: 'notion')
 
-    raise Notion::ApiError, 'Notion integration not found' unless @hook
-    raise Notion::ApiError, 'Notion integration is not active' unless @hook.status == 'enabled'
+    raise CustomExceptions::Notion::ApiError, 'Notion integration not found' unless @hook
+    raise CustomExceptions::Notion::ApiError, 'Notion integration is not active' unless @hook.status == 'enabled'
   end
 
   # List all accessible data sources (databases)

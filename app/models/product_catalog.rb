@@ -41,6 +41,7 @@
 #
 class ProductCatalog < ApplicationRecord
   include PgSearch::Model
+  include Events::Types
 
   # Disable Single Table Inheritance (STI) to allow 'type' column for product type
   self.inheritance_column = :_type_disabled
@@ -77,6 +78,14 @@ class ProductCatalog < ApplicationRecord
   validates :listPrice, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   validate :validate_payment_options
+
+  # Skip callbacks for bulk operations (handled separately in jobs/controllers)
+  attr_accessor :skip_catalog_callbacks
+
+  before_destroy :cache_destroy_data
+  after_create_commit :dispatch_create_event, unless: :skip_catalog_callbacks
+  after_update_commit :dispatch_update_event, unless: :skip_catalog_callbacks
+  after_destroy_commit :dispatch_destroy_event, unless: :skip_catalog_callbacks
 
   scope :by_industry, ->(industry) { where(industry: industry) }
   scope :by_type, ->(type) { where(type: type) }
@@ -115,6 +124,55 @@ class ProductCatalog < ApplicationRecord
     return if invalid_options.empty?
 
     errors.add(:payment_options, "contains invalid options: #{invalid_options.join(', ')}")
+  end
+
+  def cache_destroy_data
+    @cached_destroy_data = {
+      product_id: product_id,
+      account: account
+    }
+  end
+
+  def dispatch_create_event
+    Rails.configuration.dispatcher.dispatch(
+      PRODUCT_CATALOG_UPDATED,
+      Time.zone.now,
+      account: account,
+      added_count: 1,
+      updated_count: 0,
+      deleted_count: 0,
+      added_product_ids: [product_id],
+      updated_product_ids: [],
+      deleted_product_ids: []
+    )
+  end
+
+  def dispatch_update_event
+    Rails.configuration.dispatcher.dispatch(
+      PRODUCT_CATALOG_UPDATED,
+      Time.zone.now,
+      account: account,
+      added_count: 0,
+      updated_count: 1,
+      deleted_count: 0,
+      added_product_ids: [],
+      updated_product_ids: [product_id],
+      deleted_product_ids: []
+    )
+  end
+
+  def dispatch_destroy_event
+    Rails.configuration.dispatcher.dispatch(
+      PRODUCT_CATALOG_UPDATED,
+      Time.zone.now,
+      account: @cached_destroy_data[:account],
+      added_count: 0,
+      updated_count: 0,
+      deleted_count: 1,
+      added_product_ids: [],
+      updated_product_ids: [],
+      deleted_product_ids: [@cached_destroy_data[:product_id]]
+    )
   end
 end
 

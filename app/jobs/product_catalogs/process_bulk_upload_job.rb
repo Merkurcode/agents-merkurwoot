@@ -1,4 +1,6 @@
 class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
+  include Events::Types
+
   queue_as :high
   retry_on ActiveStorage::FileNotFoundError, wait: 1.minute, attempts: 3
 
@@ -28,6 +30,9 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
     end
 
     @bulk_request.update!(status: 'PROCESSING')
+
+    # Capture existing product_ids before processing to track adds vs updates
+    @existing_product_ids_before = @account.product_catalogs.pluck(:product_id).to_set
 
     # Phase 1: Process Excel file (0-50% progress)
     excel_result = process_excel(@file_path)
@@ -243,6 +248,20 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
   def update_final_status(excel_result, media_result)
     # If both phases succeeded
     if excel_result[:success] && media_result[:success]
+      # Get products processed in this bulk request and categorize as added vs updated
+      processed_products = @bulk_request.product_catalogs.pluck(:product_id)
+
+      added_product_ids = []
+      updated_product_ids = []
+
+      processed_products.each do |product_id|
+        if @existing_product_ids_before&.include?(product_id)
+          updated_product_ids << product_id
+        else
+          added_product_ids << product_id
+        end
+      end
+
       # Check if all records were processed successfully
       if @bulk_request.failed_records.zero? && @bulk_request.processed_records.positive?
         @bulk_request.update!(
@@ -250,12 +269,28 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
           progress: 100.0,
           error_message: nil
         )
+        dispatch_catalog_updated_event(
+          added_count: added_product_ids.size,
+          updated_count: updated_product_ids.size,
+          deleted_count: 0,
+          added_product_ids: added_product_ids,
+          updated_product_ids: updated_product_ids,
+          deleted_product_ids: []
+        )
       elsif @bulk_request.failed_records.positive? && @bulk_request.processed_records.positive?
         # Some records succeeded, some failed
         @bulk_request.update!(
           status: 'PARTIALLY_COMPLETED',
           progress: 100.0,
           error_message: "Processed #{@bulk_request.processed_records} of #{@bulk_request.total_records} records. #{@bulk_request.failed_records} failed."
+        )
+        dispatch_catalog_updated_event(
+          added_count: added_product_ids.size,
+          updated_count: updated_product_ids.size,
+          deleted_count: 0,
+          added_product_ids: added_product_ids,
+          updated_product_ids: updated_product_ids,
+          deleted_product_ids: []
         )
       else
         # No records were processed
@@ -277,6 +312,20 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
         error_message: error_msg.join('; ')
       )
     end
+  end
+
+  def dispatch_catalog_updated_event(added_count:, updated_count:, deleted_count:, added_product_ids:, updated_product_ids:, deleted_product_ids:)
+    Rails.configuration.dispatcher.dispatch(
+      PRODUCT_CATALOG_UPDATED,
+      Time.zone.now,
+      account: @account,
+      added_count: added_count,
+      updated_count: updated_count,
+      deleted_count: deleted_count,
+      added_product_ids: added_product_ids,
+      updated_product_ids: updated_product_ids,
+      deleted_product_ids: deleted_product_ids
+    )
   end
 
   def handle_error(error)

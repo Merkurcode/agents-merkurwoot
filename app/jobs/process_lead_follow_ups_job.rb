@@ -31,7 +31,6 @@ class ProcessLeadFollowUpsJob < ApplicationJob
     # Utilizamos UPDATE ... RETURNING para atomicidad (Postgres)
     # Esto marca los registros como "en proceso" y nos devuelve los IDs en un solo paso atómico.
     # Evita condiciones de carrera entre múltiples dispatchers (si hubieran).
-
     ConversationFollowUp
       .where(status: 'active')
       .where('next_action_at <= ?', Time.current)

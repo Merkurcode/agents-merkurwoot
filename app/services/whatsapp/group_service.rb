@@ -8,7 +8,7 @@ class Whatsapp::GroupService
 
     whapi_payload = build_group_payload
     response = send_create_group_request(whapi_payload)
-
+  
     result = process_response(response)
     return unless result
 
@@ -79,15 +79,25 @@ class Whatsapp::GroupService
   end
 
   def process_response(response)
+    Rails.logger.info "[WHATSAPP GROUP] Group created response: #{response}"
+
+    if response&.code == 429
+      Rails.logger.warn "[WHATSAPP GROUP] Rate limit exceeded, will retry"
+      raise StandardError, "Whapi rate limit exceeded (429)"
+    end
+
     return nil unless response&.success?
 
     parsed_response = parse_response_body(response.body)
+    Rails.logger.info "[WHATSAPP GROUP] Group created response: #{parsed_response}"
     return nil unless parsed_response
 
     group_id = extract_group_id(parsed_response)
+    Rails.logger.info "[WHATSAPP GROUP] Group created response: #{group_id}"
     return log_missing_group_id(response.body) unless group_id
 
     group_conversation = setup_group_conversation(group_id, parsed_response['participants'] || [])
+    Rails.logger.info "[WHATSAPP GROUP] Group created response: #{group_conversation}"
     return nil unless group_conversation
 
     unprocessed = parsed_response['unprocessed_participants'].presence
@@ -135,9 +145,7 @@ class Whatsapp::GroupService
       parsed_response = JSON.parse(response.body)
       message_id = parsed_response.dig('message', 'id')
 
-      if message_id
-        create_welcome_message_record(group_conversation, message_id)
-      end
+      create_welcome_message_record(group_conversation, message_id) if message_id
     end
   rescue StandardError => e
     Rails.logger.error "[WHATSAPP GROUP] Error sending welcome message: #{e.message}"
@@ -248,8 +256,9 @@ class Whatsapp::GroupService
   end
 
   def format_phone_number(phone)
-    # Remover el + si existe y dejar solo números
-    phone.to_s.gsub(/[^0-9]/, '')
+    digits = phone.to_s.gsub(/[^0-9]/, '')
+    last_ten = digits[-10..]
+    "521#{last_ten}"
   end
 
   def last_10_digits(phone)

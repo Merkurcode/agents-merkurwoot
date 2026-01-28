@@ -2,6 +2,7 @@
 
 class Whatsapp::CreateGroupJob < ApplicationJob
   queue_as :default
+  sidekiq_options retry: 5
 
   def perform(conversation_id, group_options = {})
     conversation = Conversation.find_by(id: conversation_id)

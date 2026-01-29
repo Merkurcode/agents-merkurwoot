@@ -1,48 +1,49 @@
 {
   "SURVEYS": {
-    "HEADER": "Encuestas",
-    "DESCRIPTION": "Crea y gestiona encuestas para calificar y filtrar leads. Construye encuestas personalizadas con múltiples tipos de preguntas para recopilar información esencial de clientes potenciales.",
-    "LEARN_MORE": "Aprende sobre encuestas",
+    "HEADER": "Cuestionarios",
+    "DESCRIPTION": "Crea y gestiona cuestionarios para calificar y filtrar leads. Construye cuestionarios personalizados con múltiples tipos de preguntas para recopilar información esencial de clientes potenciales.",
+    "LEARN_MORE": "Aprende sobre cuestionarios",
     "STATUS": {
-      "ACTIVE": "Activa",
-      "INACTIVE": "Inactiva",
-      "COMPLETED": "Completada",
+      "ACTIVE": "Activo",
+      "INACTIVE": "Inactivo",
+      "COMPLETED": "Completado",
       "IN_PROGRESS": "En Progreso"
     },
     "RESPONSES": {
-      "FETCH_ERROR": "Error al cargar las respuestas de la encuesta",
-      "EMPTY_STATE": "No se encontraron respuestas de encuesta",
+      "FETCH_ERROR": "Error al cargar las respuestas del cuestionario",
+      "EMPTY_STATE": "No se encontraron respuestas de cuestionario",
       "MORE_ANSWERS": "+{count} respuestas más"
     },
     "SURVEYS_CONFIGURATION": {
-      "TITLE": "Seleccione una encuesta",
-      "DESC": "Asigne una encuesta a su bandeja de entrada. Permiten conocer mejor a tus clientes potenciales.",
+      "TITLE": "Seleccione un cuestionario",
+      "DESC": "Asigne un cuestionario a su bandeja de entrada. Permiten conocer mejor a tus clientes potenciales.",
       "SUBMIT": "Actualizar",
-      "DISCONNECT": "Desconectar encuesta",
-      "SUCCESS_MESSAGE": "Encuesta asignada correctamente.",
-      "DISCONNECTED_SUCCESS_MESSAGE": "Desconectado correctamente la encuesta.",
-      "ERROR_MESSAGE": "No se pudo asignar la encuesta, por favor inténtalo de nuevo más tarde.",
-      "DISCONNECTED_ERROR_MESSAGE": "No se pudo desconectar la encuesta, por favor inténtalo de nuevo más tarde.",
-      "SELECT_PLACEHOLDER": "Seleccionar encuesta"
+      "DISCONNECT": "Desconectar cuestionario",
+      "SUCCESS_MESSAGE": "Cuestionario asignado correctamente.",
+      "DISCONNECTED_SUCCESS_MESSAGE": "Desconectado correctamente el cuestionario.",
+      "ERROR_MESSAGE": "No se pudo asignar el cuestionario, por favor inténtalo de nuevo más tarde.",
+      "DISCONNECTED_ERROR_MESSAGE": "No se pudo desconectar el cuestionario, por favor inténtalo de nuevo más tarde.",
+      "SELECT_PLACEHOLDER": "Seleccionar cuestionario"
     },
     "QUESTION_TYPES": {
       "OPEN_ENDED": "Respuesta Abierta",
-      "MULTIPLE_CHOICE": "Selección Múltiple"
+      "MULTIPLE_CHOICE": "Selección Múltiple",
+      "FILE": "Archivo"
     },
     "INPUT_TYPES": {
       "TEXT": "Texto",
       "NUMBER": "Número"
     },
     "ADD": {
-      "TITLE": "Agregar Encuesta",
+      "TITLE": "Agregar Cuestionario",
       "API": {
-        "SUCCESS_MESSAGE": "Encuesta agregada exitosamente.",
-        "ERROR_MESSAGE": "No se pudo agregar la encuesta. Por favor intenta de nuevo más tarde."
+        "SUCCESS_MESSAGE": "Cuestionario agregado exitosamente.",
+        "ERROR_MESSAGE": "No se pudo agregar el cuestionario. Por favor intenta de nuevo más tarde."
       }
     },
     "LIST": {
-      "404": "No se encontraron encuestas. Puedes crear una encuesta haciendo clic en el botón 'Agregar Encuesta'.",
-      "LOADING": "Cargando encuestas...",
+      "404": "No se encontraron cuestionarios. Puedes crear un cuestionario haciendo clic en el botón 'Agregar Cuestionario'.",
+      "LOADING": "Cargando cuestionarios...",
       "TABLE_HEADER": {
         "NAME": "Nombre",
         "DESCRIPTION": "Descripción",
@@ -59,43 +60,43 @@
         "NO": "No, Mantener"
       },
       "API": {
-        "SUCCESS_MESSAGE": "Encuesta eliminada exitosamente.",
-        "ERROR_MESSAGE": "No se pudo eliminar la encuesta. Por favor intenta de nuevo."
+        "SUCCESS_MESSAGE": "Cuestionario eliminado exitosamente.",
+        "ERROR_MESSAGE": "No se pudo eliminar el cuestionario. Por favor intenta de nuevo."
       }
     },
     "EDIT": {
       "BUTTON_TEXT": "Editar",
-      "TITLE": "Editar Encuesta",
+      "TITLE": "Editar Cuestionario",
       "API": {
-        "SUCCESS_MESSAGE": "Encuesta actualizada exitosamente.",
-        "ERROR_MESSAGE": "No se pudo actualizar la encuesta. Por favor intenta de nuevo."
+        "SUCCESS_MESSAGE": "Cuestionario actualizado exitosamente.",
+        "ERROR_MESSAGE": "No se pudo actualizar el cuestionario. Por favor intenta de nuevo."
       }
     },
     "FORM": {
       "NAME": {
-        "LABEL": "Nombre de la Encuesta",
-        "PLACEHOLDER": "Ingresa el nombre de la encuesta"
+        "LABEL": "Nombre del Cuestionario",
+        "PLACEHOLDER": "Ingresa el nombre del cuestionario"
       },
       "DESCRIPTION": {
         "LABEL": "Descripción",
-        "PLACEHOLDER": "¿De qué trata esta encuesta?"
+        "PLACEHOLDER": "¿De qué trata este cuestionario?"
       },
       "ACTIVE": {
-        "LABEL": "Activa"
+        "LABEL": "Activo"
       },
       "ERRORS": {
-        "NAME": "El nombre de la encuesta es requerido"
+        "NAME": "El nombre del cuestionario es requerido"
       },
       "CANCEL": "Cancelar",
-      "CREATE": "Crear Encuesta",
-      "UPDATE": "Actualizar Encuesta"
+      "CREATE": "Crear Cuestionario",
+      "UPDATE": "Actualizar Cuestionario"
     },
     "QUESTIONS": {
-      "HEADER": "Preguntas de la Encuesta",
-      "DESCRIPTION": "Gestiona las preguntas de esta encuesta. Agrega preguntas abiertas o de opción múltiple para calificar leads y recopilar información importante.",
+      "HEADER": "Preguntas del Cuestionario",
+      "DESCRIPTION": "Gestiona las preguntas de este cuestionario. Agrega preguntas abiertas o de opción múltiple para calificar leads y recopilar información importante.",
       "LOADING": "Cargando preguntas...",
       "404": "No se encontraron preguntas. Agrega tu primera pregunta haciendo clic en el botón 'Agregar Pregunta'.",
-      "GO_BACK": "Volver a encuestas",
+      "GO_BACK": "Volver a cuestionarios",
       "TYPE": "Tipo",
       "INPUT": "Entrada",
       "OPTIONS": "Opciones",
@@ -149,7 +150,8 @@
           "LABEL": "Pregunta Requerida"
         },
         "ERRORS": {
-          "QUESTION_TEXT": "El texto de la pregunta es requerido"
+          "QUESTION_TEXT": "El texto de la pregunta es requerido",
+          "MULTIPLE_CHOICE_OPTIONS": "Las preguntas de selección múltiple deben tener al menos 2 opciones"
         },
         "CANCEL": "Cancelar",
         "CREATE": "Crear Pregunta",

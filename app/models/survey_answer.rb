@@ -42,6 +42,8 @@ class SurveyAnswer < ApplicationRecord
   validate :answer_presence
   validate :answer_type_consistency
   validate :file_type_validation, if: -> { file.attached? }
+  validate :numeric_value_validation
+  validate :option_belongs_to_question
 
   private
 
@@ -89,5 +91,28 @@ class SurveyAnswer < ApplicationRecord
     return if type_accepted
 
     errors.add(:file, "type '#{content_type}' is not accepted. Accepted types: #{accepted_types.join(', ')}")
+  end
+
+  def numeric_value_validation
+    return unless survey_question&.open_ended?
+    return unless survey_question.input_type == 'number'
+    return if answer_text.blank?
+
+    # Check if the answer is a valid number
+    begin
+      Float(answer_text)
+    rescue ArgumentError, TypeError
+      errors.add(:answer_text, 'must be a valid number for numeric questions')
+    end
+  end
+
+  def option_belongs_to_question
+    return unless survey_question&.multiple_choice?
+    return unless survey_question_option_id.present?
+
+    # Verify the selected option belongs to this question
+    unless survey_question.survey_question_options.exists?(id: survey_question_option_id)
+      errors.add(:survey_question_option_id, 'does not belong to this question')
+    end
   end
 end

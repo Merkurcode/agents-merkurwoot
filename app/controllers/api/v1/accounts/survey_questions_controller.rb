@@ -40,6 +40,7 @@ class Api::V1::Accounts::SurveyQuestionsController < Api::V1::Accounts::BaseCont
       :input_type,
       :position,
       :required,
+      accepted_file_types: [],
       survey_question_options_attributes: [:id, :option_text, :position, :_destroy]
     )
   end

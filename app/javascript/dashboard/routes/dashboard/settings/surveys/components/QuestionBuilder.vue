@@ -30,11 +30,40 @@ const questionTypeOptions = computed(() => [
     label: t('SURVEYS.QUESTION_TYPES.MULTIPLE_CHOICE'),
     value: 'multiple_choice',
   },
+  { label: t('SURVEYS.QUESTION_TYPES.FILE'), value: 'file' },
 ]);
 
 const inputTypeOptions = computed(() => [
   { label: t('SURVEYS.INPUT_TYPES.TEXT'), value: 'text' },
   { label: t('SURVEYS.INPUT_TYPES.NUMBER'), value: 'number' },
+]);
+
+const fileTypeOptions = computed(() => [
+  { text: 'Imágenes (JPG, PNG, GIF, etc.)', value: 'image/*' },
+  { text: 'Videos (MP4, WebM, etc.)', value: 'video/*' },
+  { text: 'Audio (MP3, WAV, etc.)', value: 'audio/*' },
+  { text: 'PDF', value: 'application/pdf' },
+  { text: 'Word (DOC)', value: 'application/msword' },
+  {
+    text: 'Word (DOCX)',
+    value:
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  },
+  { text: 'Excel (XLS)', value: 'application/vnd.ms-excel' },
+  {
+    text: 'Excel (XLSX)',
+    value:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  },
+  { text: 'PowerPoint (PPT)', value: 'application/vnd.ms-powerpoint' },
+  {
+    text: 'PowerPoint (PPTX)',
+    value:
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  },
+  { text: 'Archivos de texto', value: 'text/plain' },
+  { text: 'CSV', value: 'text/csv' },
+  { text: 'ZIP', value: 'application/zip' },
 ]);
 
 const addQuestion = () => {
@@ -47,6 +76,7 @@ const addQuestion = () => {
       required: false,
       position: questions.value.length,
       options: [],
+      accepted_file_types: [],
       markedForDeletion: false,
     },
   ];
@@ -98,6 +128,9 @@ const onQuestionTypeChange = (questionIndex, newType) => {
       { option_text: '', position: 0, markedForDeletion: false },
       { option_text: '', position: 1, markedForDeletion: false },
     ];
+  }
+  if (newType === 'file' && !newQuestions[questionIndex].accepted_file_types) {
+    newQuestions[questionIndex].accepted_file_types = [];
   }
   questions.value = newQuestions;
 };
@@ -223,6 +256,35 @@ const visibleQuestions = computed(() =>
               xs
               @click="addOption(qIndex)"
             />
+          </div>
+
+          <div
+            v-if="question.question_type === 'file'"
+            class="flex flex-col gap-2"
+          >
+            <label class="text-xs font-medium text-n-slate-11">
+              Tipos de archivo aceptados
+              <span class="text-n-red-10">*</span>
+            </label>
+            <multiselect
+              v-model="question.accepted_file_types"
+              :options="fileTypeOptions"
+              track-by="value"
+              label="text"
+              multiple
+              :close-on-select="false"
+              :clear-on-select="false"
+              placeholder="Selecciona los tipos de archivo permitidos"
+              :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
+              :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
+            >
+              <template #noResult>
+                No se encontraron resultados
+              </template>
+            </multiselect>
+            <p class="text-xs text-n-slate-11">
+              Selecciona al menos un tipo de archivo que los usuarios podrán cargar
+            </p>
           </div>
 
           <div class="flex items-center justify-between">

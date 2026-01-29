@@ -42,6 +42,7 @@ class Api::V1::Accounts::SurveysController < Api::V1::Accounts::BaseController
         :position,
         :required,
         :_destroy,
+        { accepted_file_types: [] },
         { survey_question_options_attributes: [:id, :option_text, :position, :_destroy] }
       ]
     )

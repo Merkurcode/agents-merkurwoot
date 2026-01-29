@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_20_231242) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_29_002357) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1545,6 +1545,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_20_231242) do
     t.boolean "required", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "accepted_file_types", default: []
     t.index ["survey_id", "position"], name: "index_survey_questions_on_survey_id_and_position"
     t.index ["survey_id"], name: "index_survey_questions_on_survey_id"
   end

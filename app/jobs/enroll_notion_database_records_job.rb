@@ -3,7 +3,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
 
   BATCH_SIZE = 100
 
-  def perform(sequence_id)
+  def perform(sequence_id, start_cursor: nil)
     sequence = LeadFollowUpSequence.find_by(id: sequence_id)
     return unless sequence&.active? && sequence.source_type == 'notion_database'
 
@@ -13,7 +13,8 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
       return
     end
 
-    Rails.logger.info "Enrolling Notion database records for sequence #{sequence.id} (#{sequence.name})"
+    cursor_info = start_cursor ? " (cursor: #{start_cursor[0..8]}...)" : ' (first batch)'
+    Rails.logger.info "Enrolling Notion database records for sequence #{sequence.id} (#{sequence.name})#{cursor_info}"
 
     enrolled_count = 0
     skipped_count = 0
@@ -25,54 +26,69 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
 
     begin
       filters = build_notion_filters(sequence.source_config)
+      filters[:limit] = BATCH_SIZE
+      filters[:start_cursor] = start_cursor if start_cursor.present?
+
       Rails.logger.info "Applying Notion filters: #{filters.inspect}"
-      records = notion_service.query_database(database_id, filters.merge(limit: BATCH_SIZE))
-      Rails.logger.info "Found #{records.count} records in Notion database #{database_id} with filters applied"
+      response = notion_service.query_database(database_id, filters)
+
+      # Handle response - could be an array or a hash with pagination info
+      records = response.is_a?(Hash) ? response[:results] : response
+      has_more = response.is_a?(Hash) ? response[:has_more] : false
+      next_cursor = response.is_a?(Hash) ? response[:next_cursor] : nil
+
+      Rails.logger.info "Found #{records.count} records in Notion database #{database_id} (has_more: #{has_more})"
     rescue CustomExceptions::Notion::ApiError => e
       Rails.logger.error "Failed to fetch Notion records: #{e.message}"
       return
     end
 
     records.each do |record|
-      begin
-        record_id = record[:id]
-        Rails.logger.info "Processing Notion record #{record_id}"
-        Rails.logger.debug "Record structure: #{record.keys.inspect}"
+      record_id = record[:id]
+      Rails.logger.info "Processing Notion record #{record_id}"
+      Rails.logger.debug { "Record structure: #{record.keys.inspect}" }
 
-        # Create or find contact
-        contact = find_or_create_contact(sequence, record)
-        unless contact
-          Rails.logger.warn "Skipping record #{record_id}: Could not create/find contact"
-          skipped_count += 1
-          next
-        end
-
-        Rails.logger.info "Contact created/found: #{contact.id}"
-
-        # Create or find conversation with first contact
-        conversation = create_conversation_with_first_contact(sequence, contact, record)
-        unless conversation
-          Rails.logger.warn "Skipping record #{record_id}: Could not create conversation"
-          skipped_count += 1
-          next
-        end
-
-        Rails.logger.info "Conversation created: #{conversation.id}"
-
-        # Enroll conversation in sequence
-        enroll_conversation(conversation, sequence, first_step, record)
-        enrolled_count += 1
-        Rails.logger.info "Successfully enrolled record #{record_id}"
-      rescue StandardError => e
-        Rails.logger.error "Failed to enroll Notion record #{record_id}: #{e.message}"
-        Rails.logger.error "Backtrace: #{e.backtrace.first(5).join("\n")}" if e.backtrace
+      # Create or find contact
+      contact = find_or_create_contact(sequence, record)
+      unless contact
+        Rails.logger.warn "Skipping record #{record_id}: Could not create/find contact"
         skipped_count += 1
+        next
       end
+
+      Rails.logger.info "Contact created/found: #{contact.id}"
+
+      # Create or find conversation with first contact
+      conversation = create_conversation_with_first_contact(sequence, contact, record)
+      unless conversation
+        Rails.logger.warn "Skipping record #{record_id}: Could not create conversation"
+        skipped_count += 1
+        next
+      end
+
+      Rails.logger.info "Conversation created: #{conversation.id}"
+
+      # Enroll conversation in sequence
+      enroll_conversation(conversation, sequence, first_step, record)
+      enrolled_count += 1
+      Rails.logger.info "Successfully enrolled record #{record_id}"
+    rescue StandardError => e
+      Rails.logger.error "Failed to enroll Notion record #{record_id}: #{e.message}"
+      Rails.logger.error "Backtrace: #{e.backtrace.first(5).join("\n")}" if e.backtrace
+      skipped_count += 1
     end
 
     duration = Time.current - start_time
-    Rails.logger.info "Notion enrollment complete for sequence #{sequence.id} in #{duration.round(2)}s: " \
+    Rails.logger.info "Notion enrollment batch complete for sequence #{sequence.id} in #{duration.round(2)}s: " \
                       "Enrolled: #{enrolled_count}, Skipped: #{skipped_count}"
+
+    # Chain next job if there are more records
+    if has_more && next_cursor.present?
+      Rails.logger.info "More records available, chaining next job with cursor: #{next_cursor[0..8]}..."
+      EnrollNotionDatabaseRecordsJob.perform_later(sequence_id, start_cursor: next_cursor)
+    else
+      Rails.logger.info "All Notion records processed for sequence #{sequence.id}"
+    end
   end
 
   private
@@ -85,7 +101,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     Rails.logger.info "Extracted phone number: #{phone_number.inspect}"
 
     unless phone_number
-      Rails.logger.warn "No phone number found in record"
+      Rails.logger.warn 'No phone number found in record'
       return nil
     end
 
@@ -94,7 +110,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     Rails.logger.info "Cleaned phone number: #{cleaned_phone.inspect}"
 
     unless cleaned_phone
-      Rails.logger.warn "Phone number cleaning failed"
+      Rails.logger.warn 'Phone number cleaning failed'
       return nil
     end
 
@@ -103,7 +119,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     Rails.logger.info "Inbox for sequence: #{inbox&.id}"
 
     unless inbox
-      Rails.logger.warn "No inbox found for sequence"
+      Rails.logger.warn 'No inbox found for sequence'
       return nil
     end
 
@@ -251,9 +267,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
                       true # nil, cancelled, failed, etc.
                     end
 
-      if should_send
-        send_first_contact_message(sequence, existing_conversation, contact, record)
-      end
+      send_first_contact_message(sequence, existing_conversation, contact, record) if should_send
 
       return existing_conversation
     end
@@ -291,6 +305,8 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
       send_whatsapp_template(sequence, conversation, contact, record, config)
     when 'sms'
       send_ai_sms_first_contact(sequence, conversation, config, record)
+    when 'email'
+      send_email_first_contact(sequence, conversation, contact, config, record)
     else
       Rails.logger.error "Unknown first contact channel: #{config['channel']}"
     end
@@ -305,7 +321,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
 
     # Get channel and process template
     channel = conversation.inbox.channel
-    
+
     processor = Whatsapp::TemplateProcessorService.new(
       channel: channel,
       template_params: {
@@ -325,12 +341,12 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     # Create message record first with status sent
     # This allows the provider service to record any external errors on this message object
     conversation.messages.create!(
-      account_id: sequence.account.id,
-      inbox_id: conversation.inbox.id,
-      message_type: :template,
-      content: rendered_content,
-      status: :sent,
-      content_attributes: {
+      :account_id => sequence.account.id,
+      :inbox_id => conversation.inbox.id,
+      :message_type => :template,
+      :content => rendered_content,
+      :status => :sent,
+      :content_attributes => {
         template_name: name,
         notion_record_id: record[:id]
       },
@@ -368,6 +384,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     # Create a failed message record for tracking
     create_failed_template_message(sequence, conversation, error_message, record, template_name)
   end
+
   def render_template_content(conversation, template_name, language, params)
     # Find the template from channel's message_templates
     template = find_template(conversation.inbox.channel, template_name, language)
@@ -395,7 +412,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
   def find_template(channel, template_name, language)
     @template_cache ||= {}
     cache_key = "#{channel.id}:#{template_name}:#{language}"
-    
+
     return @template_cache[cache_key] if @template_cache.key?(cache_key)
 
     template = channel.message_templates&.find { |t| t['name'] == template_name && t['language'] == language }
@@ -416,7 +433,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
         failed_at: Time.current.iso8601
       }
     )
-    
+
     Rails.logger.warn "Created failed message record for conversation #{conversation.id}"
   rescue StandardError => e
     Rails.logger.error "Failed to create failed message record: #{e.message}"
@@ -432,9 +449,9 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
 
     # Check for existing completed enrollment and re-enrollment settings
     existing_enrollment = conversation.sequence_enrollments
-                                     .where(lead_follow_up_sequence: sequence)
-                                     .order(enrolled_at: :desc)
-                                     .first
+                                      .where(lead_follow_up_sequence: sequence)
+                                      .order(enrolled_at: :desc)
+                                      .first
 
     if existing_enrollment&.status == 'completed'
       include_completed = sequence.trigger_conditions.dig('enrollment_filter', 'include_completed')
@@ -446,8 +463,8 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
 
     # Calculate re-enrollment count
     re_enrollment_count = conversation.sequence_enrollments
-                                     .where(lead_follow_up_sequence: sequence)
-                                     .count
+                                      .where(lead_follow_up_sequence: sequence)
+                                      .count
 
     # Para Notion, el paso first_contact (índice 0) ya se ejecutó al crear la conversación
     # Entonces empezamos desde el paso 1 (o completamos si solo hay 1 paso)
@@ -517,9 +534,9 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
         completed_at: nil,
         processing_started_at: nil,
         metadata: (follow_up.metadata || {}).merge({
-          enrolled_at: Time.current,
-          enrollment_id: enrollment.id
-        })
+                                                     enrolled_at: Time.current,
+                                                     enrollment_id: enrollment.id
+                                                   })
       )
       follow_up.save!
       follow_up.schedule_job!
@@ -576,8 +593,6 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
       property['select']&.dig('name')
     when 'number'
       property['number']&.to_s
-    else
-      nil
     end
   end
 
@@ -602,12 +617,10 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     # If 10 digits, add +521
     # If more than 10 digits, just add + if it's not there
     if digits.length == 10
-      cleaned = "+521#{digits}"
+      "+521#{digits}"
     else
-      cleaned = "+#{digits}"
+      "+#{digits}"
     end
-    
-    cleaned
   end
 
   def get_inbox_for_sequence(sequence)
@@ -637,19 +650,19 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     rendered = {}
 
     template_params.each do |key, value|
-      if value.is_a?(Hash)
-        rendered[key] = render_template_params(value, contact, record, sequence)
-      elsif value.is_a?(String)
-        rendered[key] = render_param_value(value, contact, record, sequence)
-      else
-        rendered[key] = value
-      end
+      rendered[key] = if value.is_a?(Hash)
+                        render_template_params(value, contact, record, sequence)
+                      elsif value.is_a?(String)
+                        render_param_value(value, contact, record, sequence)
+                      else
+                        value
+                      end
     end
 
     rendered
   end
 
-  def render_param_value(value, contact, record, sequence)
+  def render_param_value(value, contact, record, _sequence)
     return value unless value.is_a?(String)
 
     result = value.dup
@@ -688,10 +701,10 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     # Enviar webhook al agent bot
     webhook_url = agent_bot.outgoing_url
     HTTParty.post(webhook_url, {
-      body: payload.to_json,
-      headers: { 'Content-Type' => 'application/json' },
-      timeout: 30
-    })
+                    body: payload.to_json,
+                    headers: { 'Content-Type' => 'application/json' },
+                    timeout: 30
+                  })
 
     Rails.logger.info "Sent AI first contact request for conversation #{conversation.id}"
   rescue StandardError => e
@@ -716,10 +729,10 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
 
     webhook_url = agent_bot.outgoing_url
     HTTParty.post(webhook_url, {
-      body: payload.to_json,
-      headers: { 'Content-Type' => 'application/json' },
-      timeout: 30
-    })
+                    body: payload.to_json,
+                    headers: { 'Content-Type' => 'application/json' },
+                    timeout: 30
+                  })
 
     Rails.logger.info "Sent SMS first contact request for conversation #{conversation.id}"
   rescue StandardError => e
@@ -727,7 +740,65 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     raise
   end
 
-  def build_context_with_notion_variables(context, record, sequence)
+  def send_email_first_contact(sequence, conversation, contact, config, record)
+    agent_bot = conversation.inbox.agent_bot
+    raise "No agent bot configured for inbox #{conversation.inbox.id}" unless agent_bot
+
+    # Validate contact has email
+    unless contact.email.present?
+      Rails.logger.warn "Contact #{contact.id} has no email, attempting fallback"
+      fallback_to_alternative_channel(sequence, conversation, contact, record)
+      return
+    end
+
+    context = build_context_with_notion_variables(config['email_context'] || '', record, sequence)
+
+    payload = {
+      event: 'lead_followup.first_contact_request',
+      conversation_id: conversation.id,
+      agent_bot_id: agent_bot.id,
+      channel: 'email',
+      context: context,
+      notion_data: extract_notion_data(record, sequence),
+      email_data: {
+        recipient: contact.email,
+        sender_email: conversation.account.support_email || conversation.inbox.email
+      }
+    }
+
+    webhook_url = agent_bot.outgoing_url
+    HTTParty.post(webhook_url, {
+                    body: payload.to_json,
+                    headers: { 'Content-Type' => 'application/json' },
+                    timeout: 30
+                  })
+
+    Rails.logger.info "Sent email first contact request for conversation #{conversation.id} to #{contact.email}"
+  rescue StandardError => e
+    Rails.logger.error "Failed to send email first contact: #{e.message}"
+    # Try fallback to alternative channel
+    fallback_to_alternative_channel(sequence, conversation, contact, record)
+  end
+
+  def fallback_to_alternative_channel(sequence, _conversation, contact, _record)
+    first_step = sequence.steps.find { |s| s['type'] == 'first_contact' }
+    return unless first_step
+
+    config = first_step['config']
+
+    # Try WhatsApp if contact has phone number
+    if contact.phone_number.present? && config['fallback_channel'] != 'email'
+      Rails.logger.info "Falling back to WhatsApp for contact #{contact.id}"
+      # NOTE: This requires the inbox to support WhatsApp. In production, you may want to
+      # find an appropriate WhatsApp inbox or handle this differently
+      Rails.logger.warn "Fallback to WhatsApp not fully implemented - skipping contact #{contact.id}"
+    else
+      Rails.logger.error "No fallback channel available for contact #{contact.id}"
+      raise "Contact #{contact.id} has no email and no valid fallback channel"
+    end
+  end
+
+  def build_context_with_notion_variables(context, record, _sequence)
     result = context.dup
 
     # Reemplazar variables de Notion {{notion.campo}}

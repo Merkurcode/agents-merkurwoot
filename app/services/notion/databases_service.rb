@@ -10,9 +10,9 @@ class Notion::DatabasesService
   # List all accessible data sources (databases)
   def list_databases
     response = client.post('/v1/search', {
-      filter: { property: 'object', value: 'data_source' },
-      page_size: 100
-    })
+                             filter: { property: 'object', value: 'data_source' },
+                             page_size: 100
+                           })
 
     parse_databases(response['results'] || [])
   end
@@ -35,6 +35,9 @@ class Notion::DatabasesService
       page_size: filters[:limit] || 100
     }
 
+    # Add start_cursor for pagination if provided
+    body[:start_cursor] = filters[:start_cursor] if filters[:start_cursor].present?
+
     # Build Notion filters from date_filters and select_filters
     notion_filters = build_notion_filters(filters)
     body[:filter] = notion_filters if notion_filters.present?
@@ -43,7 +46,16 @@ class Notion::DatabasesService
 
     response = client.post("/v1/data_sources/#{database_id}/query", body)
 
-    parse_database_records(response['results'] || [])
+    # Return full pagination info if has_more is present, otherwise just the records
+    if response['has_more'].present?
+      {
+        results: parse_database_records(response['results'] || []),
+        has_more: response['has_more'],
+        next_cursor: response['next_cursor']
+      }
+    else
+      parse_database_records(response['results'] || [])
+    end
   end
 
   private
@@ -86,8 +98,6 @@ class Notion::DatabasesService
       end || []
     when 'date', 'number', 'phone_number', 'email'
       { type: property['type'] }
-    else
-      nil
     end
   end
 

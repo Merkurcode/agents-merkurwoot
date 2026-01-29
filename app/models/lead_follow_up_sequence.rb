@@ -34,6 +34,7 @@ class LeadFollowUpSequence < ApplicationRecord
     change_priority
     update_pipeline_status
     send_email
+    survey
   ].freeze
 
   AVAILABLE_VARIABLES = {
@@ -210,11 +211,35 @@ class LeadFollowUpSequence < ApplicationRecord
       validate_pipeline_status_step(step, index)
     when 'send_email'
       validate_email_step(step, index)
+    when 'survey'
+      validate_survey_step(step, index)
     end
   end
 
   def validate_email_step(step, index)
     # Both subject and content are optional, AI can generate them if blank
+  end
+
+  def validate_survey_step(step, index)
+    config = step['config'] || {}
+
+    unless config['survey_id'].present?
+      errors.add(:steps, "survey step at index #{index} must have survey_id")
+      return
+    end
+
+    # Validate survey exists and belongs to account
+    survey = account.surveys.find_by(id: config['survey_id'])
+    unless survey
+      errors.add(:steps, "survey step at index #{index} references non-existent survey")
+      return
+    end
+
+    return if survey.active?
+
+    errors.add(:steps, "survey step at index #{index} references inactive survey")
+
+    # Context is optional - AI can work without it
   end
 
   def validate_wait_step(step, index)
@@ -394,9 +419,9 @@ class LeadFollowUpSequence < ApplicationRecord
     filter = trigger_conditions['enrollment_filter']
     return if filter.blank?
 
-    unless [true, false].include?(filter['include_completed'])
-      errors.add(:trigger_conditions, 'Enrollment filter include_completed must be a boolean')
-    end
+    return if [true, false].include?(filter['include_completed'])
+
+    errors.add(:trigger_conditions, 'Enrollment filter include_completed must be a boolean')
   end
 
   def validate_source_config
@@ -406,9 +431,7 @@ class LeadFollowUpSequence < ApplicationRecord
     return if source_config.blank?
 
     # Validate notion database ID
-    if source_config['notion_database_id'].blank?
-      errors.add(:source_config, 'must have a notion_database_id')
-    end
+    errors.add(:source_config, 'must have a notion_database_id') if source_config['notion_database_id'].blank?
 
     # Validate field mappings
     if source_config['field_mappings'].blank?
@@ -417,9 +440,9 @@ class LeadFollowUpSequence < ApplicationRecord
     end
 
     # Phone number is required
-    if source_config.dig('field_mappings', 'phone_number').blank?
-      errors.add(:source_config, 'must have phone_number field mapping')
-    end
+    return if source_config.dig('field_mappings', 'phone_number').present?
+
+    errors.add(:source_config, 'must have phone_number field mapping')
   end
 
   def validate_first_contact_config
@@ -442,30 +465,31 @@ class LeadFollowUpSequence < ApplicationRecord
     config = first_contact_step['config'] || {}
 
     # Validate channel
-    unless %w[whatsapp sms].include?(config['channel'])
-      errors.add(:steps, 'first_contact step must have a valid channel (whatsapp or sms)')
+    unless %w[whatsapp sms email].include?(config['channel'])
+      errors.add(:steps, 'first_contact step must have a valid channel (whatsapp, sms, or email)')
       return
     end
 
     # Validate inbox_id
-    if config['inbox_id'].blank?
-      errors.add(:steps, 'first_contact step must have inbox_id')
-    end
+    errors.add(:steps, 'first_contact step must have inbox_id') if config['inbox_id'].blank?
 
     # Validate WhatsApp configuration
-    if config['channel'] == 'whatsapp'
-      if config['template_name'].blank?
-        errors.add(:steps, 'first_contact step must have template_name when channel is whatsapp')
-      end
+    if (config['channel'] == 'whatsapp') && config['template_name'].blank?
+      errors.add(:steps, 'first_contact step must have template_name when channel is whatsapp')
+    end
+
+    # Validate Email configuration
+    if (config['channel'] == 'email') && source_config.dig('field_mappings', 'email').blank?
+      errors.add(:source_config, 'must have email field mapping when first_contact channel is email')
     end
 
     # Validate inbox exists
-    if config['inbox_id'].present?
-      inbox = account.inboxes.find_by(id: config['inbox_id'])
-      unless inbox
-        errors.add(:steps, 'first_contact step inbox_id references non-existent inbox')
-      end
-    end
+    return unless config['inbox_id'].present?
+
+    inbox = account.inboxes.find_by(id: config['inbox_id'])
+    return if inbox
+
+    errors.add(:steps, 'first_contact step inbox_id references non-existent inbox')
   end
 
   def should_auto_enroll?
@@ -541,7 +565,7 @@ class LeadFollowUpSequence < ApplicationRecord
       ) do |definition|
         definition.attribute_display_name = attribute_key.to_s.titleize
         definition.attribute_display_type = :text
-        definition.attribute_description = "Imported from Notion database"
+        definition.attribute_description = 'Imported from Notion database'
       end
     end
   rescue StandardError => e

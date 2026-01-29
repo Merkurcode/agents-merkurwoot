@@ -273,7 +273,10 @@ const fetchSequence = async () => {
           );
           availableTemplates.value = response.data.templates;
         } catch (error) {
-          console.error('Failed to load templates for first_contact step:', error);
+          console.error(
+            'Failed to load templates for first_contact step:',
+            error
+          );
         }
       }
     }
@@ -411,7 +414,7 @@ const addStep = type => {
       name: 'Primer Contacto desde Notion',
       enabled: true,
       config: {
-        channel: 'whatsapp', // 'whatsapp' | 'sms'
+        channel: 'whatsapp', // 'whatsapp' | 'sms' | 'email'
         inbox_id: null, // Inbox donde se creará la conversación
         template_name: '',
         language: 'es',
@@ -419,6 +422,7 @@ const addStep = type => {
           body: {},
         },
         sms_context: '', // Contexto para AI (SMS)
+        email_context: '', // Contexto para AI (Email)
       },
     },
     wait: {
@@ -811,15 +815,19 @@ const renameCustomAttributeKey = (oldKey, newKey) => {
   if (!sanitizedKey || sanitizedKey === oldKey) return;
 
   // Check if key already exists
-  if (sequence.value.source_config.field_mappings.custom_attributes[sanitizedKey]) {
+  if (
+    sequence.value.source_config.field_mappings.custom_attributes[sanitizedKey]
+  ) {
     useAlert('Ya existe un atributo con ese nombre');
     return;
   }
 
   // Rename key
-  const value = sequence.value.source_config.field_mappings.custom_attributes[oldKey];
+  const value =
+    sequence.value.source_config.field_mappings.custom_attributes[oldKey];
   delete sequence.value.source_config.field_mappings.custom_attributes[oldKey];
-  sequence.value.source_config.field_mappings.custom_attributes[sanitizedKey] = value;
+  sequence.value.source_config.field_mappings.custom_attributes[sanitizedKey] =
+    value;
 };
 
 const previewNotionRecords = async () => {
@@ -842,16 +850,20 @@ const previewNotionRecordsWithFilters = async () => {
 
   // Add date filters
   if (sequence.value.source_config.notion_filters?.date_filters?.length > 0) {
-    filters.date_filters = sequence.value.source_config.notion_filters.date_filters.filter(
-      f => f.field_name && (f.operator === 'between' ? (f.from_date && f.to_date) : f.days)
-    );
+    filters.date_filters =
+      sequence.value.source_config.notion_filters.date_filters.filter(
+        f =>
+          f.field_name &&
+          (f.operator === 'between' ? f.from_date && f.to_date : f.days)
+      );
   }
 
   // Add select filters
   if (sequence.value.source_config.notion_filters?.select_filters?.length > 0) {
-    filters.select_filters = sequence.value.source_config.notion_filters.select_filters.filter(
-      f => f.field_name && f.value
-    );
+    filters.select_filters =
+      sequence.value.source_config.notion_filters.select_filters.filter(
+        f => f.field_name && f.value
+      );
   }
 
   // Query with filters
@@ -1570,7 +1582,9 @@ const saveSequence = async () => {
                         :value="key"
                         placeholder="nombre_atributo"
                         class="w-full text-sm px-2 py-1 rounded border border-n-weak/60 font-mono text-n-slate-12 focus:border-n-blue-9 focus:ring-1 focus:ring-n-blue-9"
-                        @blur="e => renameCustomAttributeKey(key, e.target.value)"
+                        @blur="
+                          e => renameCustomAttributeKey(key, e.target.value)
+                        "
                       />
                       <p class="text-xs text-n-slate-11 mt-0.5">
                         Key que se guardará en custom_attributes
@@ -1580,9 +1594,8 @@ const saveSequence = async () => {
                     <div class="flex-1">
                       <select
                         v-model="
-                          sequence.source_config.field_mappings.custom_attributes[
-                            key
-                          ]
+                          sequence.source_config.field_mappings
+                            .custom_attributes[key]
                         "
                         class="w-full text-sm"
                       >
@@ -1704,8 +1717,12 @@ const saveSequence = async () => {
             <div class="border border-n-weak/60 rounded-lg p-4">
               <div class="flex items-center justify-between mb-4">
                 <div>
-                  <h4 class="font-semibold text-sm text-n-slate-12">Filtros por Fecha</h4>
-                  <p class="text-xs text-n-slate-11 mt-1">Filtra registros basándote en campos de fecha</p>
+                  <h4 class="font-semibold text-sm text-n-slate-12">
+                    Filtros por Fecha
+                  </h4>
+                  <p class="text-xs text-n-slate-11 mt-1">
+                    Filtra registros basándote en campos de fecha
+                  </p>
                 </div>
                 <Button
                   xs
@@ -1718,18 +1735,32 @@ const saveSequence = async () => {
                 />
               </div>
 
-              <div v-if="notionDateFieldsForFilters.length === 0" class="text-center py-4 text-xs text-n-amber-11">
+              <div
+                v-if="notionDateFieldsForFilters.length === 0"
+                class="text-center py-4 text-xs text-n-amber-11"
+              >
                 No hay campos de tipo fecha disponibles en esta base de datos
               </div>
 
-              <div v-else-if="sequence.source_config.notion_filters.date_filters.length === 0" class="text-center py-4 border border-dashed border-n-weak rounded">
-                <i class="i-lucide-calendar-off text-2xl text-n-slate-11 mb-2" />
-                <p class="text-sm text-n-slate-11">No hay filtros de fecha configurados</p>
+              <div
+                v-else-if="
+                  sequence.source_config.notion_filters.date_filters.length ===
+                  0
+                "
+                class="text-center py-4 border border-dashed border-n-weak rounded"
+              >
+                <i
+                  class="i-lucide-calendar-off text-2xl text-n-slate-11 mb-2"
+                />
+                <p class="text-sm text-n-slate-11">
+                  No hay filtros de fecha configurados
+                </p>
               </div>
 
               <div v-else class="space-y-3">
                 <div
-                  v-for="(filter, index) in sequence.source_config.notion_filters.date_filters"
+                  v-for="(filter, index) in sequence.source_config
+                    .notion_filters.date_filters"
                   :key="filter.id"
                   class="border border-n-weak/60 rounded-lg p-3 space-y-3"
                 >
@@ -1746,10 +1777,16 @@ const saveSequence = async () => {
 
                   <!-- Field Selection -->
                   <div>
-                    <label class="block text-xs font-medium text-n-slate-12 mb-1">Campo de Fecha</label>
+                    <label
+                      class="block text-xs font-medium text-n-slate-12 mb-1"
+                      >Campo de Fecha</label>
                     <select v-model="filter.field_name" class="w-full text-sm">
                       <option value="">Selecciona un campo</option>
-                      <option v-for="field in notionDateFieldsForFilters" :key="field.name" :value="field.name">
+                      <option
+                        v-for="field in notionDateFieldsForFilters"
+                        :key="field.name"
+                        :value="field.name"
+                      >
                         {{ field.name }}
                       </option>
                     </select>
@@ -1757,7 +1794,9 @@ const saveSequence = async () => {
 
                   <!-- Operator Selection -->
                   <div>
-                    <label class="block text-xs font-medium text-n-slate-12 mb-1">Condición</label>
+                    <label
+                      class="block text-xs font-medium text-n-slate-12 mb-1"
+                      >Condición</label>
                     <select v-model="filter.operator" class="w-full text-sm">
                       <option value="older_than">Más antiguo que</option>
                       <option value="newer_than">Más reciente que</option>
@@ -1767,7 +1806,9 @@ const saveSequence = async () => {
 
                   <!-- Days input (for older_than / newer_than) -->
                   <div v-if="filter.operator !== 'between'">
-                    <label class="block text-xs font-medium text-n-slate-12 mb-1">Cantidad de días</label>
+                    <label
+                      class="block text-xs font-medium text-n-slate-12 mb-1"
+                      >Cantidad de días</label>
                     <input
                       v-model.number="filter.days"
                       type="number"
@@ -1780,7 +1821,9 @@ const saveSequence = async () => {
                   <!-- Date range (for between) -->
                   <div v-else class="grid grid-cols-2 gap-3">
                     <div>
-                      <label class="block text-xs font-medium text-n-slate-12 mb-1">Desde</label>
+                      <label
+                        class="block text-xs font-medium text-n-slate-12 mb-1"
+                        >Desde</label>
                       <input
                         v-model="filter.from_date"
                         type="date"
@@ -1788,7 +1831,9 @@ const saveSequence = async () => {
                       />
                     </div>
                     <div>
-                      <label class="block text-xs font-medium text-n-slate-12 mb-1">Hasta</label>
+                      <label
+                        class="block text-xs font-medium text-n-slate-12 mb-1"
+                        >Hasta</label>
                       <input
                         v-model="filter.to_date"
                         type="date"
@@ -1804,8 +1849,12 @@ const saveSequence = async () => {
             <div class="border border-n-weak/60 rounded-lg p-4">
               <div class="flex items-center justify-between mb-4">
                 <div>
-                  <h4 class="font-semibold text-sm text-n-slate-12">Filtros por Select</h4>
-                  <p class="text-xs text-n-slate-11 mt-1">Filtra registros basándote en campos de selección</p>
+                  <h4 class="font-semibold text-sm text-n-slate-12">
+                    Filtros por Select
+                  </h4>
+                  <p class="text-xs text-n-slate-11 mt-1">
+                    Filtra registros basándote en campos de selección
+                  </p>
                 </div>
                 <Button
                   xs
@@ -1818,18 +1867,30 @@ const saveSequence = async () => {
                 />
               </div>
 
-              <div v-if="notionSelectFields.length === 0" class="text-center py-4 text-xs text-n-amber-11">
+              <div
+                v-if="notionSelectFields.length === 0"
+                class="text-center py-4 text-xs text-n-amber-11"
+              >
                 No hay campos de tipo select disponibles en esta base de datos
               </div>
 
-              <div v-else-if="sequence.source_config.notion_filters.select_filters.length === 0" class="text-center py-4 border border-dashed border-n-weak rounded">
+              <div
+                v-else-if="
+                  sequence.source_config.notion_filters.select_filters
+                    .length === 0
+                "
+                class="text-center py-4 border border-dashed border-n-weak rounded"
+              >
                 <i class="i-lucide-list-x text-2xl text-n-slate-11 mb-2" />
-                <p class="text-sm text-n-slate-11">No hay filtros de select configurados</p>
+                <p class="text-sm text-n-slate-11">
+                  No hay filtros de select configurados
+                </p>
               </div>
 
               <div v-else class="space-y-3">
                 <div
-                  v-for="(filter, index) in sequence.source_config.notion_filters.select_filters"
+                  v-for="(filter, index) in sequence.source_config
+                    .notion_filters.select_filters"
                   :key="filter.id"
                   class="border border-n-weak/60 rounded-lg p-3 space-y-3"
                 >
@@ -1846,10 +1907,20 @@ const saveSequence = async () => {
 
                   <!-- Field Selection -->
                   <div>
-                    <label class="block text-xs font-medium text-n-slate-12 mb-1">Campo de Select</label>
-                    <select v-model="filter.field_name" class="w-full text-sm" @change="filter.value = ''">
+                    <label
+                      class="block text-xs font-medium text-n-slate-12 mb-1"
+                      >Campo de Select</label>
+                    <select
+                      v-model="filter.field_name"
+                      class="w-full text-sm"
+                      @change="filter.value = ''"
+                    >
                       <option value="">Selecciona un campo</option>
-                      <option v-for="field in notionSelectFields" :key="field.name" :value="field.name">
+                      <option
+                        v-for="field in notionSelectFields"
+                        :key="field.name"
+                        :value="field.name"
+                      >
                         {{ field.name }} ({{ field.type }})
                       </option>
                     </select>
@@ -1857,11 +1928,15 @@ const saveSequence = async () => {
 
                   <!-- Value Selection (based on field options) -->
                   <div v-if="filter.field_name">
-                    <label class="block text-xs font-medium text-n-slate-12 mb-1">Valor</label>
+                    <label
+                      class="block text-xs font-medium text-n-slate-12 mb-1"
+                      >Valor</label>
                     <select v-model="filter.value" class="w-full text-sm">
                       <option value="">Selecciona un valor</option>
                       <option
-                        v-for="option in getSelectFieldOptions(filter.field_name)"
+                        v-for="option in getSelectFieldOptions(
+                          filter.field_name
+                        )"
                         :key="option.id"
                         :value="option.name"
                       >
@@ -1873,12 +1948,21 @@ const saveSequence = async () => {
               </div>
             </div>
 
-            <div class="p-3 bg-n-blue-2 dark:bg-n-blue-3 border border-n-blue-6 rounded-lg">
+            <div
+              class="p-3 bg-n-blue-2 dark:bg-n-blue-3 border border-n-blue-6 rounded-lg"
+            >
               <div class="flex items-start gap-2">
                 <i class="i-lucide-info text-n-blue-11 text-sm mt-0.5" />
                 <div class="text-xs text-n-slate-11">
-                  <p class="font-medium text-n-blue-11 mb-1">Acerca de los filtros</p>
-                  <p>Los filtros se aplicarán al consultar la base de datos de Notion. Solo los registros que cumplan <strong>todos</strong> los filtros configurados serán procesados.</p>
+                  <p class="font-medium text-n-blue-11 mb-1">
+                    Acerca de los filtros
+                  </p>
+                  <p>
+                    Los filtros se aplicarán al consultar la base de datos de
+                    Notion. Solo los registros que cumplan
+                    <strong>todos</strong> los filtros configurados serán
+                    procesados.
+                  </p>
                 </div>
               </div>
             </div>
@@ -2451,7 +2535,9 @@ const saveSequence = async () => {
                         <label
                           class="block text-xs font-medium text-n-slate-12"
                         >
-                          {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.CHANNEL') }}
+                          {{
+                            t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.CHANNEL')
+                          }}
                           <span class="text-n-red-10">*</span>
                         </label>
                         <div class="flex gap-3">
@@ -2489,6 +2575,23 @@ const saveSequence = async () => {
                             <i class="i-lucide-mail text-n-blue-9" />
                             <span class="text-sm text-n-slate-12">SMS</span>
                           </label>
+                          <label
+                            class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-n-weak rounded-lg hover:bg-n-weak/30"
+                            :class="{
+                              'bg-n-teal-4 border-n-teal-8':
+                                step.config.channel === 'email',
+                            }"
+                          >
+                            <input
+                              v-model="step.config.channel"
+                              type="radio"
+                              value="email"
+                              class="text-n-teal-9"
+                              @change="onFirstContactChannelChange(step)"
+                            />
+                            <i class="i-lucide-at-sign text-n-purple-9" />
+                            <span class="text-sm text-n-slate-12">Email</span>
+                          </label>
                         </div>
 
                         <!-- Inbox Selection -->
@@ -2496,7 +2599,9 @@ const saveSequence = async () => {
                           <label
                             class="block text-xs font-medium text-n-slate-12 mb-1"
                           >
-                            {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.INBOX') }}
+                            {{
+                              t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.INBOX')
+                            }}
                             <span class="text-n-red-10">*</span>
                           </label>
                           <select
@@ -2505,7 +2610,11 @@ const saveSequence = async () => {
                             @change="onFirstContactInboxChange(step)"
                           >
                             <option :value="null">
-                              {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.SELECT_INBOX') }}
+                              {{
+                                t(
+                                  'LEAD_RETARGETING.STEPS.FIRST_CONTACT.SELECT_INBOX'
+                                )
+                              }}
                             </option>
                             <option
                               v-for="inbox in inboxes"
@@ -2528,7 +2637,9 @@ const saveSequence = async () => {
                           <label
                             class="block text-xs font-medium text-n-slate-12 mb-1"
                           >
-                            {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.TEMPLATE') }}
+                            {{
+                              t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.TEMPLATE')
+                            }}
                             <span class="text-n-red-10">*</span>
                           </label>
                           <select
@@ -2537,7 +2648,11 @@ const saveSequence = async () => {
                             @change="onTemplateChange(step, 'config')"
                           >
                             <option value="">
-                              {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.SELECT_TEMPLATE') }}
+                              {{
+                                t(
+                                  'LEAD_RETARGETING.STEPS.FIRST_CONTACT.SELECT_TEMPLATE'
+                                )
+                              }}
                             </option>
                             <option
                               v-for="template in availableTemplates"
@@ -2560,7 +2675,9 @@ const saveSequence = async () => {
                             <label
                               class="block text-xs font-medium text-n-slate-12"
                             >
-                              {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.PARAMS') }}
+                              {{
+                                t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.PARAMS')
+                              }}
                             </label>
                             <div
                               v-for="(param, idx) in getTemplateParams(
@@ -2641,9 +2758,17 @@ const saveSequence = async () => {
                           <label
                             class="block text-xs font-medium text-n-slate-12 mb-1"
                           >
-                            {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.SMS_CONTEXT') }}
+                            {{
+                              t(
+                                'LEAD_RETARGETING.STEPS.FIRST_CONTACT.SMS_CONTEXT'
+                              )
+                            }}
                             <span class="text-n-slate-11 font-normal">
-                              ({{ t('LEAD_RETARGETING.STEPS.SEND_MESSAGE.AI_CONFIG.OPTIONAL') }})
+                              ({{
+                                t(
+                                  'LEAD_RETARGETING.STEPS.SEND_MESSAGE.AI_CONFIG.OPTIONAL'
+                                )
+                              }})
                             </span>
                           </label>
                           <textarea
@@ -2655,6 +2780,35 @@ const saveSequence = async () => {
                           <p class="text-xs text-n-slate-11">
                             El AI generará un mensaje SMS basado en este
                             contexto y los datos del contacto.
+                          </p>
+                        </div>
+
+                        <!-- Email Context (AI) -->
+                        <div
+                          v-if="step.config.channel === 'email'"
+                          class="space-y-2"
+                        >
+                          <label
+                            class="block text-xs font-medium text-n-slate-12 mb-1"
+                          >
+                            Contexto del Email
+                            <span class="text-n-slate-11 font-normal">
+                              ({{
+                                t(
+                                  'LEAD_RETARGETING.STEPS.SEND_MESSAGE.AI_CONFIG.OPTIONAL'
+                                )
+                              }})
+                            </span>
+                          </label>
+                          <textarea
+                            v-model="step.config.email_context"
+                            rows="3"
+                            class="w-full text-sm"
+                            placeholder="Describe el contexto del email que el AI debería generar..."
+                          />
+                          <p class="text-xs text-n-slate-11">
+                            El AI generará un email (asunto y contenido) basado
+                            en este contexto y los datos del contacto.
                           </p>
                         </div>
                       </div>
@@ -3006,7 +3160,11 @@ const saveSequence = async () => {
                           <label
                             class="block text-xs font-medium text-n-slate-12 mb-1"
                           >
-                            {{ t('LEAD_RETARGETING.STEPS.SEND_EMAIL.SENDER_EMAIL') }}
+                            {{
+                              t(
+                                'LEAD_RETARGETING.STEPS.SEND_EMAIL.SENDER_EMAIL'
+                              )
+                            }}
                           </label>
                           <input
                             v-model="step.config.sender_email"
@@ -3058,7 +3216,9 @@ const saveSequence = async () => {
                           />
                           <p class="text-xs text-n-slate-11 mt-1">
                             {{
-                              t('LEAD_RETARGETING.STEPS.SEND_EMAIL.VARIABLES_HINT')
+                              t(
+                                'LEAD_RETARGETING.STEPS.SEND_EMAIL.VARIABLES_HINT'
+                              )
                             }}
                           </p>
                         </div>
@@ -3066,7 +3226,10 @@ const saveSequence = async () => {
                     </div>
 
                     <!-- Add Label Step -->
-                    <div v-else-if="step.type === 'add_label'" class="space-y-2">
+                    <div
+                      v-else-if="step.type === 'add_label'"
+                      class="space-y-2"
+                    >
                       <label
                         class="block text-xs font-medium text-n-slate-12 mb-1"
                       >
@@ -3448,15 +3611,23 @@ const saveSequence = async () => {
                 {{ extractPreviewValue(record, 'name') || 'Sin nombre' }}
               </p>
               <div class="flex items-center gap-2 text-xs text-n-slate-11 mt-1">
-                <span v-if="sequence.source_config.field_mappings.phone_number" class="font-mono">
+                <span
+                  v-if="sequence.source_config.field_mappings.phone_number"
+                  class="font-mono"
+                >
                   {{ extractPreviewValue(record, 'phone') || 'Sin teléfono' }}
                 </span>
-                <span v-if="sequence.source_config.field_mappings.reference_date" class="text-n-slate-10">
+                <span
+                  v-if="sequence.source_config.field_mappings.reference_date"
+                  class="text-n-slate-10"
+                >
                   • {{ formatDate(extractPreviewValue(record, 'date')) }}
                 </span>
               </div>
             </div>
-            <span class="text-xs px-2 py-1 bg-n-weak/60 rounded font-mono text-n-slate-11 flex-shrink-0">
+            <span
+              class="text-xs px-2 py-1 bg-n-weak/60 rounded font-mono text-n-slate-11 flex-shrink-0"
+            >
               {{ record.id.slice(0, 8) }}
             </span>
           </div>
@@ -3473,7 +3644,8 @@ const saveSequence = async () => {
           class="mt-4 p-3 bg-n-blue-2 dark:bg-n-blue-3 rounded text-xs text-n-slate-11"
         >
           <p>
-            Mostrando {{ notionRecordsPreview.length }} registros que coinciden con los filtros configurados.
+            Mostrando {{ notionRecordsPreview.length }} registros que coinciden
+            con los filtros configurados.
             {{
               notionRecordsPreview.length >= 100
                 ? 'Puede haber más registros disponibles.'

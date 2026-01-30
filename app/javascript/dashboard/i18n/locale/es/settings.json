@@ -385,11 +385,12 @@
     "REPORTS_INBOX": "Bandeja de entrada",
     "REPORTS_TEAM": "Equipo",
     "META_CAMPAIGNS": "Campañas de Meta",
-    "AGENT_ASSIGNMENT": "Agent Assignment",
+    "AGENT_ASSIGNMENT": "Asignación de agentes",
     "SET_AVAILABILITY_TITLE": "Ponte como",
     "SET_YOUR_AVAILABILITY": "Establecer su disponibilidad",
     "SLA": "SLA",
     "CUSTOM_ROLES": "Roles personalizados",
+    "CONVERSATION_WORKFLOW": "Flujos de conversación",
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Resumen",
     "REAUTHORIZE": "Su sesión ha expirado, por favor, vuelva a conectarse para continuar recibiendo y enviando mensajes",
@@ -539,6 +540,58 @@
       "INFO_SECTION": {
         "TITLE": "Service Provider Information",
         "TOOLTIP": "Copy these values and configure them in your Identity Provider to establish the SAML connection"
+      }
+    }
+  },
+  "CONVERSATION_WORKFLOW": {
+    "INDEX": {
+      "HEADER": {
+        "TITLE": "Flujos de conversación",
+        "DESCRIPTION": "Configure reglas y campos obligatorios para la resolución de conversaciones."
+      }
+    },
+    "REQUIRED_ATTRIBUTES": {
+      "TITLE": "Atributos obligatorios al resolver",
+      "DESCRIPTION": "Al resolver una conversación, se pedirá a los agentes que completen estos atributos si aún no lo han hecho.",
+      "NO_ATTRIBUTES": "Aún no se han añadido atributos",
+      "ADD": {
+        "TITLE": "Añadir atributos",
+        "SEARCH_PLACEHOLDER": "Buscar atributos"
+      },
+      "SAVE": {
+        "SUCCESS": "Atributos obligatorios actualizados",
+        "ERROR": "No se pudieron actualizar los atributos obligatorios, inténtelo de nuevo"
+      },
+      "MODAL": {
+        "TITLE": "Resolver conversación",
+        "DESCRIPTION": "Por favor, complete los siguientes atributos personalizados antes de resolver esta conversación",
+        "ACTIONS": {
+          "RESOLVE": "Resolver conversación",
+          "CANCEL": "Cancelar"
+        },
+        "PLACEHOLDERS": {
+          "TEXT": "Escribe una nota...",
+          "NUMBER": "Introduce un número",
+          "LINK": "Añade un enlace",
+          "DATE": "Selecciona una fecha",
+          "LIST": "Selecciona una opción"
+        },
+        "CHECKBOX": {
+          "YES": "Sí",
+          "NO": "No"
+        }
+      },
+      "PAYWALL": {
+        "TITLE": "Sube de nivel para usar atributos obligatorios",
+        "AVAILABLE_ON": "La función de atributos de conversación obligatorios está disponible en los planes Business y Enterprise.",
+        "UPGRADE_PROMPT": "Mejore su plan para solicitar a los agentes que completen los atributos obligatorios antes de resolver la conversación.",
+        "UPGRADE_NOW": "Actualizar ahora",
+        "CANCEL_ANYTIME": "Puede cambiar o cancelar su plan en cualquier momento"
+      },
+      "ENTERPRISE_PAYWALL": {
+        "AVAILABLE_ON": "La función de atributos de conversación obligatorios está disponible en los planes de pago.",
+        "UPGRADE_PROMPT": "Mejore a un plan de pago para exigir atributos obligatorios antes de resolver la conversación.",
+        "ASK_ADMIN": "Por favor, comuníquese con su administrador para la actualización."
       }
     }
   },

@@ -1004,6 +1004,40 @@
         "TITLE": "No Connected Inboxes",
         "SUBTITLE": "Connecting an inbox allows the assistant to handle initial questions from your customers before transferring them to you."
       }
+    },
+    "ZOHO": {
+      "TITLE": "Zoho CRM",
+      "DESCRIPTION": "Integrate Zoho CRM to sync contacts, leads, and activities automatically.",
+      "CONFIGURE": "Configure Zoho CRM",
+      "DELETE": {
+        "TITLE": "Delete Zoho CRM Integration",
+        "MESSAGE": "Are you sure you want to delete the Zoho CRM integration? This action cannot be undone."
+      },
+      "FORM": {
+        "SUBMIT": "Connect Zoho CRM",
+        "CANCEL": "Cancel"
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Zoho CRM integration configured successfully",
+        "ERROR_MESSAGE": "Failed to configure Zoho CRM integration. Please check your credentials and try again."
+      }
+    },
+    "SALESFORCE": {
+      "TITLE": "Salesforce",
+      "DESCRIPTION": "Integrate Salesforce to sync contacts, leads, and opportunities automatically.",
+      "CONFIGURE": "Configure Salesforce",
+      "DELETE": {
+        "TITLE": "Delete Salesforce Integration",
+        "MESSAGE": "Are you sure you want to delete the Salesforce integration? This action cannot be undone."
+      },
+      "FORM": {
+        "SUBMIT": "Connect Salesforce",
+        "CANCEL": "Cancel"
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Salesforce integration configured successfully",
+        "ERROR_MESSAGE": "Failed to configure Salesforce integration. Please check your credentials and try again."
+      }
     }
   }
 }

@@ -319,6 +319,14 @@ es:
       name: 'LeadSquared'
       short_description: 'Sync your contacts and conversations with LeadSquared CRM.'
       description: 'Sync your contacts and conversations with LeadSquared CRM. This integration automatically creates leads in LeadSquared when new contacts are added, and logs conversation activity to provide your sales team with complete context.'
+    zoho:
+      name: 'Zoho CRM'
+      short_description: 'Sincroniza tus contactos, leads y actividades con Zoho CRM automáticamente.'
+      description: 'Conecta Zoho CRM para sincronizar automáticamente contactos como leads, crear tareas y eventos, agregar etiquetas y notas. Esta integración proporciona a tu equipo de ventas el contexto completo y optimiza el flujo de trabajo de tu CRM.'
+    salesforce:
+      name: 'Salesforce'
+      short_description: 'Sincroniza tus contactos, leads y oportunidades con Salesforce CRM.'
+      description: 'Conecta Salesforce para sincronizar automáticamente contactos como leads, crear oportunidades y tareas, y gestionar tu pipeline de ventas. Esta integración proporciona a tu equipo de ventas visibilidad completa de las interacciones con clientes.'
   captain:
     copilot_message_required: El mensaje es obligatorio
     copilot_error: 'Conecte un asistente a esta bandeja de entrada para utilizar Copilot'

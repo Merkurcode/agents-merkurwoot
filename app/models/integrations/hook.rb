@@ -16,6 +16,7 @@
 #
 class Integrations::Hook < ApplicationRecord
   include Reauthorizable
+  include CrmTokenRefreshable
 
   attr_readonly :app_id, :account_id, :inbox_id, :hook_type
   before_validation :ensure_hook_type
@@ -43,6 +44,7 @@ class Integrations::Hook < ApplicationRecord
 
   scope :account_hooks, -> { where(hook_type: 'account') }
   scope :inbox_hooks, -> { where(hook_type: 'inbox') }
+  scope :crm_hooks, -> { where(app_id: CrmTokenRefreshable::CRM_PROVIDERS) }
 
   def app
     @app ||= Integrations::App.find(id: app_id)
@@ -105,6 +107,6 @@ class Integrations::Hook < ApplicationRecord
   end
 
   def crm_integration?
-    %w[leadsquared].include?(app_id)
+    %w[leadsquared zoho salesforce hubspot kommo].include?(app_id)
   end
 end

@@ -413,6 +413,7 @@ Rails.application.routes.draw do
             resources :hooks, only: [:show, :create, :update, :destroy] do
               member do
                 post :process_event
+                post :test_crm_action
               end
             end
             resource :slack, only: [:create, :update, :destroy], controller: 'slack' do

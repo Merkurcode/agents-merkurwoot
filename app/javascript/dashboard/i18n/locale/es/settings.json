@@ -1136,7 +1136,7 @@
         "URL": "URL del Webhook",
         "URL_PLACEHOLDER": "https://ejemplo.com/webhook",
         "METHOD": "Método HTTP",
-        "VARIABLES_HINT": "Puedes usar variables como {{contact.name}}, {{conversation.id}}, etc."
+        "VARIABLES_HINT": "Puedes usar variables como {'{{'}contact.name{'}}'}, {'{{'}conversation.id{'}}'}, etc."
       },
       "FIRST_CONTACT": {
         "ADD": "Primer Contacto",
@@ -1159,12 +1159,12 @@
         "ADD": "Enviar Email",
         "DEFAULT_NAME": "Enviar correo electrónico",
         "SENDER_EMAIL": "Email del emisor (opcional)",
-        "SENDER_EMAIL_PLACEHOLDER": "Ej: soporte@tuempresa.com",
+        "SENDER_EMAIL_PLACEHOLDER": "Ej: soporte{'@'}tuempresa.com",
         "SUBJECT": "Asunto del correo (opcional)",
         "SUBJECT_PLACEHOLDER": "Si se deja en blanco, la IA generará el asunto...",
         "CONTENT": "Contenido del correo (opcional)",
         "CONTENT_PLACEHOLDER": "Si se deja en blanco, la IA generará el contenido...",
-        "VARIABLES_HINT": "Puedes usar variables como {{contact.name}}, {{contact.email}}, {{conversation.id}}, etc."
+        "VARIABLES_HINT": "Puedes usar variables como {'{{'}contact.name{'}}'}, {'{{'}contact.email{'}}'}, {'{{'}conversation.id{'}}'}, etc."
       }
     },
     "TIMELINE": {

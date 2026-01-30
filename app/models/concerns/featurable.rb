@@ -23,7 +23,8 @@ module Featurable
 
     # Only load second column flags if the database column actually exists
     # This prevents failures during the migration process itself
-    if ActiveRecord::Base.connection.table_exists?(:accounts) && ActiveRecord::Base.connection.column_exists?(:accounts, :feature_flags_2)
+    # Always load second column flags if defined in configuration
+    if FEATURES_2.present?
       has_flags FEATURES_2.merge(column: 'feature_flags_2').merge(QUERY_MODE)
     end
 

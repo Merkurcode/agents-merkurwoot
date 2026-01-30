@@ -27,7 +27,6 @@ import { AUDIO_FORMATS } from 'shared/constants/messages';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { CONVERSATION_TYPES } from 'dashboard/helper/inbox';
 import { CMD_AI_ASSIST } from 'dashboard/helper/commandbar/events';
-import { CONVERSATION_TYPES } from 'dashboard/helper/inbox';
 import {
   getMessageVariables,
   getUndefinedVariablesInMessage,

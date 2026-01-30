@@ -34,7 +34,6 @@ import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirecti
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import Board from '../routes/dashboard/conversation/StatusBoard/Board.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
-import Board from '../routes/dashboard/conversation/StatusBoard/Board.vue';
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
@@ -138,7 +137,6 @@ const currentAccountId = useMapGetter('getCurrentAccountId');
 const getTeamFn = useMapGetter('teams/getTeam');
 const getLocationFn = useMapGetter('locations/getLocation');
 const getConversationById = useMapGetter('getConversationById');
-const getLocationFn = useMapGetter('locations/getLocation');
 
 useChatListKeyboardEvents(conversationListRef);
 const {

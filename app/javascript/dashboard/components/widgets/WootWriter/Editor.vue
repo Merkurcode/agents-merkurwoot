@@ -118,10 +118,6 @@ const effectiveChannelType = computed(() =>
   getEffectiveChannelType(props.channelType, props.medium)
 );
 
-const effectiveChannelType = computed(() =>
-  getEffectiveChannelType(props.channelType, props.medium)
-);
-
 const editorSchema = computed(() => {
   if (!props.channelType) return messageSchema;
 

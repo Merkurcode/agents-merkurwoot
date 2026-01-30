@@ -188,17 +188,37 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_29_163843) do
   create_table "appointments", force: :cascade do |t|
     t.string "location"
     t.text "description"
-    t.datetime "start_time"
-    t.datetime "end_time"
+    t.datetime "scheduled_at"
+    t.datetime "ended_at"
     t.boolean "assisted", default: false, null: false
     t.string "access_token"
     t.bigint "contact_id", null: false
     t.bigint "account_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "appointment_type", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.bigint "owner_id"
+    t.bigint "inbox_id"
+    t.bigint "conversation_id"
+    t.datetime "started_at"
+    t.integer "duration_minutes"
+    t.string "meeting_url"
+    t.string "phone_number"
+    t.jsonb "participants", default: {}
+    t.jsonb "external_ids", default: {}
+    t.jsonb "additional_attributes", default: {}
+    t.datetime "discarded_at"
     t.index ["access_token"], name: "index_appointments_on_access_token", unique: true
+    t.index ["account_id", "scheduled_at"], name: "index_appointments_on_account_id_and_scheduled_at"
     t.index ["account_id"], name: "index_appointments_on_account_id"
     t.index ["contact_id"], name: "index_appointments_on_contact_id"
+    t.index ["conversation_id"], name: "index_appointments_on_conversation_id"
+    t.index ["discarded_at"], name: "index_appointments_on_discarded_at"
+    t.index ["inbox_id"], name: "index_appointments_on_inbox_id"
+    t.index ["owner_id", "status"], name: "index_appointments_on_owner_id_and_status"
+    t.index ["owner_id"], name: "index_appointments_on_owner_id"
+    t.index ["status"], name: "index_appointments_on_status"
   end
 
   create_table "article_embeddings", force: :cascade do |t|
@@ -1583,6 +1603,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_29_163843) do
     t.boolean "required", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "accepted_file_types", default: []
     t.index ["survey_id", "position"], name: "index_survey_questions_on_survey_id_and_position"
     t.index ["survey_id"], name: "index_survey_questions_on_survey_id"
   end
@@ -1723,6 +1744,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_29_163843) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "appointments", "accounts"
   add_foreign_key "appointments", "contacts"
+  add_foreign_key "appointments", "conversations"
+  add_foreign_key "appointments", "inboxes"
+  add_foreign_key "appointments", "users", column: "owner_id"
   add_foreign_key "bulk_processing_requests", "accounts"
   add_foreign_key "bulk_processing_requests", "users"
   add_foreign_key "campaign_contacts", "campaigns"

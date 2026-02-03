@@ -80,6 +80,10 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
     total_products = products.count
     processed = 0
     @media_errors = []
+    last_progress_update = Time.current
+
+    # Calculate update frequency: for small batches update more often
+    update_frequency = [total_products / 20, 10].max.clamp(1, 100)
 
     products.find_each do |product|
       # Check if bulk request status is still valid for processing
@@ -104,15 +108,24 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
 
       processed += 1
 
-      # Update progress from 50% to 100% every 100 products
-      if processed % 100 == 0
+      # Update progress from 50% to 100% based on dynamic frequency or every 2 seconds
+      should_update = (processed % update_frequency == 0) || (Time.current - last_progress_update > 2.seconds)
+      if should_update
         progress = 50 + (processed.to_f / total_products * 50).round(2)
         @bulk_request.update!(
           progress: progress,
           updated_at: Time.current
         )
+        last_progress_update = Time.current
+        Rails.logger.info("Media processing progress: #{processed}/#{total_products} (#{progress}%)")
       end
     end
+
+    # Final progress update to 100%
+    @bulk_request.update!(
+      progress: 100.0,
+      updated_at: Time.current
+    )
 
     # Save media errors to bulk request
     if @media_errors.any?

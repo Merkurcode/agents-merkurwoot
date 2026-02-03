@@ -169,17 +169,21 @@ class ProductCatalogs::ExcelProcessorService
         @bulk_request.increment!(:processed_records, buffer.size)
         buffer.clear
 
-        # Update progress less frequently (only on batch completion)
+        # Update progress (0-50% for Excel phase)
         @bulk_request.update!(
           total_records: row_index - 1,
-          progress: ((row_index - 1).to_f / [row_index - 1, 1].max * 50).round(2),
+          progress: 25.0, # Mid-point of Excel phase
           updated_at: Time.current
         )
         last_update_time = Time.current
         Rails.logger.info("ExcelProcessor: Batch done. Total: #{row_index - 1}, Progress: #{@bulk_request.progress}%")
-      elsif Time.current - last_update_time > 30.seconds
-        # Touch updated_at less frequently (every 30s instead of 10s)
-        @bulk_request.update_column(:updated_at, Time.current)
+      elsif Time.current - last_update_time > 2.seconds
+        # Update progress every 2 seconds for better UX
+        @bulk_request.update!(
+          total_records: row_index - 1,
+          progress: [((row_index - 1) * 0.5).round(2), 49.0].min, # Estimate progress up to 49%
+          updated_at: Time.current
+        )
         last_update_time = Time.current
       end
     end
@@ -190,9 +194,14 @@ class ProductCatalogs::ExcelProcessorService
       @bulk_request.increment!(:processed_records, buffer.size)
     end
 
-    # Final update
+    # Final update - set progress to 50% (Excel phase complete)
     total = row_index - 1
-    @bulk_request.update!(total_records: total)
+    @bulk_request.update!(
+      total_records: total,
+      progress: 50.0,
+      updated_at: Time.current
+    )
+    Rails.logger.info("ExcelProcessor: Excel phase complete. Total: #{total}, Progress: 50%")
 
     total
   ensure

@@ -119,7 +119,7 @@ class ProductCatalogs::ExcelProcessorService
     conn.exec("SET maintenance_work_mem TO '256MB'") # More memory for index building
     conn.exec("SET work_mem TO '64MB'")             # More memory for sorting/hashing
 
-    xlsx.each_row_streaming do |row|
+    xlsx.each_row_streaming(pad_cells: true) do |row|
       # Skip header row
       if row_index == 0
         row_index += 1

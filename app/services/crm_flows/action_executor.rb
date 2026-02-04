@@ -118,6 +118,7 @@ module CrmFlows
       case hook.app_id
       when 'zoho'       then Crm::Zoho::ProcessorService.new(hook)
       when 'salesforce' then Crm::Salesforce::ProcessorService.new(hook)
+      when 'hubspot'    then Crm::Hubspot::ProcessorService.new(hook)
       else nil
       end
     rescue StandardError

@@ -412,3 +412,36 @@ salesforce:
       },
     ]
   visible_properties: ['client_id', 'username', 'is_sandbox']
+
+hubspot:
+  id: hubspot
+  feature_flag: crm_integration
+  logo: hubspot.png
+  i18n_key: hubspot
+  action: /hubspot
+  hook_type: account
+  allow_multiple_hooks: false
+  settings_json_schema:
+    {
+      'type': 'object',
+      'properties':
+        {
+          'access_token': { 'type': 'string' },
+          'token_type': { 'type': 'string' },
+          'triggers': { 'type': 'object' },
+        },
+      'required': ['access_token'],
+      'additionalProperties': false,
+    }
+  settings_form_schema:
+    [
+      {
+        'label': 'Access Token',
+        'type': 'text',
+        'name': 'access_token',
+        'validation': 'required',
+        'inputType': 'password',
+        'help': 'Your HubSpot Private App Access Token (pat-na1-xxxxx)',
+      },
+    ]
+  visible_properties: ['access_token']

@@ -352,6 +352,10 @@ en:
       name: 'Salesforce'
       short_description: 'Sync your contacts, leads, and opportunities with Salesforce CRM.'
       description: 'Connect Salesforce to automatically sync contacts as leads, create opportunities and tasks, and manage your sales pipeline. This integration provides your sales team with complete visibility into customer interactions.'
+    hubspot:
+      name: 'HubSpot'
+      short_description: 'Sync your contacts, deals, and activities with HubSpot CRM.'
+      description: 'Connect HubSpot CRM to automatically sync contacts, create deals and tasks, schedule meetings, and add notes. This integration provides your sales team with complete context and streamlines your CRM workflow.'
     crm_flows:
       name: 'CRM Flows'
       short_description: 'Configure automated action sequences triggered by your AI agent.'

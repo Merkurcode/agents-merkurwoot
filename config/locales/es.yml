@@ -327,6 +327,10 @@ es:
       name: 'Salesforce'
       short_description: 'Sincroniza tus contactos, leads y oportunidades con Salesforce CRM.'
       description: 'Conecta Salesforce para sincronizar automáticamente contactos como leads, crear oportunidades y tareas, y gestionar tu pipeline de ventas. Esta integración proporciona a tu equipo de ventas visibilidad completa de las interacciones con clientes.'
+    hubspot:
+      name: 'HubSpot'
+      short_description: 'Sincroniza tus contactos, deals y actividades con HubSpot CRM.'
+      description: 'Conecta HubSpot CRM para sincronizar automáticamente contactos, crear deals y tareas, programar reuniones y agregar notas. Esta integración proporciona a tu equipo de ventas el contexto completo y optimiza el flujo de trabajo de tu CRM.'
     crm_flows:
       name: 'CRM Flows'
       short_description: 'Configura secuencias de acciones automatizadas disparadas por tu agente de IA.'

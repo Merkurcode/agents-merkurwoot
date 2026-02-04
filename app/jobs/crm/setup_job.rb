@@ -27,9 +27,9 @@ class Crm::SetupJob < ApplicationJob
       Crm::Zoho::SetupService.new(hook)
     when 'salesforce'
       Crm::Salesforce::SetupService.new(hook)
+    when 'hubspot'
+      Crm::Hubspot::SetupService.new(hook)
     # Add cases for future CRMs here
-    # when 'hubspot'
-    #   Crm::Hubspot::SetupService.new(hook)
     # when 'kommo'
     #   Crm::Kommo::SetupService.new(hook)
     else

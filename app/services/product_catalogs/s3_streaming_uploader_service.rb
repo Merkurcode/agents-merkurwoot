@@ -1,8 +1,7 @@
-require 'net/http'
-require 'uri'
-
 module ProductCatalogs
   class S3StreamingUploaderService
+    require 'net/http'
+    require 'uri'
     BUFFER_SIZE = 5 * 1024 * 1024 # 5MB minimum for S3 multipart
     DOWNLOAD_TIMEOUT = 300 # 5 minutes
 

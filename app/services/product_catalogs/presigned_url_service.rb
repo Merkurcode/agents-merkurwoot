@@ -19,7 +19,6 @@ module ProductCatalogs
       )
     rescue StandardError => e
       Rails.logger.error("Failed to generate presigned URL for #{s3_key}: #{e.message}")
-      nil
     end
   end
 end

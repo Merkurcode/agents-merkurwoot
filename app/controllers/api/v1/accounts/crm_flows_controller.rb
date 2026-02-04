@@ -4,7 +4,7 @@ class Api::V1::Accounts::CrmFlowsController < Api::V1::Accounts::BaseController
   # GET /api/v1/accounts/:account_id/crm_flows
   def index
     flows = CrmFlow.where(account_id: Current.account.id).order(created_at: :desc)
-    render json: { flows: flows.map { |f| serialize_list_item(f) } }
+    render json: { flows: flows.map { |f| serialize_full(f) } }
   end
 
   # GET /api/v1/accounts/:account_id/crm_flows/:id

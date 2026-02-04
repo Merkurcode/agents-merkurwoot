@@ -123,17 +123,17 @@ module Crm
         # TAG OPERATIONS
         # ============================================================================
 
-        # Add tags to records
+        # Add tags to a specific record
         #
-        # @param record_ids [Array<String>] Record IDs to tag
+        # @param record_id [String] Record ID to tag
         # @param tag_names [Array<String>] Tag names
         # @param module_name [String] Module name ('Leads', 'Contacts', etc.)
         # @return [Hash] API response
-        def add_tags(record_ids, tag_names, module_name: 'Leads')
+        def add_tags(record_id, tag_names, module_name: 'Leads')
           request(
             :post,
-            "#{API_PATH}/#{module_name}/actions/add_tags",
-            query: { ids: record_ids.join(','), tag_names: tag_names.join(',') }
+            "#{API_PATH}/#{module_name}/#{record_id}/actions/add_tags",
+            body: { tags: tag_names.map { |name| { name: name } } }.to_json
           )
         end
 
@@ -147,7 +147,7 @@ module Crm
           request(
             :post,
             "#{API_PATH}/#{module_name}/actions/remove_tags",
-            query: { ids: record_ids.join(','), tag_names: tag_names.join(',') }
+            body: { tags: tag_names.map { |name| { name: name } }, ids: record_ids }.to_json
           )
         end
       end

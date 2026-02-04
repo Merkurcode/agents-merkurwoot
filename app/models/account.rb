@@ -137,8 +137,7 @@ class Account < ApplicationRecord
   has_many :webhooks, dependent: :destroy_async
   has_many :whatsapp_channels, dependent: :destroy_async, class_name: '::Channel::Whatsapp'
   has_many :working_hours, dependent: :destroy_async
-  has_many :business_working_hours, -> { where(workable_type: 'Account') },
-           class_name: 'WorkingHour', as: :workable, dependent: :destroy_async
+  has_many :business_working_hours, class_name: 'WorkingHour', as: :workable, dependent: :destroy_async
   has_many :marketing_campaigns, dependent: :destroy_async
   has_many :pipeline_statuses, dependent: :destroy_async
   has_many :product_catalogs, dependent: :destroy_async

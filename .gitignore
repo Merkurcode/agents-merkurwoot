@@ -124,3 +124,4 @@ BASE-DE-DATOS.md
 *.md
 !docs/**/*.md
 /docs
+/db/local_dev_scripts

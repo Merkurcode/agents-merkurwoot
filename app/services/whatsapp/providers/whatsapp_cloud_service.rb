@@ -85,6 +85,12 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     @csat_template_service ||= Whatsapp::CsatTemplateService.new(whatsapp_channel)
   end
 
+  private
+
+  def csat_template_service
+    @csat_template_service ||= Whatsapp::CsatTemplateService.new(whatsapp_channel)
+  end
+
   def api_base_path
     ENV.fetch('WHATSAPP_CLOUD_BASE_URL', 'https://graph.facebook.com')
   end

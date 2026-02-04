@@ -67,6 +67,13 @@
         "ERROR_MESSAGE": "There was an error connecting to TikTok, please try again",
         "ERROR_AUTH": "There was an error connecting to TikTok, please try again"
       },
+      "TIKTOK": {
+        "CONTINUE_WITH_TIKTOK": "Continue with TikTok",
+        "CONNECT_YOUR_TIKTOK_PROFILE": "Connect your TikTok Profile",
+        "HELP": "To add your TikTok profile as a channel, you need to authenticate your TikTok Profile by clicking on 'Continue with TikTok' ",
+        "ERROR_MESSAGE": "There was an error connecting to TikTok, please try again",
+        "ERROR_AUTH": "There was an error connecting to TikTok, please try again"
+      },
       "TWITTER": {
         "HELP": "உங்கள் ட்விட்டர் சுயவிவரத்தை ஒரு சேனலாக சேர்க்க, 'ட்விட்டருடன் உள்நுழைக' என்பதைக் கிளிக் செய்யாவும், இதன் மூலம் உங்கள் சுயவிவரத்தை ட்விட்டர் வாயிலாக அங்கீகரிக்கிறீர்கள் ",
         "ERROR_MESSAGE": "Twitter-க்கு இணைக்கும்போது பிழை ஏற்பட்டது, தயவுசெய்து மீண்டும் முயற்சிக்கவும்",

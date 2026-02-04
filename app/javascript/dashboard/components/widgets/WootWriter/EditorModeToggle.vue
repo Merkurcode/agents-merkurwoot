@@ -16,6 +16,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  showOnlyPrivateNote: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 defineEmits(['toggleMode']);

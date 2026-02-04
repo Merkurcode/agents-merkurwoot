@@ -384,11 +384,12 @@
     "REPORTS_INBOX": "Bandeja de entrada",
     "REPORTS_TEAM": "Equipo",
     "META_CAMPAIGNS": "Campañas de Meta",
-    "AGENT_ASSIGNMENT": "Agent Assignment",
+    "AGENT_ASSIGNMENT": "Asignación de agentes",
     "SET_AVAILABILITY_TITLE": "Ponte como",
     "SET_YOUR_AVAILABILITY": "Establecer su disponibilidad",
     "SLA": "SLA",
     "CUSTOM_ROLES": "Roles personalizados",
+    "CONVERSATION_WORKFLOW": "Flujos de conversación",
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Resumen",
     "REAUTHORIZE": "Su sesión ha expirado, por favor, vuelva a conectarse para continuar recibiendo y enviando mensajes",
@@ -1206,7 +1207,7 @@
         "URL": "URL del Webhook",
         "URL_PLACEHOLDER": "https://ejemplo.com/webhook",
         "METHOD": "Método HTTP",
-        "VARIABLES_HINT": "Puedes usar variables como {{contact.name}}, {{conversation.id}}, etc."
+        "VARIABLES_HINT": "Puedes usar variables como {'{{'}contact.name{'}}'}, {'{{'}conversation.id{'}}'}, etc."
       },
       "FIRST_CONTACT": {
         "ADD": "Primer Contacto",
@@ -1229,12 +1230,12 @@
         "ADD": "Enviar Email",
         "DEFAULT_NAME": "Enviar correo electrónico",
         "SENDER_EMAIL": "Email del emisor (opcional)",
-        "SENDER_EMAIL_PLACEHOLDER": "Ej: soporte@tuempresa.com",
+        "SENDER_EMAIL_PLACEHOLDER": "Ej: soporte{'@'}tuempresa.com",
         "SUBJECT": "Asunto del correo (opcional)",
         "SUBJECT_PLACEHOLDER": "Si se deja en blanco, la IA generará el asunto...",
         "CONTENT": "Contenido del correo (opcional)",
         "CONTENT_PLACEHOLDER": "Si se deja en blanco, la IA generará el contenido...",
-        "VARIABLES_HINT": "Puedes usar variables como {{contact.name}}, {{contact.email}}, {{conversation.id}}, etc."
+        "VARIABLES_HINT": "Puedes usar variables como {'{{'}contact.name{'}}'}, {'{{'}contact.email{'}}'}, {'{{'}conversation.id{'}}'}, etc."
       }
     },
     "TIMELINE": {

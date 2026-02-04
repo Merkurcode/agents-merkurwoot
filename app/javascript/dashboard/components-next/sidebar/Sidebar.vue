@@ -925,6 +925,7 @@ const menuItems = computed(() => {
       <div
         class="pointer-events-none absolute inset-x-0 -top-[1.938rem] h-8 bg-gradient-to-t from-n-background to-transparent"
       />
+      <YearInReviewBanner />
       <SidebarChangelogCard
         v-if="
           isOnChatwootCloud &&

@@ -353,6 +353,10 @@ const closeDatePicker = () => {
     showDatePicker.value = false;
   }
 };
+
+const closeDatePicker = () => {
+  showDatePicker.value = false;
+};
 </script>
 
 <template>

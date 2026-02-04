@@ -67,6 +67,13 @@
         "ERROR_MESSAGE": "TikTok-ലേക്ക് കണക്ട് ചെയ്യുമ്പോൾ പിശക് സംഭവിച്ചു, ദയവായി വീണ്ടും ശ്രമിക്കുക",
         "ERROR_AUTH": "TikTok-ലേക്ക് കണക്ട് ചെയ്യുമ്പോൾ പിശക് സംഭവിച്ചു, ദയവായി വീണ്ടും ശ്രമിക്കുക"
       },
+      "TIKTOK": {
+        "CONTINUE_WITH_TIKTOK": "Continue with TikTok",
+        "CONNECT_YOUR_TIKTOK_PROFILE": "Connect your TikTok Profile",
+        "HELP": "To add your TikTok profile as a channel, you need to authenticate your TikTok Profile by clicking on 'Continue with TikTok' ",
+        "ERROR_MESSAGE": "There was an error connecting to TikTok, please try again",
+        "ERROR_AUTH": "There was an error connecting to TikTok, please try again"
+      },
       "TWITTER": {
         "HELP": "നിങ്ങളുടെ ട്വിറ്റർ പ്രൊഫൈൽ ഒരു ചാനലായി ചേർക്കുന്നതിന്, 'ട്വിറ്ററിനൊപ്പം പ്രവേശിക്കുക' ക്ലിക്കുചെയ്ത് നിങ്ങളുടെ ട്വിറ്റർ പ്രൊഫൈൽ പ്രാമാണീകരിക്കേണ്ടതുണ്ട് ",
         "ERROR_MESSAGE": "Twitter-ലേക്ക് കണക്ട് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു, ദയവായി വീണ്ടും ശ്രമിക്കുക",
@@ -484,6 +491,10 @@
           "TIKTOK": {
             "TITLE": "TikTok",
             "DESCRIPTION": "നിങ്ങളുടെ TikTok അക്കൗണ്ട് കണക്ട് ചെയ്യുക"
+          },
+          "TIKTOK": {
+            "TITLE": "TikTok",
+            "DESCRIPTION": "Connect your TikTok account"
           },
           "VOICE": {
             "TITLE": "വോയ്സ്",
@@ -927,6 +938,35 @@
           "LIKELY_MARKETING": "സാധ്യതയുള്ള മാർക്കറ്റിംഗ്",
           "UNCLEAR": "വിവരണം ആവശ്യമാണ്"
         }
+      },
+      "BUTTON_TEXT": {
+        "LABEL": "Button text",
+        "PLACEHOLDER": "Please rate us"
+      },
+      "LANGUAGE": {
+        "LABEL": "Language",
+        "PLACEHOLDER": "Select template language"
+      },
+      "MESSAGE_PREVIEW": {
+        "LABEL": "Message preview",
+        "TOOLTIP": "This may vary slightly when rendered on WhatsApp's platform."
+      },
+      "TEMPLATE_STATUS": {
+        "APPROVED": "Approved by WhatsApp",
+        "PENDING": "Pending WhatsApp approval",
+        "REJECTED": "Meta rejected the template",
+        "DEFAULT": "Needs WhatsApp approval",
+        "NOT_FOUND": "The template does not exist in the Meta platform."
+      },
+      "TEMPLATE_CREATION": {
+        "SUCCESS_MESSAGE": "WhatsApp template created successfully and sent for approval",
+        "ERROR_MESSAGE": "Failed to create WhatsApp template"
+      },
+      "TEMPLATE_UPDATE_DIALOG": {
+        "TITLE": "Edit survey details",
+        "DESCRIPTION": "We will delete the previous template and make a new one which will be sent again for WhatsApp approval",
+        "CONFIRM": "Create new template",
+        "CANCEL": "Go back"
       },
       "SURVEY_RULE": {
         "LABEL": "സർവേ നിയമം",

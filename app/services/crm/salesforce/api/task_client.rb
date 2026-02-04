@@ -29,6 +29,18 @@ module Crm
         def get_task(task_id)
           request(:get, "/sobjects/Task/#{task_id}")
         end
+
+        # ============================================================================
+        # EVENT OPERATIONS
+        # ============================================================================
+
+        # Create a new event (meeting)
+        #
+        # @param event_data [Hash] Event data
+        # @return [Hash] Response with event ID
+        def create_event(event_data)
+          request(:post, '/sobjects/Event', body: event_data.to_json)
+        end
       end
     end
   end

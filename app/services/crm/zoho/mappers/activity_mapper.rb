@@ -53,49 +53,84 @@ module Crm
         # @option params [String] :owner_id Zoho owner ID
         # @option params [Array<Hash>] :participants Event participants
         # @return [Hash] Zoho Event data
-        def self.map_event(appointment, params = {})
+        # Map Nauto Console Appointment to Zoho Event format
+        #
+        # @param appointment_or_params [Appointment, Hash] Appointment model or parameters hash
+        # @param params [Hash] Additional parameters
+        # @return [Hash] Zoho Event data
+        def self.map_event(appointment_or_params, params = {})
+          is_appointment = appointment_or_params.is_a?(Appointment)
+          p = is_appointment ? params : appointment_or_params
+
+          # Título/Asunto
+          subject = if is_appointment
+                      appointment_or_params.description
+                    else
+                      p[:event_title] || p[:subject] || p[:event_subject]
+                    end
+          subject ||= 'Meeting from Nauto Console'
+
+          # Fechas
+          start_at = if is_appointment
+                       appointment_or_params.scheduled_at
+                     else
+                       p[:start_datetime] || p[:start_time] || p[:scheduled_at] || Time.current + 1.hour
+                     end
+
+          end_at = if is_appointment
+                     appointment_or_params.ended_at || appointment_or_params.scheduled_at + 1.hour
+                   else
+                     p[:end_datetime] || p[:end_time]
+                   end
+          end_at ||= start_at + 1.hour
+
+          # Descripción
+          description = if is_appointment
+                          build_event_description(appointment_or_params)
+                        else
+                          p[:description]
+                        end
+
           event_data = {
-            Subject: appointment.description || 'Meeting from Nauto Console',
-            Start_DateTime: format_datetime(appointment.scheduled_at),
-            End_DateTime: format_datetime(appointment.ended_at || appointment.scheduled_at + 1.hour),
-            Description: build_event_description(appointment),
-            Send_Notification_Email: params[:send_notification] || false
+            Subject: subject,                 # Standard field
+            Event_Title: subject,             # V3 field name
+            Start_DateTime: format_datetime(start_at),
+            End_DateTime: format_datetime(end_at),
+            Description: description,
+            Venue: p[:venue] || (is_appointment ? map_appointment_venue(appointment_or_params) : nil),
+            Send_Notification_Email: p[:send_notification] || false
           }.compact
 
-          # Add venue/location based on appointment type
-          case appointment.appointment_type
-          when 'physical_visit'
-            event_data[:Venue] = appointment.location || 'Office'
-          when 'digital_meeting'
-            event_data[:Venue] = 'Video Call'
-            event_data[:Description] = "#{event_data[:Description]}\n\nMeeting URL: #{appointment.meeting_url}"
-          when 'phone_call'
-            event_data[:Venue] = 'Phone Call'
-            event_data[:Description] = "#{event_data[:Description]}\n\nPhone: #{appointment.phone_number}"
-          end
-
           # Add Who_Id (Contact) if provided
-          if params[:contact_id].present?
-            event_data[:Who_Id] = { id: params[:contact_id] }
+          if p[:contact_id].present?
+            event_data[:Who_Id] = { id: p[:contact_id] }
           end
 
           # Add What_Id (Lead or other related record) if provided
-          if params[:lead_id].present?
-            event_data[:What_Id] = { id: params[:lead_id] }
-            event_data[:'$se_module'] = params[:se_module] || 'Leads'
+          if p[:lead_id].present?
+            event_data[:What_Id] = { id: p[:lead_id] }
+            event_data[:'$se_module'] = p[:se_module] || 'Leads'
           end
 
           # Add Owner if specified
-          if params[:owner_id].present?
-            event_data[:Owner] = { id: params[:owner_id] }
+          if p[:owner_id].present?
+            event_data[:Owner] = { id: p[:owner_id] }
           end
 
           # Add participants if provided
-          if params[:participants].present?
-            event_data[:Participants] = params[:participants]
+          if p[:participants].present?
+            event_data[:Participants] = p[:participants]
           end
 
           event_data
+        end
+
+        def self.map_appointment_venue(appointment)
+          case appointment.appointment_type
+          when 'physical_visit' then appointment.location || 'Office'
+          when 'digital_meeting' then 'Video Call'
+          when 'phone_call' then 'Phone Call'
+          end
         end
 
         # Map phone call to Zoho Call format

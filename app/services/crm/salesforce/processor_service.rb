@@ -32,6 +32,8 @@ module Crm
           create_opportunity(params)
         when 'create_task'
           create_task(params)
+        when 'create_event'
+          create_event(params)
         when 'add_note'
           add_note(params)
         else
@@ -192,6 +194,61 @@ module Crm
         end
       rescue StandardError => e
         Rails.logger.error "Error creating task in Salesforce: #{e.message}"
+        { success: false, error: e.message }
+      end
+
+      # ============================================================================
+      # EVENT OPERATIONS
+      # ============================================================================
+
+      # Create event (meeting) in Salesforce
+      #
+      # @param params [Hash] Event parameters
+      # @option params [Integer] :appointment_id Chatwoot appointment ID (opcional)
+      # @option params [Hash] :metadata Metadata del agente AI
+      # @return [Hash] Result with success status and event_id
+      def create_event(params)
+        metadata = params[:metadata] || {}
+        appointment = params[:appointment_id].present? ? Appointment.find_by(id: params[:appointment_id]) : nil
+
+        contact = appointment&.contact || find_contact_from_params(params)
+        lead_id = contact&.additional_attributes&.dig('external', 'salesforce_lead_id')
+
+        if !appointment && metadata.blank? && params[:subject].blank?
+          return { success: false, error: 'Appointment or event details required' }
+        end
+
+        event_params = if appointment
+                         { who_id: lead_id }
+                       else
+                         {
+                           subject: metadata['event_title'] || metadata['subject'] || params[:subject],
+                           description: metadata['description'] || params[:description],
+                           start_time: metadata['start_time'] || metadata['scheduled_at'] || params[:start_time],
+                           end_time: metadata['end_time'] || params[:end_time],
+                           venue: metadata['venue'] || params[:venue],
+                           who_id: lead_id
+                         }
+                       end
+
+        event_data = Crm::Salesforce::Mappers::ActivityMapper.map_event(
+          appointment || event_params,
+          event_params
+        )
+
+        response = @task_client.create_event(event_data)
+
+        if response && response['id'].present?
+          event_id = response['id']
+          appointment.store_external_id('salesforce', event_id) if appointment
+
+          Rails.logger.info "Event created successfully in Salesforce: #{event_id}"
+          { success: true, event_id: event_id, response: response }
+        else
+          { success: false, error: 'Failed to create event', response: response }
+        end
+      rescue StandardError => e
+        Rails.logger.error "Error creating event in Salesforce: #{e.message}"
         { success: false, error: e.message }
       end
 

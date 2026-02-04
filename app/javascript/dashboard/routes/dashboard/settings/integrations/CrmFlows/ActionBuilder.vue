@@ -28,12 +28,13 @@ const CHATWOOT_ACTION_OPTIONS = [
 const CRM_SUPPORT = {
   salesforce: ['create_lead', 'create_opportunity', 'create_task', 'create_event', 'add_note'],
   zoho:       ['create_lead', 'create_task', 'create_call', 'create_event', 'add_crm_tag', 'add_note'],
+  hubspot:    ['create_lead', 'create_opportunity', 'create_task', 'create_event', 'add_note'],
 };
 
 const connectedCrms = computed(() => {
   const integrations = getters['integrations/getAppIntegrations'].value || [];
   return integrations
-    .filter(i => ['salesforce', 'zoho'].includes(i.id) && i.enabled)
+    .filter(i => ['salesforce', 'zoho', 'hubspot'].includes(i.id) && i.enabled)
     .map(i => i.id);
 });
 
@@ -160,6 +161,13 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
           :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.TITLE')"
           class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
           @input="changeParam(index, 'note_title', $event.target.value)"
+        />
+        <input
+          :value="action.params.note_text"
+          type="text"
+          :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.CONTENT')"
+          class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
+          @input="changeParam(index, 'note_text', $event.target.value)"
         />
       </div>
 

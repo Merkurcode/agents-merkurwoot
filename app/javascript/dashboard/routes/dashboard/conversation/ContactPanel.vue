@@ -89,8 +89,12 @@ const zohoIntegration = useFunctionGetter(
   'integrations/getIntegration',
   'zoho'
 );
+const hubspotIntegration = useFunctionGetter(
+  'integrations/getIntegration',
+  'hubspot'
+);
 const hasCrmIntegration = computed(
-  () => salesforceIntegration.value?.enabled || zohoIntegration.value?.enabled
+  () => salesforceIntegration.value?.enabled || zohoIntegration.value?.enabled || hubspotIntegration.value?.enabled
 );
 
 const store = useStore();

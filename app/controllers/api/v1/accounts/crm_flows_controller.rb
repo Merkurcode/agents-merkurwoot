@@ -93,7 +93,7 @@ class Api::V1::Accounts::CrmFlowsController < Api::V1::Accounts::BaseController
   def crm_flow_params
     params.require(:crm_flow).permit(
       :name, :trigger_type, :scope_type, :inbox_id, :active, :dedup_window_minutes,
-      actions: [:order, :action, :type, { params: [:tag_name, :agent_id, :label, :subject, :note_title] }],
+      actions: [:order, :action, :type, { params: [:tag_name, :agent_id, :label, :subject, :note_title, :note_text, :description] }],
       required_fields: [:key, :label, :type, :required, { options: [] }]
     )
   end

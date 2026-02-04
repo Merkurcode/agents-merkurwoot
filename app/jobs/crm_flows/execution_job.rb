@@ -46,7 +46,6 @@ module CrmFlows
         results:      results
       })
 
-      create_activity_message(conversation, flow, results) if conversation
     rescue StandardError => e
       IdempotencyService.store_failed(idempotency_key, error: e.message) if idempotency_key
       raise
@@ -60,25 +59,6 @@ module CrmFlows
       return 'success' if statuses.all? { |s| %w[success skipped].include?(s) }
 
       'partial'
-    end
-
-    def create_activity_message(conversation, flow, results)
-      lines  = results.map { |r| format_line(r) }.compact
-      html   = "<b>CRM Flow &quot;#{flow.name}&quot;:</b><br>#{lines.join('<br>')}"
-
-      message = conversation.messages.new(
-        account_id: conversation.account_id,
-        inbox_id:   conversation.inbox_id,
-        content:    html,
-        message_type: :activity,
-        content_type: :text
-      )
-
-      unless message.save
-        Rails.logger.warn "CrmFlows::ExecutionJob could not create activity message: #{message.errors.full_messages.join(', ')}"
-      end
-    rescue StandardError => e
-      Rails.logger.error "CrmFlows::ExecutionJob activity message error: #{e.message}"
     end
 
     def format_line(r)

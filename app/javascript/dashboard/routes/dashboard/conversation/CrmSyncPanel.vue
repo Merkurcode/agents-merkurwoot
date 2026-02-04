@@ -1,9 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
 
-const { t } = useI18n();
 const store = useStore();
 const getters = useStoreGetters();
 
@@ -19,21 +17,12 @@ onMounted(() => {
   store.dispatch('crmFlows/getConversationExecutions', props.conversationId);
 });
 
-function statusClass(status) {
-  switch (status) {
-    case 'success': return 'text-green-600';
-    case 'failed':  return 'text-red-500';
-    case 'partial': return 'text-amber-600';
-    default:        return 'text-n-slate-9';
-  }
-}
-
 function statusBg(status) {
   switch (status) {
-    case 'success': return 'bg-green-100 text-green-700';
-    case 'failed':  return 'bg-red-100 text-red-700';
-    case 'partial': return 'bg-amber-100 text-amber-700';
-    default:        return 'bg-n-slate-3 text-n-slate-11';
+    case 'success': return 'bg-n-teal-5 text-n-teal-12';
+    case 'failed':  return 'bg-n-solid-3 text-n-ruby-12';
+    case 'partial': return 'bg-n-solid-3 text-n-amber-12';
+    default:        return 'bg-n-solid-3 text-n-slate-12';
   }
 }
 
@@ -45,88 +34,78 @@ function formatTime(dateStr) {
 
 function resultIcon(status) {
   switch (status) {
-    case 'success': return '✓';
-    case 'skipped': return '●';
-    case 'failed':  return '✗';
-    default:        return '—';
+    case 'success': return 'i-lucide-check-circle';
+    case 'skipped': return 'i-lucide-minus-circle';
+    case 'failed':  return 'i-lucide-x-circle';
+    default:        return 'i-lucide-circle';
   }
 }
 
 function resultColor(status) {
   switch (status) {
-    case 'success': return 'text-green-600';
-    case 'skipped': return 'text-n-slate-9';
-    case 'failed':  return 'text-red-500';
-    default:        return 'text-n-slate-9';
-  }
-}
-
-// CRM dashboard URLs para links directos
-function crmUrl(crm, externalId) {
-  if (!externalId) return null;
-  switch (crm) {
-    case 'salesforce': return `https://na1.salesforce.com/o/Lead/${externalId}`;
-    case 'zoho':       return `https://crm.zoho.com/crm/private#/CRM/Leads/${externalId}`;
-    default:           return null;
+    case 'success': return 'text-n-green-11';
+    case 'skipped': return 'text-n-slate-11';
+    case 'failed':  return 'text-n-ruby-11';
+    default:        return 'text-n-slate-11';
   }
 }
 </script>
 
 <template>
-  <div class="px-1 py-2">
+  <div>
     <!-- Estado vacío -->
-    <p v-if="!executions.length" class="text-xs text-n-slate-9 text-center py-3">
-      {{ $t('CRM_FLOWS.CRM_SYNC.EMPTY') }}
-    </p>
+    <div v-if="!executions.length" class="flex justify-center p-4">
+      <p class="text-sm text-n-slate-11">
+        {{ $t('CRM_FLOWS.CRM_SYNC.EMPTY') }}
+      </p>
+    </div>
 
     <!-- Lista de ejecuciones -->
-    <div v-else class="flex flex-col gap-3">
+    <div v-else class="max-h-[300px] overflow-y-auto">
       <div
         v-for="exec in executions"
         :key="exec.id"
-        class="border border-n-weak rounded-lg p-2.5"
+        class="px-4 py-3 border-b border-n-weak last:border-b-0"
       >
-        <!-- Header de la ejecución -->
-        <div class="flex items-center justify-between mb-1.5">
-          <span class="text-xs font-semibold text-n-slate-12">{{ exec.flow_name }}</span>
-          <span :class="statusBg(exec.status)" class="text-xs font-medium rounded-full px-2 py-0.5">
+        <!-- Header: nombre del flow + badge de status -->
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="text-sm font-medium text-n-slate-12 truncate">
+            {{ exec.flow_name }}
+          </span>
+          <span
+            :class="statusBg(exec.status)"
+            class="text-xs px-2 py-0.5 rounded flex-shrink-0 capitalize"
+          >
             {{ $t(`CRM_FLOWS.CRM_SYNC.STATUS.${exec.status.toUpperCase()}`) }}
           </span>
         </div>
-        <span class="text-xs text-n-slate-9">
+
+        <!-- Timestamp -->
+        <p class="text-xs text-n-slate-11 mb-2">
           {{ $t('CRM_FLOWS.CRM_SYNC.EXECUTED_AT', { time: formatTime(exec.created_at) }) }}
-        </span>
+        </p>
 
         <!-- Resultados por acción -->
-        <div class="mt-2 flex flex-col gap-1">
+        <div class="flex flex-col gap-1.5">
           <div
             v-for="(result, idx) in (exec.results || [])"
             :key="idx"
-            class="flex items-start gap-1.5"
+            class="flex items-center gap-2"
           >
-            <span :class="resultColor(result.status)" class="text-xs font-bold leading-4">
-              {{ resultIcon(result.status) }}
+            <i
+              :class="[resultIcon(result.status), resultColor(result.status)]"
+              class="w-3.5 h-3.5 flex-shrink-0"
+            />
+            <span class="text-xs text-n-slate-12 truncate">
+              {{ result.action?.replace(/_/g, ' ') }}
+              <span v-if="result.crm" class="text-n-slate-11">en {{ result.crm }}</span>
             </span>
-            <div class="flex-1">
-              <span class="text-xs text-n-slate-11">
-                {{ result.action?.replace(/_/g, ' ') }}
-                <span v-if="result.crm" class="text-n-slate-9">en {{ result.crm }}</span>
-              </span>
-              <!-- Link al CRM si hay external_id -->
-              <a
-                v-if="result.external_id && crmUrl(result.crm, result.external_id)"
-                :href="crmUrl(result.crm, result.external_id)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="ml-1 text-xs text-blue-600 hover:underline"
-              >
-                → Open
-              </a>
-              <!-- Error message -->
-              <span v-if="result.status === 'failed' && result.error" class="text-xs text-red-500 ml-1">
-                — {{ result.error }}
-              </span>
-            </div>
+            <span
+              v-if="result.status === 'failed' && result.error"
+              class="text-xs text-n-ruby-11 ml-auto truncate"
+            >
+              {{ result.error }}
+            </span>
           </div>
         </div>
       </div>

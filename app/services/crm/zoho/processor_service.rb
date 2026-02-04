@@ -247,23 +247,39 @@ module Crm
       # @return [Hash] Result with success status and event_id
       def create_event(params)
         appointment_id = params[:appointment_id]
-        return { success: false, error: 'Appointment ID not provided' } unless appointment_id
+        metadata = params[:metadata] || {}
+        appointment = appointment_id.present? ? Appointment.find_by(id: appointment_id) : nil
 
-        appointment = Appointment.find_by(id: appointment_id)
-        return { success: false, error: 'Appointment not found' } unless appointment
-
-        # Get Zoho lead ID from contact
-        contact = appointment.contact
+        # Identificar el contacto y lead_id de Zoho
+        contact = appointment&.contact || find_contact_from_params(params)
         lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
 
-        # Map appointment to Zoho event format
+        # Si no hay cita ni metadata suficiente, fallamos (mantenemos compatibilidad)
+        if !appointment && metadata.blank? && params[:subject].blank?
+          return { success: false, error: 'Appointment or metadata required to create event' }
+        end
+
+        # Preparamos los parámetros base
+        event_params = if appointment
+                         params # Pasar params directamente para que map_event los combine con appointment
+                       else
+                         {
+                           event_title: metadata['event_title'] || metadata['subject'] || params[:subject],
+                           description: metadata['event_description'] || metadata['description'] || params[:description],
+                           start_time:  metadata['start_time'] || metadata['scheduled_at'] || params[:start_time],
+                           end_time:    metadata['end_time'] || params[:end_time],
+                           venue:       metadata['venue'] || params[:venue],
+                           lead_id:     lead_id,
+                           se_module:   'Leads',
+                           owner_id:    params[:owner_id],
+                           send_notification: params[:send_notification] || false
+                         }
+                       end
+
+        # Map to Zoho event format
         event_data = Crm::Zoho::Mappers::ActivityMapper.map_event(
-          appointment,
-          contact_id: nil, # Zoho events use What_Id for leads
-          lead_id: lead_id,
-          se_module: 'Leads',
-          owner_id: params[:owner_id],
-          send_notification: params[:send_notification]
+          appointment || event_params,
+          appointment ? event_params : {}
         )
 
         response = @activity_client.create_event(event_data)
@@ -272,8 +288,8 @@ module Crm
           event_record = response['data'].first
           event_id = event_record['details']['id']
 
-          # Store external ID in appointment
-          appointment.store_external_id('zoho', event_id)
+          # Si venía de una cita, guardamos el ID externo
+          appointment.store_external_id('zoho', event_id) if appointment
 
           Rails.logger.info "Event created successfully in Zoho: #{event_id}"
           { success: true, event_id: event_id, response: event_record }

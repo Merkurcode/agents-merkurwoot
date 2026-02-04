@@ -34,9 +34,19 @@ module Crm
 
         data = response.parsed_response
 
+        if data['error'].present?
+          Rails.logger.error "Zoho token refresh returned error: #{data['error']} - #{data['error_description']}"
+          raise "Token refresh error: #{data['error']} - #{data['error_description']}"
+        end
+
+        unless data['access_token'].present?
+          Rails.logger.error "Zoho token refresh returned no access_token: #{data}"
+          raise "Token refresh failed: no access_token in response"
+        end
+
         {
           'access_token' => data['access_token'],
-          'expires_in' => data['expires_in'], # 3600 segundos (1 hora)
+          'expires_in' => data['expires_in'],
           'api_domain' => data['api_domain'],
           'token_type' => data['token_type'] || 'Bearer'
         }
@@ -50,7 +60,7 @@ module Crm
           client_secret: client_secret,
           grant_type: 'client_credentials',
           scope: scope_string,
-          soid: soid
+          soid: "ZohoCRM.#{soid}"
         }
       end
 
@@ -59,8 +69,6 @@ module Crm
         scopes = @credentials['scopes'] || DEFAULT_SCOPES
         scopes.join(',')
       end
-
-      private
 
       def client_id
         @credentials['client_id'] || @credentials.dig('credentials', 'client_id')

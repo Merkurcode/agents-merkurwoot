@@ -35,7 +35,8 @@ module Crm
         # @param email [String] Email to search
         # @return [Hash] Search results
         def search_by_email(email)
-          query = "SELECT Id, FirstName, LastName, Email, Company FROM Lead WHERE Email = '#{email}'"
+          escaped = email.to_s.gsub("'", "''")
+          query = "SELECT Id, FirstName, LastName, Email, Company FROM Lead WHERE Email = '#{escaped}'"
           request(:get, '/query', query: { q: query })
         end
 

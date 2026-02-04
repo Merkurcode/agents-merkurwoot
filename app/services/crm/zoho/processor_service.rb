@@ -29,6 +29,8 @@ module Crm
           update_lead(params)
         when 'create_task'
           create_task(params)
+        when 'create_call'
+          create_call(params)
         when 'create_event'
           create_event(params)
         when 'add_tag'
@@ -181,6 +183,58 @@ module Crm
       end
 
       # ============================================================================
+      # CALL OPERATIONS
+      # ============================================================================
+
+      # Create call log in Zoho CRM
+      #
+      # @param params [Hash] Call parameters
+      # @option params [String] :subject Call subject
+      # @option params [String] :description Call description
+      # @option params [String] :call_type Call type (Inbound/Outbound)
+      # @option params [String] :start_time Start time (ISO 8601)
+      # @option params [Integer] :duration Duration in seconds
+      # @return [Hash] Result with success status and call_id
+      def create_call(params)
+        contact = find_contact_from_params(params)
+        lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
+        metadata = params[:metadata] || {}
+
+        # Priorizamos metadata (AI) sobre params (configuración fija del flow)
+        subject     = metadata['call_subject'].presence || metadata['subject'].presence || params[:subject]
+        description = metadata['call_description'].presence || metadata['description'].presence || params[:description]
+        start_time  = metadata['scheduled_at'].presence || metadata['start_time'].presence || params[:start_time]
+
+        # Map to Zoho call format
+        call_data = Crm::Zoho::Mappers::ActivityMapper.map_call(
+          subject: subject,
+          description: description,
+          call_type: params[:call_type],
+          start_time: start_time,
+          duration: params[:duration],
+          contact_id: nil, # Zoho calls use What_Id for leads
+          lead_id: lead_id,
+          se_module: 'Leads',
+          status: 'Scheduled'
+        )
+
+        response = @activity_client.create_call(call_data)
+
+        if response && response['data']&.any?
+          call_record = response['data'].first
+          call_id = call_record['details']['id']
+
+          Rails.logger.info "Call created successfully in Zoho: #{call_id}"
+          { success: true, call_id: call_id, response: call_record }
+        else
+          { success: false, error: 'Failed to create call', response: response }
+        end
+      rescue StandardError => e
+        Rails.logger.error "Error creating call in Zoho: #{e.message}"
+        { success: false, error: e.message }
+      end
+
+      # ============================================================================
       # EVENT OPERATIONS
       # ============================================================================
 
@@ -249,7 +303,7 @@ module Crm
         tag_name = params[:tag_name]
         return { success: false, error: 'Tag name not provided' } unless tag_name
 
-        response = @lead_client.add_tags([lead_id], [tag_name], module_name: 'Leads')
+        response = @lead_client.add_tags(lead_id, [tag_name], module_name: 'Leads')
 
         if response && response['data']&.any?
           Rails.logger.info "Tag '#{tag_name}' added to lead #{lead_id}"

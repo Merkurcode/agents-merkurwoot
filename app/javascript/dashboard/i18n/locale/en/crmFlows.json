@@ -65,6 +65,7 @@
       "CREATE_LEAD": "Create Lead",
       "CREATE_OPPORTUNITY": "Create Opportunity",
       "CREATE_TASK": "Create Task",
+      "CREATE_CALL": "Schedule Call",
       "CREATE_EVENT": "Create Event",
       "ADD_CRM_TAG": "Add CRM Tag",
       "ADD_NOTE": "Add Note",
@@ -75,6 +76,7 @@
         "AGENT": "Select agent",
         "LABEL": "Label name",
         "SUBJECT": "Subject",
+        "DESCRIPTION": "Description",
         "TITLE": "Title",
         "CONTENT": "Content"
       },

@@ -29,15 +29,11 @@ module Crm
             send_notification: params[:send_notification] || false
           }.compact
 
-          # Add Who_Id (Contact) if provided
-          if params[:contact_id].present?
-            task_data[:Who_Id] = { id: params[:contact_id] }
-          end
-
-          # Add What_Id (Lead or other related record) if provided
+          # Who_Id: enlace al Lead o Contacto involucrado
           if params[:lead_id].present?
-            task_data[:What_Id] = { id: params[:lead_id] }
-            task_data[:'$se_module'] = params[:se_module] || 'Leads'
+            task_data[:Who_Id] = { id: params[:lead_id] }
+          elsif params[:contact_id].present?
+            task_data[:Who_Id] = { id: params[:contact_id] }
           end
 
           # Add Owner if specified
@@ -48,9 +44,9 @@ module Crm
           task_data
         end
 
-        # Map Chatwoot Appointment to Zoho Event format
+        # Map Nauto Console Appointment to Zoho Event format
         #
-        # @param appointment [Appointment] Chatwoot appointment
+        # @param appointment [Appointment] Nauto Console appointment
         # @param params [Hash] Additional parameters
         # @option params [String] :contact_id Zoho contact ID
         # @option params [String] :lead_id Zoho lead ID
@@ -59,11 +55,11 @@ module Crm
         # @return [Hash] Zoho Event data
         def self.map_event(appointment, params = {})
           event_data = {
-            Event_Title: appointment.description || 'Meeting from Chatwoot',
+            Subject: appointment.description || 'Meeting from Nauto Console',
             Start_DateTime: format_datetime(appointment.scheduled_at),
             End_DateTime: format_datetime(appointment.ended_at || appointment.scheduled_at + 1.hour),
             Description: build_event_description(appointment),
-            send_notification: params[:send_notification] || false
+            Send_Notification_Email: params[:send_notification] || false
           }.compact
 
           # Add venue/location based on appointment type
@@ -114,15 +110,45 @@ module Crm
         # @option params [Integer] :duration Call duration in seconds
         # @return [Hash] Zoho Call data
         def self.map_call(params = {})
-          {
-            Subject: params[:subject] || 'Call from Chatwoot',
+          status = params[:status] || 'Scheduled'
+          start_time = params[:start_time] || Time.current
+
+          # Para llamadas programadas, Zoho requiere que la hora sea estrictamente a futuro.
+          # Agregamos un margen de 5 minutos si es "ahora" para evitar errores de sincronización.
+          if status == 'Scheduled' && params[:start_time].blank?
+            start_time = Time.current + 5.minutes
+          end
+
+          call_data = {
+            Subject: params[:subject] || (status == 'Scheduled' ? 'Scheduled Call from Nauto Console' : 'Call from Nauto Console'),
             Call_Type: params[:call_type] || 'Outbound',
-            Call_Start_Time: format_datetime(params[:start_time] || Time.current),
-            Call_Duration: params[:duration] || 0,
-            Description: params[:description],
-            Who_Id: params[:contact_id].present? ? { id: params[:contact_id] } : nil,
-            What_Id: params[:lead_id].present? ? { id: params[:lead_id] } : nil
-          }.compact
+            Call_Start_Time: format_datetime(start_time),
+            Call_Status: status,            # Standard field
+            Outgoing_Call_Status: status,   # Field name from error message (V2.1+)
+            Outbound_Call_Status: status,   # Field name from documentation
+            Description: params[:description]
+          }
+
+          # Zoho rechaza duración cero, y para programadas debe omitirse.
+          if status == 'Completed'
+            duration_secs = params[:duration].to_i
+            hours   = duration_secs / 3600
+            minutes = (duration_secs % 3600) / 60
+            call_data[:Call_Duration] = format('%<hh>02d:%<mm>02d', hh: hours, mm: minutes)
+          end
+
+          # En Zoho V2/V3, Who_Id es para Contactos/Leads
+          # What_Id es para otros módulos (Deals, etc)
+          # Sin embargo, si se usa What_Id para Leads (según ProcessorService),
+          # se REQUIERE especificar $se_module.
+          if params[:lead_id].present?
+            call_data[:What_Id] = { id: params[:lead_id] }
+            call_data[:'$se_module'] = params[:se_module] || 'Leads'
+          elsif params[:contact_id].present?
+            call_data[:Who_Id] = { id: params[:contact_id] }
+          end
+
+          call_data.compact
         end
 
         # Format datetime to Zoho format (ISO 8601 with timezone)
@@ -131,13 +157,14 @@ module Crm
         # @return [String] Formatted datetime
         def self.format_datetime(datetime)
           return nil unless datetime
+          return datetime if datetime.is_a?(String)
 
           datetime.iso8601
         end
 
         # Build event description from appointment
         #
-        # @param appointment [Appointment] Chatwoot appointment
+        # @param appointment [Appointment] Nauto Console appointment
         # @return [String] Event description
         def self.build_event_description(appointment)
           parts = []

@@ -11,7 +11,8 @@ module CrmFlows
       'add_crm_tag'              => 'Etiqueta añadida',
       'add_note'                 => 'Nota añadida',
       'assign_chatwoot_agent'    => 'Asignado a asesor',
-      'add_chatwoot_label'       => 'Label añadido'
+      'add_chatwoot_label'       => 'Label añadido',
+      'create_call'              => 'Llamada programada'
     }.freeze
 
     def perform(flow_id:, conversation_id:, contact_id:, metadata:, idempotency_key:)
@@ -64,9 +65,20 @@ module CrmFlows
     def create_activity_message(conversation, flow, results)
       lines  = results.map { |r| format_line(r) }.compact
       html   = "<b>CRM Flow &quot;#{flow.name}&quot;:</b><br>#{lines.join('<br>')}"
-      conversation.messages.create!(content: html, message_type: :activity, content_type: :input_text)
+
+      message = conversation.messages.new(
+        account_id: conversation.account_id,
+        inbox_id:   conversation.inbox_id,
+        content:    html,
+        message_type: :activity,
+        content_type: :text
+      )
+
+      unless message.save
+        Rails.logger.warn "CrmFlows::ExecutionJob could not create activity message: #{message.errors.full_messages.join(', ')}"
+      end
     rescue StandardError => e
-      Rails.logger.error "CrmFlows::ExecutionJob activity message: #{e.message}"
+      Rails.logger.error "CrmFlows::ExecutionJob activity message error: #{e.message}"
     end
 
     def format_line(r)

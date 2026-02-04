@@ -1,7 +1,12 @@
 module CrmFlows
   class ActionExecutor
-    CRM_ACTIONS = %w[create_lead create_opportunity create_task create_event add_crm_tag add_note].freeze
+    CRM_ACTIONS = %w[create_lead create_opportunity create_call create_task create_event add_crm_tag add_note].freeze
     CHATWOOT_ACTIONS = %w[assign_chatwoot_agent add_chatwoot_label].freeze
+
+    # Mapeo de nombres de acción del flow → nombres que espera el ProcessorService
+    PROCESSOR_ACTION_MAP = {
+      'add_crm_tag' => 'add_tag'
+    }.freeze
 
     IDEMPOTENCY_STRATEGIES = {
       'create_lead' => :check_external_id,
@@ -9,6 +14,7 @@ module CrmFlows
       'create_event' => :check_external_id,
       'add_crm_tag' => :idempotent_by_nature,
       'create_task' => :none,
+      'create_call' => :none,
       'add_note' => :none
     }.freeze
 
@@ -83,10 +89,11 @@ module CrmFlows
       end
 
       params = build_params(action)
-      result = processor.execute_action(action_name, params)
+      processor_action = PROCESSOR_ACTION_MAP[action_name] || action_name
+      result = processor.execute_action(processor_action, params)
 
       if result[:success]
-        eid = result[:lead_id] || result[:task_id] || result[:event_id] || result[:opportunity_id] || result[:note_id]
+        eid = result[:lead_id] || result[:call_id] || result[:task_id] || result[:event_id] || result[:opportunity_id] || result[:note_id]
         { action: action_name, crm: crm_name, status: 'success', external_id: eid, type: 'crm' }
       else
         { action: action_name, crm: crm_name, status: 'failed', error: result[:error], type: 'crm' }
@@ -121,7 +128,7 @@ module CrmFlows
       (action['params'] || {}).merge(
         'contact_id' => @contact.id,
         'metadata' => @metadata
-      )
+      ).symbolize_keys
     end
   end
 end

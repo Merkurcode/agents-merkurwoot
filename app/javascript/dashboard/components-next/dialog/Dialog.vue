@@ -91,6 +91,9 @@ const open = () => {
 };
 
 const close = () => {
+  // Prevent closing while loading
+  if (props.isLoading) return;
+
   emit('close');
   dialogRef.value?.close();
   isOpen.value = false;
@@ -157,6 +160,7 @@ defineExpose({ open, close });
                 :label="cancelButtonLabel || t('DIALOG.BUTTONS.CANCEL')"
                 class="w-full"
                 type="button"
+                :disabled="isLoading"
                 @click="close"
               />
               <Button

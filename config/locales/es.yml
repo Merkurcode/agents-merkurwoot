@@ -327,6 +327,10 @@ es:
       name: 'Salesforce'
       short_description: 'Sincroniza tus contactos, leads y oportunidades con Salesforce CRM.'
       description: 'Conecta Salesforce para sincronizar automáticamente contactos como leads, crear oportunidades y tareas, y gestionar tu pipeline de ventas. Esta integración proporciona a tu equipo de ventas visibilidad completa de las interacciones con clientes.'
+    crm_flows:
+      name: 'CRM Flows'
+      short_description: 'Configura secuencias de acciones automatizadas disparadas por tu agente de IA.'
+      description: 'CRM Flows te permite definir qué sucede cuando tu agente de IA lanza un evento. Configura disparadores, encadena acciones de CRM y Chatwoot, establece campos requeridos y habilita idempotencia — todo sin código.'
   captain:
     copilot_message_required: El mensaje es obligatorio
     copilot_error: 'Conecte un asistente a esta bandeja de entrada para utilizar Copilot'

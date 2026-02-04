@@ -408,6 +408,16 @@ Rails.application.routes.draw do
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]
+          resources :crm_flows, only: [:index, :show, :create, :update, :destroy] do
+            collection do
+              post :trigger
+              get :trigger_schema
+              get :executions_by_conversation
+            end
+            member do
+              get :executions
+            end
+          end
           namespace :integrations do
             resources :apps, only: [:index, :show]
             resources :hooks, only: [:show, :create, :update, :destroy] do

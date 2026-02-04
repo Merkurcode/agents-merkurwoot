@@ -9,6 +9,12 @@
 # settings_json_schema: the json schema used to validate the settings hash (https://json-schema.org/)
 # settings_form_schema: the formulate schema used in frontend to render settings form (https://vueformulate.com/)
 ########################################################
+crm_flows:
+  id: crm_flows
+  logo: crm_flows.png
+  i18n_key: crm_flows
+  hook_type: account
+  allow_multiple_hooks: true
 webhooks:
   id: webhook
   logo: webhooks.png

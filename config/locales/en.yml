@@ -352,6 +352,10 @@ en:
       name: 'Salesforce'
       short_description: 'Sync your contacts, leads, and opportunities with Salesforce CRM.'
       description: 'Connect Salesforce to automatically sync contacts as leads, create opportunities and tasks, and manage your sales pipeline. This integration provides your sales team with complete visibility into customer interactions.'
+    crm_flows:
+      name: 'CRM Flows'
+      short_description: 'Configure automated action sequences triggered by your AI agent.'
+      description: 'CRM Flows let you define what happens when your AI agent fires an event. Configure triggers, chain CRM and Chatwoot actions, set required fields, and enable idempotency — all without code.'
   captain:
     copilot_message_required: Message is required
     copilot_error: 'Please connect an assistant to this inbox to use Copilot'

@@ -38,8 +38,8 @@ const formData = ref({
   trigger_type:         props.flow?.trigger_type       || 'quote_request',
   scope_type:           props.flow?.scope_type         || 'global',
   inbox_id:             props.flow?.inbox_id           || null,
-  actions:              props.flow?.actions            || [],
-  required_fields:      props.flow?.required_fields    || [],
+  actions:              props.flow?.actions ? JSON.parse(JSON.stringify(props.flow.actions)) : [],
+  required_fields:      props.flow?.required_fields ? JSON.parse(JSON.stringify(props.flow.required_fields)) : [],
   active:               props.flow?.active             !== false,
   dedup_window_minutes: props.flow?.dedup_window_minutes ?? DEFAULT_DEDUP.quote_request,
 });

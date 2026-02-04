@@ -1,20 +1,19 @@
 <script setup>
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useStoreGetters } from 'dashboard/composables/store';
-
-const { t } = useI18n();
-const getters = useStoreGetters();
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
 });
 const emit = defineEmits(['update:modelValue']);
 
+const getters = useStoreGetters();
+
 const CRM_ACTION_OPTIONS = [
   { value: 'create_lead',        label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_LEAD' },
   { value: 'create_opportunity', label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_OPPORTUNITY' },
   { value: 'create_task',        label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_TASK' },
+  { value: 'create_call',        label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_CALL' },
   { value: 'create_event',       label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_EVENT' },
   { value: 'add_crm_tag',        label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_CRM_TAG' },
   { value: 'add_note',           label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_NOTE' },
@@ -28,7 +27,7 @@ const CHATWOOT_ACTION_OPTIONS = [
 // Qué CRMs soportan qué acciones
 const CRM_SUPPORT = {
   salesforce: ['create_lead', 'create_opportunity', 'create_task', 'create_event', 'add_note'],
-  zoho:       ['create_lead', 'create_task', 'create_event', 'add_crm_tag', 'add_note'],
+  zoho:       ['create_lead', 'create_task', 'create_call', 'create_event', 'add_crm_tag', 'add_note'],
 };
 
 const connectedCrms = computed(() => {
@@ -171,6 +170,26 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
           :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.SUBJECT')"
           class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
           @input="changeParam(index, 'subject', $event.target.value)"
+        />
+      </div>
+
+      <div
+        v-else-if="action.action === 'create_call'"
+        class="ml-7 flex flex-col gap-2"
+      >
+        <input
+          :value="action.params.subject"
+          type="text"
+          :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.SUBJECT')"
+          class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
+          @input="changeParam(index, 'subject', $event.target.value)"
+        />
+        <input
+          :value="action.params.description"
+          type="text"
+          :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.DESCRIPTION')"
+          class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
+          @input="changeParam(index, 'description', $event.target.value)"
         />
       </div>
 

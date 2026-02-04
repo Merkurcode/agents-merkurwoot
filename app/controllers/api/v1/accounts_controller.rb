@@ -50,6 +50,7 @@ class Api::V1::AccountsController < Api::BaseController
       @account.settings.merge!(settings_params)
       @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
       update_account_address if account_address_params.present? && administrator?
+      update_business_hours if business_hours_params.present? && administrator?
       @account.save!
     end
   end
@@ -116,6 +117,20 @@ class Api::V1::AccountsController < Api::BaseController
       address ? address.update!(address_attrs) : @account.account_addresses.create!(address_attrs)
     else
       @account.account_addresses.create!(address_attrs)
+    end
+  end
+
+  def business_hours_params
+    params.permit(business_hours: %i[day_of_week open_hour open_minutes close_hour close_minutes closed_all_day open_all_day])[:business_hours]
+  end
+
+  def update_business_hours
+    return unless business_hours_params.present?
+
+    business_hours_params.each do |day_hours|
+      wh = @account.business_working_hours.find_or_initialize_by(day_of_week: day_hours[:day_of_week])
+      wh.assign_attributes(day_hours.except(:day_of_week))
+      wh.save!
     end
   end
 

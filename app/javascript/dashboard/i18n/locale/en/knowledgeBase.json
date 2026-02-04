@@ -75,6 +75,7 @@
         "TYPE": "Type",
         "INDUSTRY": "Industry",
         "PRICE": "Price",
+        "PRICE_UNDEFINED": "Undefined",
         "MEDIA": "Media",
         "ACTIONS": "Actions",
         "HIDE_PRODUCT": "Hide product",

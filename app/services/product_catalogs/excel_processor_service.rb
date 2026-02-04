@@ -280,10 +280,20 @@ class ProductCatalogs::ExcelProcessorService
       # Create temporary table with same structure (no ON COMMIT DROP)
       conn.exec("CREATE TEMP TABLE #{temp_table} (LIKE product_catalogs INCLUDING DEFAULTS)")
 
-      # COPY data into temporary table
-      conn.copy_data("COPY #{temp_table} (#{column_list}) FROM STDIN WITH (FORMAT csv)") do
+      # COPY data into temporary table using TEXT format
+      # \N represents NULL in text format (more reliable than CSV for NULL handling)
+      conn.copy_data("COPY #{temp_table} (#{column_list}) FROM STDIN WITH (FORMAT text)") do
         rows.each do |tuple|
-          conn.put_copy_data(CSV.generate_line(tuple, force_quotes: true))
+          # Convert to tab-separated values with \N for NULL
+          line = tuple.map do |v|
+            if v.nil?
+              '\N'
+            else
+              # Escape special characters for COPY text format
+              v.to_s.gsub('\\', '\\\\').gsub("\t", '\\t').gsub("\n", '\\n').gsub("\r", '\\r')
+            end
+          end.join("\t") + "\n"
+          conn.put_copy_data(line)
         end
       end
 

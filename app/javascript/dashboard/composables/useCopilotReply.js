@@ -70,6 +70,7 @@ function trackGenerationFailure({
   });
 }
 
+
 /**
  * Composable for managing Copilot reply generation state and actions.
  * Extracts copilot-related logic from ReplyBox for cleaner code organization.

@@ -29,7 +29,21 @@ module Enterprise::SearchService
 
   def build_where_conditions
     conditions = { account_id: current_account.id }
-    conditions[:inbox_id] = accessable_inbox_ids unless should_skip_inbox_filtering?
+
+    unless should_skip_inbox_filtering?
+      if account_user.supervisor?
+        # Supervisor only sees messages from conversations assigned to themselves or their subordinates
+        supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
+        conversation_ids = current_account.conversations
+                                          .where(assignee_id: supervisor_assignee_ids)
+                                          .pluck(:id)
+        conditions[:conversation_id] = conversation_ids
+      else
+        conditions[:inbox_id] = accessable_inbox_ids
+      end
+    end
+
+
     conditions
   end
 

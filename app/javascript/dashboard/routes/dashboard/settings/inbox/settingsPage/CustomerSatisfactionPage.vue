@@ -38,6 +38,15 @@ const isAnyWhatsAppChannel = computed(
   () => isAWhatsAppChannel.value || isATwilioWhatsAppChannel.value
 );
 
+const { isAWhatsAppChannel, isATwilioWhatsAppChannel } = useInbox(
+  props.inbox?.id
+);
+
+// Computed to check if it's any type of WhatsApp channel (Cloud or Twilio)
+const isAnyWhatsAppChannel = computed(
+  () => isAWhatsAppChannel.value || isATwilioWhatsAppChannel.value
+);
+
 const isUpdating = ref(false);
 const utilityAnalysisLoading = ref(false);
 const utilityAnalysisResult = ref(null);
@@ -736,6 +745,7 @@ const handleConfirmTemplateUpdate = async () => {
         @click="saveSettings"
       />
     </div>
+
 
     <!-- Template Update Confirmation Dialog -->
     <ConfirmTemplateUpdateDialog

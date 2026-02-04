@@ -20,6 +20,7 @@ const emit = defineEmits(['change']);
 
 const searchContacts = createContactSearcher();
 
+
 const FROM_TYPE = {
   CONTACT: 'contact',
   AGENT: 'agent',

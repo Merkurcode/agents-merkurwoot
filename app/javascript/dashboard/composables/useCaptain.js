@@ -100,6 +100,7 @@ export function useCaptain() {
     return CAPTAIN_ERROR_TYPES.API_ERROR;
   };
 
+
   // === Task Methods ===
   /**
    * Rewrites content with a specific operation.

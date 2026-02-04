@@ -58,6 +58,7 @@ const DEFAULT_FORMATTING = 'Context::Default';
 
 const copilot = useCopilotReply();
 
+
 const showContactsDropdown = ref(false);
 const showInboxesDropdown = ref(false);
 const showCcEmailsDropdown = ref(false);

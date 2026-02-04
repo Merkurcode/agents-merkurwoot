@@ -42,6 +42,7 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
     render json: { error: 'Template parameters are required' }, status: :unprocessable_entity
   end
 
+
   private
 
   def fetch_inbox
@@ -69,6 +70,7 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
 
     render json: { error: 'Captain is required for template analysis' }, status: :forbidden
   end
+
 
   def render_template_creation_result(result)
     if result[:success]

@@ -83,6 +83,7 @@ class Captain::BaseTaskService
     chat
   end
 
+
   def add_messages_if_needed(chat, conversation_messages)
     return if conversation_messages.length == 1
 

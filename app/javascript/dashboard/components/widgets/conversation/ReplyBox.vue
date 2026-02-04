@@ -7,7 +7,9 @@ import { useTrack } from 'dashboard/composables';
 import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixins';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
+import CannedResponse from './CannedResponse.vue';
 import ReplyToMessage from './ReplyToMessage.vue';
+import ResizableTextArea from 'shared/components/ResizableTextArea.vue';
 import AttachmentPreview from 'dashboard/components/widgets/AttachmentsPreview.vue';
 import ReplyTopPanel from 'dashboard/components/widgets/WootWriter/ReplyTopPanel.vue';
 import ReplyEmailHead from './ReplyEmailHead.vue';
@@ -50,6 +52,10 @@ import {
   appendSignature,
   removeSignature,
   getEffectiveChannelType,
+<<<<<<< HEAD
+=======
+  extractTextFromMarkdown,
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
 } from 'dashboard/helper/editorHelper';
 import { useCopilotReply } from 'dashboard/composables/useCopilotReply';
 import { useKbd } from 'dashboard/composables/utils/useKbd';
@@ -99,7 +105,10 @@ export default {
     } = useUISettings();
 
     const replyEditor = useTemplateRef('replyEditor');
+<<<<<<< HEAD
     const messageEditor = useTemplateRef('messageEditor');
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
     const copilot = useCopilotReply();
     const shortcutKey = useKbd(['$mod', '+', 'enter']);
 
@@ -110,7 +119,10 @@ export default {
       setQuotedReplyFlagForInbox,
       fetchQuotedReplyFlagFromUISettings,
       replyEditor,
+<<<<<<< HEAD
       messageEditor,
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
       copilot,
       shortcutKey,
     };
@@ -126,6 +138,8 @@ export default {
       recordingAudioState: '',
       recordingAudioDurationText: '',
       replyType: REPLY_EDITOR_MODES.REPLY,
+      mentionSearchKey: '',
+      hasSlashCommand: false,
       bccEmails: '',
       ccEmails: '',
       toEmails: '',
@@ -253,9 +267,12 @@ export default {
       if (this.isAnInstagramChannel) {
         return MESSAGE_MAX_LENGTH.INSTAGRAM;
       }
+<<<<<<< HEAD
       if (this.isATelegramChannel) {
         return MESSAGE_MAX_LENGTH.TELEGRAM;
       }
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
       if (this.isATiktokChannel) {
         return MESSAGE_MAX_LENGTH.TIKTOK;
       }
@@ -435,6 +452,7 @@ export default {
     isDefaultEditorMode() {
       return !this.showAudioRecorderEditor && !this.copilot.isActive.value;
     },
+<<<<<<< HEAD
     isEditorDisabled() {
       return (
         (this.isAWhatsAppChannel || this.isAPIInbox) &&
@@ -442,6 +460,8 @@ export default {
         !this.currentChat.can_reply
       );
     },
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
   },
   watch: {
     currentChat(conversation, oldConversation) {
@@ -486,7 +506,25 @@ export default {
         this.resetRecorderAndClearAttachments();
       }
     },
-    message() {
+    message(updatedMessage) {
+      // Check if the message starts with a slash.
+      const bodyWithoutSignature = removeSignature(
+        updatedMessage,
+        this.signatureToApply
+      );
+      const startsWithSlash = bodyWithoutSignature.startsWith('/');
+
+      // Determine if the user is potentially typing a slash command.
+      // This is true if the message starts with a slash and the rich content editor is not active.
+      this.hasSlashCommand = startsWithSlash && !this.showRichContentEditor;
+      this.showMentions = this.hasSlashCommand;
+
+      // If a slash command is active, extract the command text after the slash.
+      // If not, reset the mentionSearchKey.
+      this.mentionSearchKey = this.hasSlashCommand
+        ? bodyWithoutSignature.substring(1)
+        : '';
+
       // Autosave the current message draft.
       this.doAutoSaveDraft();
     },
@@ -559,14 +597,20 @@ export default {
     },
     handleInsert(article) {
       const { url, title } = article;
-      // Removing empty lines from the title
-      const lines = title.split('\n');
-      const nonEmptyLines = lines.filter(line => line.trim() !== '');
-      const filteredMarkdown = nonEmptyLines.join(' ');
-      emitter.emit(
-        BUS_EVENTS.INSERT_INTO_RICH_EDITOR,
-        `[${filteredMarkdown}](${url})`
-      );
+      if (this.isRichEditorEnabled) {
+        // Removing empty lines from the title
+        const lines = title.split('\n');
+        const nonEmptyLines = lines.filter(line => line.trim() !== '');
+        const filteredMarkdown = nonEmptyLines.join(' ');
+        emitter.emit(
+          BUS_EVENTS.INSERT_INTO_RICH_EDITOR,
+          `[${filteredMarkdown}](${url})`
+        );
+      } else {
+        this.addIntoEditor(
+          `${this.$t('CONVERSATION.REPLYBOX.INSERT_READ_MORE')} ${url}`
+        );
+      }
 
       useTrack(CONVERSATION_EVENTS.INSERT_ARTICLE_LINK);
     },
@@ -635,6 +679,7 @@ export default {
       if (this.isPrivate) {
         return message;
       }
+<<<<<<< HEAD
 
       const effectiveChannelType = getEffectiveChannelType(
         this.channelType,
@@ -643,6 +688,28 @@ export default {
       return this.sendWithSignature
         ? appendSignature(message, this.messageSignature, effectiveChannelType)
         : removeSignature(message, this.messageSignature, effectiveChannelType);
+=======
+      if (this.showRichContentEditor) {
+        const effectiveChannelType = getEffectiveChannelType(
+          this.channelType,
+          this.inbox?.medium || ''
+        );
+        return this.sendWithSignature
+          ? appendSignature(
+              message,
+              this.messageSignature,
+              effectiveChannelType
+            )
+          : removeSignature(
+              message,
+              this.messageSignature,
+              effectiveChannelType
+            );
+      }
+      return this.sendWithSignature
+        ? appendSignature(message, this.signatureToApply)
+        : removeSignature(message, this.signatureToApply);
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
     },
     removeFromDraft() {
       if (this.conversationIdByRoute) {
@@ -658,6 +725,7 @@ export default {
         Escape: {
           action: () => {
             this.hideEmojiPicker();
+            this.hideMentions();
           },
           allowOnFocusedInput: true,
         },
@@ -704,9 +772,12 @@ export default {
       // Don't handle paste if compose new conversation modal is open
       if (this.newConversationModalActive) return;
 
+<<<<<<< HEAD
       // Don't handle paste if editor is disabled
       if (this.isEditorDisabled) return;
 
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
       // Filter valid files (non-zero size)
       Array.from(e.clipboardData.files)
         .filter(file => file.size > 0)
@@ -916,6 +987,7 @@ export default {
         // if signature is enabled, append it to the message
         // appendSignature ensures that the signature is not duplicated
         // so we don't need to check if the signature is already present
+<<<<<<< HEAD
         const effectiveChannelType = getEffectiveChannelType(
           this.channelType,
           this.inbox?.medium || ''
@@ -925,6 +997,21 @@ export default {
           this.messageSignature,
           effectiveChannelType
         );
+=======
+        if (this.showRichContentEditor) {
+          const effectiveChannelType = getEffectiveChannelType(
+            this.channelType,
+            this.inbox?.medium || ''
+          );
+          message = appendSignature(
+            message,
+            this.messageSignature,
+            effectiveChannelType
+          );
+        } else {
+          message = appendSignature(message, this.signatureToApply);
+        }
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
       }
 
       const updatedMessage = replaceVariablesInMessage({
@@ -951,13 +1038,31 @@ export default {
       if (this.isRecordingAudio) {
         this.toggleAudioRecorder();
       }
+      this.$nextTick(() => this.$refs.messageInput.focus());
     },
     clearEditorSelection() {
       this.updateEditorSelectionWith = '';
     },
+    insertIntoTextEditor(text, selectionStart, selectionEnd) {
+      const { message } = this;
+      const newMessage =
+        message.slice(0, selectionStart) +
+        text +
+        message.slice(selectionEnd, message.length);
+      this.message = newMessage;
+    },
     addIntoEditor(content) {
-      this.updateEditorSelectionWith = content;
-      this.onFocus();
+      if (this.showRichContentEditor) {
+        this.updateEditorSelectionWith = content;
+        this.onFocus();
+      }
+      if (!this.showRichContentEditor) {
+        const { selectionStart, selectionEnd } = this.$refs.messageInput.$el;
+        this.insertIntoTextEditor(content, selectionStart, selectionEnd);
+      }
+    },
+    executeCopilotAction(action, data) {
+      this.copilot.execute(action, data);
     },
     executeCopilotAction(action, data) {
       this.copilot.execute(action, data);
@@ -967,6 +1072,7 @@ export default {
       this.clearCopilotAcceptedMessage();
       if (this.sendWithSignature && !this.isPrivate) {
         // if signature is enabled, append it to the message
+<<<<<<< HEAD
         const effectiveChannelType = getEffectiveChannelType(
           this.channelType,
           this.inbox?.medium || ''
@@ -976,6 +1082,21 @@ export default {
           this.messageSignature,
           effectiveChannelType
         );
+=======
+        if (this.showRichContentEditor) {
+          const effectiveChannelType = getEffectiveChannelType(
+            this.channelType,
+            this.inbox?.medium || ''
+          );
+          this.message = appendSignature(
+            this.message,
+            this.messageSignature,
+            effectiveChannelType
+          );
+        } else {
+          this.message = appendSignature(this.message, this.signatureToApply);
+        }
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
       }
       this.attachedFiles = [];
       this.isRecordingAudio = false;
@@ -1009,6 +1130,9 @@ export default {
       if (this.showEmojiPicker) {
         this.toggleEmojiPicker();
       }
+    },
+    hideMentions() {
+      this.showMentions = false;
     },
     onTypingOn() {
       this.toggleTyping('on');
@@ -1241,9 +1365,13 @@ export default {
       this.$emit('update:popOutReplyBox', !this.popOutReplyBox);
     },
     onSubmitCopilotReply() {
+<<<<<<< HEAD
       const acceptedMessage = this.copilot.accept();
       this.message = acceptedMessage;
       this.setCopilotAcceptedMessage(acceptedMessage);
+=======
+      this.message = this.copilot.accept();
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
     },
   },
 };
@@ -1260,7 +1388,10 @@ export default {
         (copilot.isActive.value && copilot.isButtonDisabled.value) ||
         showAudioRecorderEditor
       "
+<<<<<<< HEAD
       :is-editor-disabled="isEditorDisabled"
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
       :is-message-length-reaching-threshold="isMessageLengthReachingThreshold"
       :characters-remaining="charactersRemaining"
       :editor-content="message"
@@ -1330,16 +1461,23 @@ export default {
         />
         <WootMessageEditor
           v-else-if="!showAudioRecorderEditor"
+<<<<<<< HEAD
           ref="messageEditor"
           v-model="message"
           :conversation-id="conversationId"
+=======
+          v-model="message"
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
           :editor-id="editorStateId"
           class="input popover-prosemirror-menu"
           :is-private="isOnPrivateNote"
           :placeholder="messagePlaceHolder"
           :update-selection-with="updateEditorSelectionWith"
           :min-height="4"
+<<<<<<< HEAD
           :disabled="isEditorDisabled"
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
           enable-variables
           :variables="messageVariables"
           :signature="messageSignature"
@@ -1415,7 +1553,10 @@ export default {
         :is-recording-audio="isRecordingAudio"
         :is-send-disabled="isReplyButtonDisabled"
         :is-note="isPrivate"
+<<<<<<< HEAD
         :is-editor-disabled="isEditorDisabled"
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
         :on-file-upload="onFileUpload"
         :on-send="onSendReply"
         :conversation-type="conversationType"
@@ -1483,7 +1624,15 @@ export default {
 }
 
 .reply-box__top {
+<<<<<<< HEAD
   @apply relative py-0 px-3 -mt-px;
+=======
+  @apply relative py-0 px-4 -mt-px;
+
+  textarea {
+    @apply shadow-none outline-none border-transparent bg-transparent m-0 max-h-60 min-h-[3rem] pt-4 pb-0 px-0 resize-none;
+  }
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
 }
 
 .emoji-dialog {
@@ -1502,5 +1651,10 @@ export default {
     transform: rotate(0deg);
     @apply ltr:left-1 rtl:right-1 -bottom-2;
   }
+}
+
+.normal-editor__canned-box {
+  width: calc(100% - 2 * 1rem);
+  left: 1rem;
 }
 </style>

@@ -108,6 +108,9 @@ CLAUDE.local.md
 local/
 Procfile.worktree
 
+# pnpm store (local cache)
+.pnpm-store/
+
 # Local Docker configuration changes
 docker-compose.yaml
 

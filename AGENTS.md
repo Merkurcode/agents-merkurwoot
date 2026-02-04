@@ -34,11 +34,11 @@
 
 ## Styling
 
-- **Tailwind Only**:  
-  - Do not write custom CSS  
-  - Do not use scoped CSS  
-  - Do not use inline styles  
-  - Always use Tailwind utility classes  
+- **Tailwind Only**:
+  - Do not write custom CSS
+  - Do not use scoped CSS
+  - Do not use inline styles
+  - Always use Tailwind utility classes
 - **Colors**: Refer to `tailwind.config.js` for color definitions
 
 ## General Guidelines
@@ -67,6 +67,7 @@
 - Prefer Conventional Commits: `type(scope): subject` (scope optional)
 - Example: `feat(auth): add user authentication`
 - Don't reference Claude in commit messages
+- Prefer `with_modified_env` (from spec helpers) over stubbing `ENV` directly in specs
 
 ## PR Description Format
 

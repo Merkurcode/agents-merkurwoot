@@ -369,6 +369,11 @@ class Message < ApplicationRecord
     outgoing? && sender_type.in?(['AgentBot', 'Captain::Assistant'])
   end
 
+  def bot_response?
+    # Check if this is a response from AgentBot or Captain::Assistant
+    outgoing? && sender_type.in?(['AgentBot', 'Captain::Assistant'])
+  end
+
   def dispatch_create_events
     Rails.configuration.dispatcher.dispatch(MESSAGE_CREATED, Time.zone.now, message: self, performed_by: Current.executed_by)
 

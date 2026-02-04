@@ -44,6 +44,7 @@ const effectiveContent = computed(() =>
   props.editorContent !== undefined ? props.editorContent : draftMessage.value
 );
 
+
 // Selection-based menu items (when text is selected)
 const menuItems = computed(() => {
   const items = [];

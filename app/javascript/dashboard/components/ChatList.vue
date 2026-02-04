@@ -31,6 +31,7 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import IntersectionObserver from 'dashboard/components/IntersectionObserver.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 import Board from '../routes/dashboard/conversation/StatusBoard/Board.vue';
+import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
@@ -131,6 +132,7 @@ const currentAccountId = useMapGetter('getCurrentAccountId');
 const getTeamFn = useMapGetter('teams/getTeam');
 const getConversationById = useMapGetter('getConversationById');
 const getLocationFn = useMapGetter('locations/getLocation');
+const getConversationById = useMapGetter('getConversationById');
 
 useChatListKeyboardEvents(conversationListRef);
 const {
@@ -913,7 +915,10 @@ provide('deSelectConversation', deSelectConversation);
 provide('assignAgent', onAssignAgent);
 provide('assignTeam', onAssignTeam);
 provide('assignLabels', onAssignLabels);
+<<<<<<< HEAD
 provide('removeLabels', onRemoveLabels);
+=======
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
 provide('updateConversationStatus', handleResolveConversation);
 provide('toggleContextMenu', onContextMenuToggle);
 provide('markAsUnread', markAsUnread);
@@ -1042,6 +1047,7 @@ watch(isOnBoard, (newVal, oldVal) => {
     <div
       v-if="!isOnBoard"
       ref="conversationListRef"
+<<<<<<< HEAD
       class="flex-1 min-h-0 overflow-y-auto conversations-list"
       :class="{ '!overflow-hidden': isContextMenuOpen }"
     >
@@ -1049,6 +1055,16 @@ watch(isOnBoard, (newVal, oldVal) => {
         ref="virtualListRef"
         v-slot="{ item, index }"
         :data="conversationList"
+=======
+      class="overflow-hidden flex-1 conversations-list hover:overflow-y-auto"
+      :class="{ 'overflow-hidden': isContextMenuOpen }"
+    >
+      <DynamicScroller
+        ref="conversationDynamicScroller"
+        :items="conversationList"
+        :min-item-size="24"
+        class="overflow-auto w-full h-full"
+>>>>>>> 082feb6a7 (chore: sync repository  0126 (#77))
       >
         <ConversationItem
           :source="item"

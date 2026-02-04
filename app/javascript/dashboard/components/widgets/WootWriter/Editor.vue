@@ -207,6 +207,7 @@ const isEditorMenuPopover = computed(
     editorRoot.value?.classList.contains('popover-prosemirror-menu') ?? false
 );
 
+
 const handleCopilotAction = actionKey => {
   if (actionKey === 'improve_selection' && editorView?.state) {
     const { from, to } = editorView.state.selection;

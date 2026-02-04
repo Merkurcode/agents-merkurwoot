@@ -39,6 +39,7 @@ import sla from './sla.json';
 import surveys from './surveys.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
+import crmFlows from './crmFlows.json';
 
 export default {
   ...advancedFilters,
@@ -82,4 +83,5 @@ export default {
   ...surveys,
   ...teamsSettings,
   ...whatsappTemplates,
+  ...crmFlows,
 };

@@ -43,6 +43,7 @@ const CHATWOOT_ACTION_OPTIONS = [
 
 // Qué CRMs soportan qué acciones
 const CRM_SUPPORT = {
+<<<<<<< HEAD
   salesforce: [
     'create_lead',
     'create_contact',
@@ -68,6 +69,11 @@ const CRM_SUPPORT = {
     'create_event',
     'add_note',
   ],
+=======
+  salesforce: ['create_lead', 'create_opportunity', 'create_task', 'create_event', 'add_note'],
+  zoho:       ['create_lead', 'create_task', 'create_call', 'create_event', 'add_crm_tag', 'add_note'],
+  hubspot:    ['create_lead', 'create_opportunity', 'create_task', 'create_event', 'add_note'],
+>>>>>>> c9da9c03e (feat: Enhance CRM Orchestrator and update Salesforce/Zoho adapters)
 };
 
 const connectedCrms = computed(() => {

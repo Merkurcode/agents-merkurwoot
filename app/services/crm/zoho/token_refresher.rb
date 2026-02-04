@@ -63,7 +63,7 @@ module Crm
           client_secret: client_secret,
           grant_type: 'client_credentials',
           scope: scope_string,
-          soid: soid_string
+          soid: "ZohoCRM.#{soid}"
         }
       end
 

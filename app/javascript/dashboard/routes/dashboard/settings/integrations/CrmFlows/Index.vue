@@ -12,19 +12,19 @@ const { t } = useI18n();
 const store = useStore();
 const getters = useStoreGetters();
 
-const showModal             = ref(false);
-const selectedFlow           = ref(null);
+const showModal = ref(false);
+const selectedFlow = ref(null);
 const showDeleteConfirmation = ref(false);
-const flowToDelete           = ref(null);
+const flowToDelete = ref(null);
 
-const flows  = computed(() => getters['crmFlows/getCrmFlows'].value);
+const flows = computed(() => getters['crmFlows/getCrmFlows'].value);
 const uiFlags = computed(() => getters['crmFlows/getUIFlags'].value);
 
 const TRIGGER_LABELS = {
-  quote_request:          'CRM_FLOWS.TRIGGERS.QUOTE_REQUEST',
-  advisor_transfer:       'CRM_FLOWS.TRIGGERS.ADVISOR_TRANSFER',
+  quote_request: 'CRM_FLOWS.TRIGGERS.QUOTE_REQUEST',
+  advisor_transfer: 'CRM_FLOWS.TRIGGERS.ADVISOR_TRANSFER',
   appointment_scheduling: 'CRM_FLOWS.TRIGGERS.APPOINTMENT_SCHEDULING',
-  lead_creation:          'CRM_FLOWS.TRIGGERS.LEAD_CREATION',
+  lead_creation: 'CRM_FLOWS.TRIGGERS.LEAD_CREATION',
 };
 
 onMounted(() => {
@@ -36,19 +36,19 @@ onMounted(() => {
 
 function openCreate() {
   selectedFlow.value = null;
-  showModal.value    = true;
+  showModal.value = true;
 }
 function openEdit(flow) {
   selectedFlow.value = flow;
-  showModal.value    = true;
+  showModal.value = true;
 }
 function closeModal() {
-  showModal.value    = false;
+  showModal.value = false;
   selectedFlow.value = null;
 }
 
 function openDelete(flow) {
-  flowToDelete.value           = flow;
+  flowToDelete.value = flow;
   showDeleteConfirmation.value = true;
 }
 
@@ -60,13 +60,16 @@ async function confirmDelete() {
     useAlert(t('CRM_FLOWS.DELETE.ERROR'));
   } finally {
     showDeleteConfirmation.value = false;
-    flowToDelete.value           = null;
+    flowToDelete.value = null;
   }
 }
 
 async function toggleActive(flow) {
   try {
-    await store.dispatch('crmFlows/update', { id: flow.id, active: !flow.active });
+    await store.dispatch('crmFlows/update', {
+      id: flow.id,
+      active: !flow.active,
+    });
   } catch {
     useAlert(t('CRM_FLOWS.EDIT.ERROR'));
   }
@@ -100,7 +103,7 @@ async function toggleActive(flow) {
       <table class="min-w-full divide-y divide-n-weak">
         <thead>
           <th
-            v-for="col in ['NAME','TRIGGER','SCOPE','ACTIONS','STATUS']"
+            v-for="col in ['NAME', 'TRIGGER', 'SCOPE', 'ACTIONS', 'STATUS']"
             :key="col"
             class="py-4 ltr:pr-4 rtl:pl-4 ltr:text-left rtl:text-right font-semibold text-n-slate-11"
           >
@@ -109,14 +112,28 @@ async function toggleActive(flow) {
           <th class="py-4 pr-4" />
         </thead>
         <tbody class="divide-y divide-n-weak text-n-slate-12">
-          <tr v-for="flow in flows" :key="flow.id" class="hover:bg-n-slate-2 transition-colors">
+          <tr
+            v-for="flow in flows"
+            :key="flow.id"
+            class="hover:bg-n-slate-2 transition-colors"
+          >
             <td class="py-3 pr-4 text-sm font-medium">{{ flow.name }}</td>
-            <td class="py-3 pr-4 text-sm">{{ $t(TRIGGER_LABELS[flow.trigger_type]) }}</td>
             <td class="py-3 pr-4 text-sm">
-              {{ flow.scope_type === 'global' ? $t('CRM_FLOWS.LIST.GLOBAL') : flow.inbox_name }}
+              {{ $t(TRIGGER_LABELS[flow.trigger_type]) }}
             </td>
             <td class="py-3 pr-4 text-sm">
-              {{ $t('CRM_FLOWS.LIST.ACTIONS_COUNT', { count: flow.actions_count }) }}
+              {{
+                flow.scope_type === 'global'
+                  ? $t('CRM_FLOWS.LIST.GLOBAL')
+                  : flow.inbox_name
+              }}
+            </td>
+            <td class="py-3 pr-4 text-sm">
+              {{
+                $t('CRM_FLOWS.LIST.ACTIONS_COUNT', {
+                  count: flow.actions_count,
+                })
+              }}
             </td>
             <td class="py-3 pr-4 text-sm">
               <span class="inline-flex items-center gap-1.5">
@@ -124,8 +141,14 @@ async function toggleActive(flow) {
                   :class="flow.active ? 'bg-green-500' : 'bg-n-slate-4'"
                   class="inline-block w-2 h-2 rounded-full"
                 />
-                <span :class="flow.active ? 'text-green-600' : 'text-n-slate-9'">
-                  {{ flow.active ? $t('CRM_FLOWS.LIST.ACTIVE') : $t('CRM_FLOWS.LIST.INACTIVE') }}
+                <span
+                  :class="flow.active ? 'text-green-600' : 'text-n-slate-9'"
+                >
+                  {{
+                    flow.active
+                      ? $t('CRM_FLOWS.LIST.ACTIVE')
+                      : $t('CRM_FLOWS.LIST.INACTIVE')
+                  }}
                 </span>
               </span>
             </td>
@@ -135,11 +158,27 @@ async function toggleActive(flow) {
                   faded
                   slate
                   xs
-                  :label="flow.active ? $t('CRM_FLOWS.LIST.INACTIVE') : $t('CRM_FLOWS.LIST.ACTIVE')"
+                  :label="
+                    flow.active
+                      ? $t('CRM_FLOWS.LIST.INACTIVE')
+                      : $t('CRM_FLOWS.LIST.ACTIVE')
+                  "
                   @click="toggleActive(flow)"
                 />
-                <Button icon="i-lucide-pen" slate xs faded @click="openEdit(flow)" />
-                <Button icon="i-lucide-trash-2" xs ruby faded @click="openDelete(flow)" />
+                <Button
+                  icon="i-lucide-pen"
+                  slate
+                  xs
+                  faded
+                  @click="openEdit(flow)"
+                />
+                <Button
+                  icon="i-lucide-trash-2"
+                  xs
+                  ruby
+                  faded
+                  @click="openDelete(flow)"
+                />
               </div>
             </td>
           </tr>
@@ -150,7 +189,11 @@ async function toggleActive(flow) {
 
   <!-- Modal crear/editar -->
   <woot-modal v-model:show="showModal" size="medium" :on-close="closeModal">
-    <CrmFlowModal v-if="showModal" :flow="selectedFlow" :on-close="closeModal" />
+    <CrmFlowModal
+      v-if="showModal"
+      :flow="selectedFlow"
+      :on-close="closeModal"
+    />
   </woot-modal>
 
   <!-- Modal eliminar -->

@@ -10,25 +10,50 @@ const emit = defineEmits(['update:modelValue']);
 const getters = useStoreGetters();
 
 const CRM_ACTION_OPTIONS = [
-  { value: 'create_lead',        label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_LEAD' },
-  { value: 'create_opportunity', label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_OPPORTUNITY' },
-  { value: 'create_task',        label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_TASK' },
-  { value: 'create_call',        label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_CALL' },
-  { value: 'create_event',       label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_EVENT' },
-  { value: 'add_crm_tag',        label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_CRM_TAG' },
-  { value: 'add_note',           label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_NOTE' },
+  { value: 'create_lead', label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_LEAD' },
+  {
+    value: 'create_opportunity',
+    label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_OPPORTUNITY',
+  },
+  { value: 'create_task', label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_TASK' },
+  { value: 'create_call', label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_CALL' },
+  { value: 'create_event', label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_EVENT' },
+  { value: 'add_crm_tag', label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_CRM_TAG' },
+  { value: 'add_note', label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_NOTE' },
 ];
 
 const CHATWOOT_ACTION_OPTIONS = [
-  { value: 'assign_chatwoot_agent', label: 'CRM_FLOWS.ACTIONS_BUILDER.ASSIGN_AGENT' },
-  { value: 'add_chatwoot_label',    label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_LABEL' },
+  {
+    value: 'assign_chatwoot_agent',
+    label: 'CRM_FLOWS.ACTIONS_BUILDER.ASSIGN_AGENT',
+  },
+  { value: 'add_chatwoot_label', label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_LABEL' },
 ];
 
 // Qué CRMs soportan qué acciones
 const CRM_SUPPORT = {
-  salesforce: ['create_lead', 'create_opportunity', 'create_task', 'create_event', 'add_note'],
-  zoho:       ['create_lead', 'create_task', 'create_call', 'create_event', 'add_crm_tag', 'add_note'],
-  hubspot:    ['create_lead', 'create_opportunity', 'create_task', 'create_event', 'add_note'],
+  salesforce: [
+    'create_lead',
+    'create_opportunity',
+    'create_task',
+    'create_event',
+    'add_note',
+  ],
+  zoho: [
+    'create_lead',
+    'create_task',
+    'create_call',
+    'create_event',
+    'add_crm_tag',
+    'add_note',
+  ],
+  hubspot: [
+    'create_lead',
+    'create_opportunity',
+    'create_task',
+    'create_event',
+    'add_note',
+  ],
 };
 
 const connectedCrms = computed(() => {
@@ -47,7 +72,12 @@ function update(newActions) {
 function addAction() {
   update([
     ...actions.value,
-    { order: actions.value.length + 1, action: 'create_lead', type: 'crm', params: {} },
+    {
+      order: actions.value.length + 1,
+      action: 'create_lead',
+      type: 'crm',
+      params: {},
+    },
   ]);
 }
 
@@ -59,7 +89,12 @@ function changeAction(index, newAction) {
   const updated = actions.value.map((a, i) => {
     if (i !== index) return a;
     const isCrm = CRM_ACTION_OPTIONS.some(o => o.value === newAction);
-    return { ...a, action: newAction, type: isCrm ? 'crm' : 'chatwoot', params: {} };
+    return {
+      ...a,
+      action: newAction,
+      type: isCrm ? 'crm' : 'chatwoot',
+      params: {},
+    };
   });
   update(updated);
 }
@@ -85,7 +120,9 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
 
 <template>
   <div class="flex flex-col gap-3">
-    <h4 class="text-sm font-semibold text-n-slate-11">{{ $t('CRM_FLOWS.ACTIONS_BUILDER.TITLE') }}</h4>
+    <h4 class="text-sm font-semibold text-n-slate-11">
+      {{ $t('CRM_FLOWS.ACTIONS_BUILDER.TITLE') }}
+    </h4>
 
     <div
       v-for="(action, index) in actions"
@@ -94,19 +131,29 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
     >
       <!-- Número + selector de acción -->
       <div class="flex items-center gap-2">
-        <span class="text-xs font-bold text-n-slate-9 w-5 text-center">{{ index + 1 }}</span>
+        <span class="text-xs font-bold text-n-slate-9 w-5 text-center">{{
+          index + 1
+        }}</span>
         <select
           :value="action.action"
           class="flex-1 text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
           @change="changeAction(index, $event.target.value)"
         >
           <optgroup :label="$t('CRM_FLOWS.ACTIONS_BUILDER.CRM_ACTIONS')">
-            <option v-for="opt in CRM_ACTION_OPTIONS" :key="opt.value" :value="opt.value">
+            <option
+              v-for="opt in CRM_ACTION_OPTIONS"
+              :key="opt.value"
+              :value="opt.value"
+            >
               {{ $t(opt.label) }}
             </option>
           </optgroup>
           <optgroup :label="$t('CRM_FLOWS.ACTIONS_BUILDER.CHATWOOT_ACTIONS')">
-            <option v-for="opt in CHATWOOT_ACTION_OPTIONS" :key="opt.value" :value="opt.value">
+            <option
+              v-for="opt in CHATWOOT_ACTION_OPTIONS"
+              :key="opt.value"
+              :value="opt.value"
+            >
               {{ $t(opt.label) }}
             </option>
           </optgroup>
@@ -137,7 +184,9 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
           class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
           @change="changeParam(index, 'agent_id', Number($event.target.value))"
         >
-          <option value="">{{ $t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.AGENT') }}</option>
+          <option value="">
+            {{ $t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.AGENT') }}
+          </option>
           <option v-for="agent in agents" :key="agent.id" :value="agent.id">
             {{ agent.name }}
           </option>
@@ -154,7 +203,10 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
         />
       </div>
 
-      <div v-else-if="action.action === 'add_note'" class="ml-7 flex flex-col gap-1.5">
+      <div
+        v-else-if="action.action === 'add_note'"
+        class="ml-7 flex flex-col gap-1.5"
+      >
         <input
           :value="action.params.note_title"
           type="text"
@@ -206,11 +258,17 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
         <span
           v-for="crm in connectedCrms"
           :key="crm"
-          :class="crmSupports(crm, action.action) ? 'text-green-600' : 'text-n-slate-9'"
+          :class="
+            crmSupports(crm, action.action)
+              ? 'text-green-600'
+              : 'text-n-slate-9'
+          "
           class="text-xs flex items-center gap-1"
         >
           <span
-            :class="crmSupports(crm, action.action) ? 'bg-green-500' : 'bg-n-slate-4'"
+            :class="
+              crmSupports(crm, action.action) ? 'bg-green-500' : 'bg-n-slate-4'
+            "
             class="inline-block w-1.5 h-1.5 rounded-full"
           />
           {{ crm.charAt(0).toUpperCase() + crm.slice(1) }}

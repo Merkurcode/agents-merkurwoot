@@ -83,13 +83,16 @@ export const actions = {
     } catch (error) {
       throwErrorMessage(error);
     } finally {
-      commit(types.default.SET_CRM_FLOWS_UI_FLAG, { isFetchingExecutions: false });
+      commit(types.default.SET_CRM_FLOWS_UI_FLAG, {
+        isFetchingExecutions: false,
+      });
     }
   },
 
   getConversationExecutions: async ({ commit }, conversationId) => {
     try {
-      const response = await CrmFlowsAPI.executionsByConversation(conversationId);
+      const response =
+        await CrmFlowsAPI.executionsByConversation(conversationId);
       commit(types.default.SET_CRM_FLOW_CONVERSATION_EXECUTIONS, {
         conversationId,
         executions: response.data.executions,

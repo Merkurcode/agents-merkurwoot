@@ -2,41 +2,54 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n();
-
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
-  actions:    { type: Array, default: () => [] },
+  actions: { type: Array, default: () => [] },
 });
+
 const emit = defineEmits(['update:modelValue']);
 
+const { t } = useI18n();
+
 const BASE_FIELDS = [
-  { key: 'name',  label: 'Name' },
+  { key: 'name', label: 'Name' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
 ];
 
 const FIELD_TYPES = [
-  { value: 'text',    label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.TEXT' },
-  { value: 'number',  label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.NUMBER' },
-  { value: 'date',    label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.DATE' },
-  { value: 'select',  label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.SELECT' },
+  { value: 'text', label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.TEXT' },
+  { value: 'number', label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.NUMBER' },
+  { value: 'date', label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.DATE' },
+  { value: 'select', label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.SELECT' },
   { value: 'boolean', label: 'CRM_FLOWS.FIELDS_BUILDER.TYPES.BOOLEAN' },
 ];
 
 // Campos auto-sugeridos por tipo de acción
 const ACTION_FIELD_SUGGESTIONS = {
   create_opportunity: [
-    { key: 'amount',  label: 'Amount',      type: 'number', required: true },
-    { key: 'stage',   label: 'Stage',       type: 'select', required: true, options: ['Prospecting', 'Qualification', 'Proposal', 'Closed Won', 'Closed Lost'] },
+    { key: 'amount', label: 'Amount', type: 'number', required: true },
+    {
+      key: 'stage',
+      label: 'Stage',
+      type: 'select',
+      required: true,
+      options: [
+        'Prospecting',
+        'Qualification',
+        'Proposal',
+        'Closed Won',
+        'Closed Lost',
+      ],
+    },
   ],
   create_task: [
-    { key: 'subject',  label: 'Subject',     type: 'text',  required: true },
-    { key: 'due_date', label: 'Due date',    type: 'date',  required: false },
+    { key: 'subject', label: 'Subject', type: 'text', required: true },
+    { key: 'due_date', label: 'Due date', type: 'date', required: false },
   ],
   create_event: [
-    { key: 'event_title', label: 'Title',       type: 'text',  required: true },
-    { key: 'start_date',  label: 'Start date',  type: 'date',  required: true },
+    { key: 'event_title', label: 'Title', type: 'text', required: true },
+    { key: 'start_date', label: 'Start date', type: 'date', required: true },
   ],
   add_crm_tag: [
     { key: 'tag_name', label: 'Tag name', type: 'text', required: true },
@@ -53,7 +66,10 @@ function update(newFields) {
 }
 
 function slugify(label) {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/(^_|_$)/g, '');
 }
 
 function addField() {
@@ -109,7 +125,10 @@ function removeOption(fieldIndex, optionIndex) {
   update(
     fields.value.map((f, i) => {
       if (i !== fieldIndex) return f;
-      return { ...f, options: (f.options || []).filter((_, oi) => oi !== optionIndex) };
+      return {
+        ...f,
+        options: (f.options || []).filter((_, oi) => oi !== optionIndex),
+      };
     })
   );
 }
@@ -122,7 +141,10 @@ const suggestedFields = computed(() => {
     const defs = ACTION_FIELD_SUGGESTIONS[action.action];
     if (defs) {
       defs.forEach(def => {
-        if (!existing.has(def.key) && !suggestions.some(s => s.key === def.key)) {
+        if (
+          !existing.has(def.key) &&
+          !suggestions.some(s => s.key === def.key)
+        ) {
           suggestions.push(def);
         }
       });
@@ -138,11 +160,15 @@ function applySuggestions() {
 
 <template>
   <div class="flex flex-col gap-3">
-    <h4 class="text-sm font-semibold text-n-slate-11">{{ $t('CRM_FLOWS.FIELDS_BUILDER.TITLE') }}</h4>
+    <h4 class="text-sm font-semibold text-n-slate-11">
+      {{ $t('CRM_FLOWS.FIELDS_BUILDER.TITLE') }}
+    </h4>
 
     <!-- Base fields (read-only) -->
     <div>
-      <span class="text-xs text-n-slate-9 mb-1 block">{{ $t('CRM_FLOWS.FIELDS_BUILDER.BASE_FIELDS_LABEL') }}</span>
+      <span class="text-xs text-n-slate-9 mb-1 block">{{
+        $t('CRM_FLOWS.FIELDS_BUILDER.BASE_FIELDS_LABEL')
+      }}</span>
       <div class="flex gap-1.5 flex-wrap">
         <span
           v-for="f in BASE_FIELDS"
@@ -155,18 +181,28 @@ function applySuggestions() {
     </div>
 
     <!-- Auto-suggest banner -->
-    <div v-if="suggestedFields.length" class="border border-blue-200 bg-blue-50 rounded-lg p-2.5 flex items-center justify-between">
+    <div
+      v-if="suggestedFields.length"
+      class="border border-blue-200 bg-blue-50 rounded-lg p-2.5 flex items-center justify-between"
+    >
       <span class="text-xs text-blue-700">
-        {{ suggestedFields.length }} campo(s) sugerido(s) según las acciones configuradas
+        {{ suggestedFields.length }} campo(s) sugerido(s) según las acciones
+        configuradas
       </span>
-      <button type="button" class="text-xs text-blue-600 hover:text-blue-800 font-semibold" @click="applySuggestions">
+      <button
+        type="button"
+        class="text-xs text-blue-600 hover:text-blue-800 font-semibold"
+        @click="applySuggestions"
+      >
         Añadir todos
       </button>
     </div>
 
     <!-- Custom fields table -->
     <div>
-      <span class="text-xs text-n-slate-9 mb-1.5 block">{{ $t('CRM_FLOWS.FIELDS_BUILDER.CUSTOM_FIELDS_LABEL') }}</span>
+      <span class="text-xs text-n-slate-9 mb-1.5 block">{{
+        $t('CRM_FLOWS.FIELDS_BUILDER.CUSTOM_FIELDS_LABEL')
+      }}</span>
 
       <div
         v-for="(field, index) in fields"
@@ -191,12 +227,16 @@ function applySuggestions() {
               {{ $t(ft.label) }}
             </option>
           </select>
-          <label class="flex items-center gap-1 text-xs text-n-slate-9 select-none">
+          <label
+            class="flex items-center gap-1 text-xs text-n-slate-9 select-none"
+          >
             <input
               :checked="field.required"
               type="checkbox"
               class="w-3.5 h-3.5"
-              @change="updateFieldProp(index, 'required', $event.target.checked)"
+              @change="
+                updateFieldProp(index, 'required', $event.target.checked)
+              "
             />
             {{ $t('CRM_FLOWS.FIELDS_BUILDER.FIELD_REQUIRED') }}
           </label>
@@ -217,7 +257,7 @@ function applySuggestions() {
         <!-- Opciones (solo para tipo select) -->
         <div v-if="field.type === 'select'" class="flex flex-col gap-1">
           <div
-            v-for="(opt, oi) in (field.options || [])"
+            v-for="(opt, oi) in field.options || []"
             :key="oi"
             class="flex items-center gap-1.5"
           >
@@ -228,11 +268,19 @@ function applySuggestions() {
               class="flex-1 text-xs border border-n-weak rounded px-2 py-1 bg-n-solid-1 text-n-slate-12"
               @input="updateOption(index, oi, $event.target.value)"
             />
-            <button type="button" class="text-n-slate-9 hover:text-red-500 p-0.5" @click="removeOption(index, oi)">
+            <button
+              type="button"
+              class="text-n-slate-9 hover:text-red-500 p-0.5"
+              @click="removeOption(index, oi)"
+            >
               <i class="i-lucide-x w-3 h-3" />
             </button>
           </div>
-          <button type="button" class="text-xs text-blue-600 hover:text-blue-700 text-left" @click="addOption(index)">
+          <button
+            type="button"
+            class="text-xs text-blue-600 hover:text-blue-700 text-left"
+            @click="addOption(index)"
+          >
             {{ $t('CRM_FLOWS.FIELDS_BUILDER.ADD_OPTION') }}
           </button>
         </div>

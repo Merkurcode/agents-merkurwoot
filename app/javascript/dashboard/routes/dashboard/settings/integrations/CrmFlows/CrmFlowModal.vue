@@ -8,19 +8,22 @@ import ActionBuilder from './ActionBuilder.vue';
 import FieldBuilder from './FieldBuilder.vue';
 
 const props = defineProps({
-  flow:    { type: Object,   default: null },
+  flow: { type: Object, default: null },
   onClose: { type: Function, required: true },
 });
 
-const { t }      = useI18n();
-const store      = useStore();
-const getters    = useStoreGetters();
+const { t } = useI18n();
+const store = useStore();
+const getters = useStoreGetters();
 
 const TRIGGER_OPTIONS = [
-  { value: 'quote_request',          label: 'CRM_FLOWS.TRIGGERS.QUOTE_REQUEST' },
-  { value: 'advisor_transfer',       label: 'CRM_FLOWS.TRIGGERS.ADVISOR_TRANSFER' },
-  { value: 'appointment_scheduling', label: 'CRM_FLOWS.TRIGGERS.APPOINTMENT_SCHEDULING' },
-  { value: 'lead_creation',          label: 'CRM_FLOWS.TRIGGERS.LEAD_CREATION' },
+  { value: 'quote_request', label: 'CRM_FLOWS.TRIGGERS.QUOTE_REQUEST' },
+  { value: 'advisor_transfer', label: 'CRM_FLOWS.TRIGGERS.ADVISOR_TRANSFER' },
+  {
+    value: 'appointment_scheduling',
+    label: 'CRM_FLOWS.TRIGGERS.APPOINTMENT_SCHEDULING',
+  },
+  { value: 'lead_creation', label: 'CRM_FLOWS.TRIGGERS.LEAD_CREATION' },
 ];
 
 const DEFAULT_DEDUP = {
@@ -30,18 +33,23 @@ const DEFAULT_DEDUP = {
   lead_creation: 1440,
 };
 
-const isEditMode     = computed(() => !!props.flow);
-const isSubmitting   = ref(false);
+const isEditMode = computed(() => !!props.flow);
+const isSubmitting = ref(false);
 
 const formData = ref({
-  name:                 props.flow?.name               || '',
-  trigger_type:         props.flow?.trigger_type       || 'quote_request',
-  scope_type:           props.flow?.scope_type         || 'global',
-  inbox_id:             props.flow?.inbox_id           || null,
-  actions:              props.flow?.actions ? JSON.parse(JSON.stringify(props.flow.actions)) : [],
-  required_fields:      props.flow?.required_fields ? JSON.parse(JSON.stringify(props.flow.required_fields)) : [],
-  active:               props.flow?.active             !== false,
-  dedup_window_minutes: props.flow?.dedup_window_minutes ?? DEFAULT_DEDUP.quote_request,
+  name: props.flow?.name || '',
+  trigger_type: props.flow?.trigger_type || 'quote_request',
+  scope_type: props.flow?.scope_type || 'global',
+  inbox_id: props.flow?.inbox_id || null,
+  actions: props.flow?.actions
+    ? JSON.parse(JSON.stringify(props.flow.actions))
+    : [],
+  required_fields: props.flow?.required_fields
+    ? JSON.parse(JSON.stringify(props.flow.required_fields))
+    : [],
+  active: props.flow?.active !== false,
+  dedup_window_minutes:
+    props.flow?.dedup_window_minutes ?? DEFAULT_DEDUP.quote_request,
 });
 
 const inboxes = computed(() => getters['inboxes/getInboxes'].value || []);
@@ -57,7 +65,9 @@ watch(
 
 watch(
   () => formData.value.scope_type,
-  val => { if (val === 'global') formData.value.inbox_id = null; }
+  val => {
+    if (val === 'global') formData.value.inbox_id = null;
+  }
 );
 
 async function handleSubmit() {
@@ -73,7 +83,10 @@ async function handleSubmit() {
   isSubmitting.value = true;
   try {
     if (isEditMode.value) {
-      await store.dispatch('crmFlows/update', { id: props.flow.id, ...formData.value });
+      await store.dispatch('crmFlows/update', {
+        id: props.flow.id,
+        ...formData.value,
+      });
       useAlert(t('CRM_FLOWS.EDIT.SUCCESS'));
     } else {
       await store.dispatch('crmFlows/create', formData.value);
@@ -81,7 +94,9 @@ async function handleSubmit() {
     }
     props.onClose();
   } catch {
-    useAlert(isEditMode.value ? t('CRM_FLOWS.EDIT.ERROR') : t('CRM_FLOWS.CREATE.ERROR'));
+    useAlert(
+      isEditMode.value ? t('CRM_FLOWS.EDIT.ERROR') : t('CRM_FLOWS.CREATE.ERROR')
+    );
   } finally {
     isSubmitting.value = false;
   }
@@ -91,12 +106,13 @@ async function handleSubmit() {
 <template>
   <div class="flex flex-col h-auto overflow-auto">
     <woot-modal-header
-      :header-title="isEditMode ? $t('CRM_FLOWS.MODAL.SAVE') : $t('CRM_FLOWS.CREATE.BUTTON')"
+      :header-title="
+        isEditMode ? $t('CRM_FLOWS.MODAL.SAVE') : $t('CRM_FLOWS.CREATE.BUTTON')
+      "
     />
 
     <form class="w-full" @submit.prevent="handleSubmit">
       <div class="w-full flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
-
         <!-- Nombre -->
         <div class="w-full">
           <label>
@@ -114,7 +130,11 @@ async function handleSubmit() {
           <label>
             {{ $t('CRM_FLOWS.MODAL.TRIGGER_LABEL') }}
             <select v-model="formData.trigger_type">
-              <option v-for="opt in TRIGGER_OPTIONS" :key="opt.value" :value="opt.value">
+              <option
+                v-for="opt in TRIGGER_OPTIONS"
+                :key="opt.value"
+                :value="opt.value"
+              >
                 {{ $t(opt.label) }}
               </option>
             </select>
@@ -125,12 +145,26 @@ async function handleSubmit() {
         <div class="w-full">
           <label>{{ $t('CRM_FLOWS.MODAL.SCOPE_LABEL') }}</label>
           <div class="flex flex-col gap-1.5 mt-1">
-            <label class="flex items-center gap-2 text-sm text-n-slate-12 cursor-pointer">
-              <input v-model="formData.scope_type" type="radio" value="global" class="w-4 h-4" />
+            <label
+              class="flex items-center gap-2 text-sm text-n-slate-12 cursor-pointer"
+            >
+              <input
+                v-model="formData.scope_type"
+                type="radio"
+                value="global"
+                class="w-4 h-4"
+              />
               {{ $t('CRM_FLOWS.MODAL.SCOPE_GLOBAL') }}
             </label>
-            <label class="flex items-center gap-2 text-sm text-n-slate-12 cursor-pointer">
-              <input v-model="formData.scope_type" type="radio" value="inbox" class="w-4 h-4" />
+            <label
+              class="flex items-center gap-2 text-sm text-n-slate-12 cursor-pointer"
+            >
+              <input
+                v-model="formData.scope_type"
+                type="radio"
+                value="inbox"
+                class="w-4 h-4"
+              />
               {{ $t('CRM_FLOWS.MODAL.SCOPE_INBOX') }}
             </label>
           </div>
@@ -141,8 +175,14 @@ async function handleSubmit() {
           <label>
             {{ $t('CRM_FLOWS.MODAL.INBOX_LABEL') }}
             <select v-model="formData.inbox_id">
-              <option :value="null">{{ $t('CRM_FLOWS.MODAL.INBOX_LABEL') }}</option>
-              <option v-for="inbox in inboxes" :key="inbox.id" :value="inbox.id">
+              <option :value="null">
+                {{ $t('CRM_FLOWS.MODAL.INBOX_LABEL') }}
+              </option>
+              <option
+                v-for="inbox in inboxes"
+                :key="inbox.id"
+                :value="inbox.id"
+              >
                 {{ inbox.name }}
               </option>
             </select>
@@ -157,13 +197,18 @@ async function handleSubmit() {
         <hr class="border-n-weak" />
 
         <!-- FieldBuilder -->
-        <FieldBuilder v-model="formData.required_fields" :actions="formData.actions" />
+        <FieldBuilder
+          v-model="formData.required_fields"
+          :actions="formData.actions"
+        />
 
         <hr class="border-n-weak" />
 
         <!-- Configuración avanzada (collapsible) -->
         <details>
-          <summary class="text-sm font-medium text-n-slate-11 cursor-pointer select-none">
+          <summary
+            class="text-sm font-medium text-n-slate-11 cursor-pointer select-none"
+          >
             {{ $t('CRM_FLOWS.MODAL.ADVANCED') }}
           </summary>
           <div class="mt-2 w-full">
@@ -176,15 +221,28 @@ async function handleSubmit() {
                 class="w-24"
               />
             </label>
-            <span class="text-xs text-n-slate-9">{{ $t('CRM_FLOWS.MODAL.DEDUP_WINDOW_HELP') }}</span>
+            <span class="text-xs text-n-slate-9">{{
+              $t('CRM_FLOWS.MODAL.DEDUP_WINDOW_HELP')
+            }}</span>
           </div>
         </details>
       </div>
 
       <!-- Footer -->
       <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">
-        <Button faded slate type="reset" :label="$t('CRM_FLOWS.MODAL.CANCEL')" @click.prevent="onClose" />
-        <Button type="submit" :label="$t('CRM_FLOWS.MODAL.SAVE')" :disabled="isSubmitting" :is-loading="isSubmitting" />
+        <Button
+          faded
+          slate
+          type="reset"
+          :label="$t('CRM_FLOWS.MODAL.CANCEL')"
+          @click.prevent="onClose"
+        />
+        <Button
+          type="submit"
+          :label="$t('CRM_FLOWS.MODAL.SAVE')"
+          :disabled="isSubmitting"
+          :is-loading="isSubmitting"
+        />
       </div>
     </form>
   </div>

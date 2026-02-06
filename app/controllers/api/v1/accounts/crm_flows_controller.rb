@@ -68,6 +68,27 @@ class Api::V1::Accounts::CrmFlowsController < Api::V1::Accounts::BaseController
     render json: CrmFlows::SchemaService.new(flow).schema
   end
 
+  # GET /api/v1/accounts/:account_id/crm_flows/agent_schema
+  # Params: trigger_type (required), contact_id or conversation_id (required), inbox_id (optional)
+  # Returns active flows for the trigger with per-action metadata requirements,
+  # auto-filled contact fields, and the list of missing fields the agent must collect.
+  def agent_schema
+    trigger_type = params[:trigger_type]
+    return render json: { error: 'trigger_type is required' }, status: :bad_request unless trigger_type
+
+    contact = resolve_agent_contact
+    return render json: { error: 'Contact not found' }, status: :not_found unless contact
+
+    result = CrmFlows::AgentSchemaService.new(
+      account: Current.account,
+      trigger_type: trigger_type,
+      contact: contact,
+      inbox_id: params[:inbox_id]
+    ).call
+
+    render json: result
+  end
+
   # GET /api/v1/accounts/:account_id/crm_flows/:id/executions
   def executions
     execs = @crm_flow.crm_flow_executions.order(created_at: :desc).limit(50)
@@ -88,6 +109,14 @@ class Api::V1::Accounts::CrmFlowsController < Api::V1::Accounts::BaseController
 
   def set_crm_flow
     @crm_flow = CrmFlow.where(account_id: Current.account.id).find(params[:id])
+  end
+
+  def resolve_agent_contact
+    if params[:contact_id]
+      Contact.find_by(id: params[:contact_id], account_id: Current.account.id)
+    elsif params[:conversation_id]
+      Conversation.find_by(id: params[:conversation_id], account_id: Current.account.id)&.contact
+    end
   end
 
   def crm_flow_params

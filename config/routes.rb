@@ -203,6 +203,10 @@ Rails.application.routes.draw do
 
             member do
               get :show_qr
+              post :start
+              post :complete
+              post :cancel
+              post :mark_no_show
             end
           end
           resources :locations, only: [:index, :create, :show, :update, :destroy] do
@@ -412,6 +416,7 @@ Rails.application.routes.draw do
             collection do
               post :trigger
               get :trigger_schema
+              get :agent_schema
               get :executions_by_conversation
             end
             member do

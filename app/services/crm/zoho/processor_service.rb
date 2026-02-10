@@ -39,6 +39,8 @@ module Crm
           remove_tag(params)
         when 'add_note'
           add_note(params)
+        when 'update_appointment_status'
+          update_appointment_status(params)
         else
           { success: false, error: "Unknown action type: #{action_type}" }
         end
@@ -49,7 +51,18 @@ module Crm
       # ============================================================================
 
       def authenticated?
-        credentials['access_token'].present? && !hook.token_expired?
+        # Verificar si tiene access_token
+        return false unless @hook.credentials['access_token'].present?
+
+        # Si el token está expirado, intentar refrescarlo
+        if @hook.token_expired?
+          Rails.logger.info "Zoho token expired, attempting refresh..."
+          @hook.refresh_token_if_needed
+          @hook.reload
+        end
+
+        # Verificar de nuevo después del posible refresh
+        @hook.credentials['access_token'].present? && !@hook.token_expired?
       rescue StandardError => e
         Rails.logger.error "Zoho authentication check failed: #{e.message}"
         false
@@ -189,6 +202,7 @@ module Crm
       # Create call log in Zoho CRM
       #
       # @param params [Hash] Call parameters
+      # @option params [Integer] :appointment_id Chatwoot appointment ID (optional)
       # @option params [String] :subject Call subject
       # @option params [String] :description Call description
       # @option params [String] :call_type Call type (Inbound/Outbound)
@@ -196,38 +210,66 @@ module Crm
       # @option params [Integer] :duration Duration in seconds
       # @return [Hash] Result with success status and call_id
       def create_call(params)
-        contact = find_contact_from_params(params)
-        lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
-        metadata = params[:metadata] || {}
+        appointment_id = params[:appointment_id]
+        appointment = appointment_id.present? ? Appointment.find_by(id: appointment_id) : nil
 
-        # Priorizamos metadata (AI) sobre params (configuración fija del flow)
-        subject     = metadata['call_subject'].presence || metadata['subject'].presence || params[:subject]
-        description = metadata['call_description'].presence || metadata['description'].presence || params[:description]
-        start_time  = metadata['scheduled_at'].presence || metadata['start_time'].presence || params[:start_time]
+        if appointment
+          # Usar datos del appointment para crear la llamada
+          contact = appointment.contact
+          lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
 
-        # Map to Zoho call format
-        call_data = Crm::Zoho::Mappers::ActivityMapper.map_call(
-          subject: subject,
-          description: description,
-          call_type: params[:call_type],
-          start_time: start_time,
-          duration: params[:duration],
-          contact_id: nil, # Zoho calls use What_Id for leads
-          lead_id: lead_id,
-          se_module: 'Leads',
-          status: 'Scheduled'
-        )
+          # Usar el mapper específico para appointments
+          call_data = Crm::Zoho::Mappers::ActivityMapper.map_call_from_appointment(appointment, params)
 
-        response = @activity_client.create_call(call_data)
+          response = @activity_client.create_call(call_data)
 
-        if response && response['data']&.any?
-          call_record = response['data'].first
-          call_id = call_record['details']['id']
+          if response && response['data']&.any?
+            call_record = response['data'].first
+            call_id = call_record['details']['id']
 
-          Rails.logger.info "Call created successfully in Zoho: #{call_id}"
-          { success: true, call_id: call_id, response: call_record }
+            # Guardar el external_id en el appointment
+            appointment.store_external_id('zoho', call_id)
+
+            Rails.logger.info "Call created successfully in Zoho from appointment #{appointment.id}: #{call_id}"
+            { success: true, call_id: call_id, response: call_record }
+          else
+            { success: false, error: 'Failed to create call', response: response }
+          end
         else
-          { success: false, error: 'Failed to create call', response: response }
+          # Código existente para crear call sin appointment
+          contact = find_contact_from_params(params)
+          lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
+          metadata = params[:metadata] || {}
+
+          # Priorizamos metadata (AI) sobre params (configuración fija del flow)
+          subject     = metadata['call_subject'].presence || metadata['subject'].presence || params[:subject]
+          description = metadata['call_description'].presence || metadata['description'].presence || params[:description]
+          start_time  = metadata['scheduled_at'].presence || metadata['start_time'].presence || params[:start_time]
+
+          # Map to Zoho call format
+          call_data = Crm::Zoho::Mappers::ActivityMapper.map_call(
+            subject: subject,
+            description: description,
+            call_type: params[:call_type],
+            start_time: start_time,
+            duration: params[:duration],
+            contact_id: nil, # Zoho calls use What_Id for leads
+            lead_id: lead_id,
+            se_module: 'Leads',
+            status: 'Scheduled'
+          )
+
+          response = @activity_client.create_call(call_data)
+
+          if response && response['data']&.any?
+            call_record = response['data'].first
+            call_id = call_record['details']['id']
+
+            Rails.logger.info "Call created successfully in Zoho: #{call_id}"
+            { success: true, call_id: call_id, response: call_record }
+          else
+            { success: false, error: 'Failed to create call', response: response }
+          end
         end
       rescue StandardError => e
         Rails.logger.error "Error creating call in Zoho: #{e.message}"
@@ -254,6 +296,9 @@ module Crm
         contact = appointment&.contact || find_contact_from_params(params)
         lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
 
+        Rails.logger.info "🔍 [ZOHO EVENT] params: #{params.inspect}"
+        Rails.logger.info "🔍 [ZOHO EVENT] contact_id: #{contact&.id}, lead_id: #{lead_id}"
+
         # Si no hay cita ni metadata suficiente, fallamos (mantenemos compatibilidad)
         if !appointment && metadata.blank? && params[:subject].blank?
           return { success: false, error: 'Appointment or metadata required to create event' }
@@ -261,7 +306,12 @@ module Crm
 
         # Preparamos los parámetros base
         event_params = if appointment
-                         params # Pasar params directamente para que map_event los combine con appointment
+                         # Cuando hay appointment, combinar params con lead_id y se_module
+                         # IMPORTANTE: Eliminar contact_id de Chatwoot para evitar conflicto con Who_Id
+                         params.except(:contact_id).merge(
+                           lead_id: lead_id,
+                           se_module: 'Leads'
+                         )
                        else
                          {
                            event_title: metadata['event_title'] || metadata['subject'] || params[:subject],
@@ -276,11 +326,15 @@ module Crm
                          }
                        end
 
+        Rails.logger.info "🔍 [ZOHO EVENT] event_params: #{event_params.inspect}"
+
         # Map to Zoho event format
         event_data = Crm::Zoho::Mappers::ActivityMapper.map_event(
           appointment || event_params,
           appointment ? event_params : {}
         )
+
+        Rails.logger.info "🔍 [ZOHO EVENT] event_data final: #{event_data.inspect}"
 
         response = @activity_client.create_event(event_data)
 
@@ -393,6 +447,59 @@ module Crm
         end
       rescue StandardError => e
         Rails.logger.error "Error adding note in Zoho: #{e.message}"
+        { success: false, error: e.message }
+      end
+
+      # ============================================================================
+      # APPOINTMENT STATUS SYNC
+      # ============================================================================
+
+      # Update appointment status in Zoho CRM
+      #
+      # Syncs appointment status changes (started, completed, cancelled) to the corresponding
+      # Zoho object (Call or Event) based on appointment type
+      #
+      # @param params [Hash] Update parameters
+      # @option params [Integer] :appointment_id Chatwoot appointment ID
+      # @return [Hash] Result with success status
+      def update_appointment_status(params)
+        appointment_id = params[:appointment_id]
+        appointment = Appointment.find_by(id: appointment_id)
+
+        return { success: false, error: 'Appointment not found' } unless appointment
+
+        external_id = appointment.external_id_for('zoho')
+        return { success: false, error: 'Appointment not synced to Zoho' } unless external_id
+
+        # Mapear status de Chatwoot a Zoho
+        zoho_status = Crm::AppointmentStatusConfig.resolve('zoho', appointment.status)
+        return { success: false, error: 'Status mapping not found' } unless zoho_status
+
+        # Determinar si es Call o Event según appointment_type
+        object_type = appointment.appointment_type == 'phone_call' ? 'Calls' : 'Events'
+
+        # Preparar datos de actualización
+        update_data = if object_type == 'Calls'
+                        { Call_Status: zoho_status, Outgoing_Call_Status: zoho_status }
+                      else
+                        { Event_Status: zoho_status }
+                      end
+
+        # Actualizar en Zoho
+        response = if object_type == 'Calls'
+                     @activity_client.update_record('Calls', external_id, update_data)
+                   else
+                     @activity_client.update_record('Events', external_id, update_data)
+                   end
+
+        if response && response['data']&.any?
+          Rails.logger.info "Appointment status updated in Zoho: #{external_id} (#{object_type}) -> #{zoho_status}"
+          { success: true, updated_id: external_id, object_type: object_type, status: zoho_status }
+        else
+          { success: false, error: 'Failed to update appointment status', response: response }
+        end
+      rescue StandardError => e
+        Rails.logger.error "Error updating appointment status in Zoho: #{e.message}"
         { success: false, error: e.message }
       end
 

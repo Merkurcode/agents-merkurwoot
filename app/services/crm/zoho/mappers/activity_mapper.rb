@@ -29,9 +29,11 @@ module Crm
             send_notification: params[:send_notification] || false
           }.compact
 
-          # Who_Id: enlace al Lead o Contacto involucrado
+          # En Zoho V2/V3, Who_Id es para Contactos
+          # What_Id es para Leads (requiere especificar $se_module)
           if params[:lead_id].present?
-            task_data[:Who_Id] = { id: params[:lead_id] }
+            task_data[:What_Id] = { id: params[:lead_id] }
+            task_data[:'$se_module'] = params[:se_module] || 'Leads'
           elsif params[:contact_id].present?
             task_data[:Who_Id] = { id: params[:contact_id] }
           end
@@ -61,6 +63,12 @@ module Crm
         def self.map_event(appointment_or_params, params = {})
           is_appointment = appointment_or_params.is_a?(Appointment)
           p = is_appointment ? params : appointment_or_params
+
+          Rails.logger.info "🔍 [MAPPER] is_appointment: #{is_appointment}"
+          Rails.logger.info "🔍 [MAPPER] p (params hash): #{p.inspect}"
+          Rails.logger.info "🔍 [MAPPER] p[:contact_id]: #{p[:contact_id].inspect}"
+          Rails.logger.info "🔍 [MAPPER] p[:lead_id]: #{p[:lead_id].inspect}"
+          Rails.logger.info "🔍 [MAPPER] p[:se_module]: #{p[:se_module].inspect}"
 
           # Título/Asunto
           subject = if is_appointment
@@ -103,13 +111,17 @@ module Crm
 
           # Add Who_Id (Contact) if provided
           if p[:contact_id].present?
+            Rails.logger.info "🔍 [MAPPER] Añadiendo Who_Id con contact_id: #{p[:contact_id]}"
             event_data[:Who_Id] = { id: p[:contact_id] }
           end
 
           # Add What_Id (Lead or other related record) if provided
           if p[:lead_id].present?
+            Rails.logger.info "🔍 [MAPPER] Añadiendo What_Id con lead_id: #{p[:lead_id]}"
             event_data[:What_Id] = { id: p[:lead_id] }
             event_data[:'$se_module'] = p[:se_module] || 'Leads'
+          else
+            Rails.logger.info "🔍 [MAPPER] NO añadiendo What_Id porque lead_id no está present"
           end
 
           # Add Owner if specified
@@ -131,6 +143,61 @@ module Crm
           when 'digital_meeting' then 'Video Call'
           when 'phone_call' then 'Phone Call'
           end
+        end
+
+        # Map Chatwoot Appointment to Zoho Call format
+        #
+        # @param appointment [Appointment] Chatwoot appointment
+        # @param params [Hash] Additional parameters
+        # @return [Hash] Zoho Call data
+        def self.map_call_from_appointment(appointment, params = {})
+          contact = appointment.contact
+          lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
+
+          # Determinar el status según el appointment status
+          zoho_status = map_status_to_zoho(appointment.status)
+
+          # Construir descripción desde appointment
+          description = build_call_description(appointment)
+
+          map_call(
+            subject: appointment.description || "Call with #{contact&.name || 'Unknown'}",
+            description: description,
+            call_type: params[:call_type] || 'Outbound',
+            start_time: appointment.scheduled_at,
+            duration: appointment.duration_minutes ? appointment.duration_minutes * 60 : nil,
+            status: zoho_status,
+            lead_id: lead_id,
+            se_module: 'Leads'
+          )
+        end
+
+        # Map Chatwoot appointment status to Zoho status
+        #
+        # @param chatwoot_status [String] Chatwoot status
+        # @return [String] Zoho status
+        def self.map_status_to_zoho(chatwoot_status)
+          Crm::AppointmentStatusConfig.resolve('zoho', chatwoot_status)
+        end
+
+        # Build call description from appointment
+        #
+        # @param appointment [Appointment] Chatwoot appointment
+        # @return [String] Call description
+        def self.build_call_description(appointment)
+          parts = []
+
+          parts << appointment.description if appointment.description.present?
+          parts << "Type: Phone Call"
+          parts << "Phone: #{appointment.phone_number}" if appointment.phone_number.present?
+          parts << "Status: #{appointment.status.humanize}"
+
+          if appointment.participant_agents.any?
+            agent_names = appointment.participant_agents.map(&:name).join(', ')
+            parts << "Agents: #{agent_names}"
+          end
+
+          parts.join("\n")
         end
 
         # Map phone call to Zoho Call format

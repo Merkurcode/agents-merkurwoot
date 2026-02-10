@@ -17,6 +17,11 @@ const emit = defineEmits(['close', 'edit', 'delete', 'toggle-visibility', 'move'
 const { t } = useI18n();
 const router = useRouter();
 
+// Accordion state for associations
+const associationsOpen = ref(true);
+// Accordion state for products (collapsed by default)
+const productsOpen = ref(false);
+
 // Pagination for associated products
 const currentProductPage = ref(1);
 const productsPerPage = 5;
@@ -32,9 +37,11 @@ const paginatedProducts = computed(() => {
   return props.resource.product_catalogs.slice(start, start + productsPerPage);
 });
 
-// Reset pagination when resource changes
+// Reset pagination and accordion states when resource changes
 watch(() => props.resource?.id, () => {
   currentProductPage.value = 1;
+  associationsOpen.value = (props.resource?.product_catalogs?.length || 0) > 0;
+  productsOpen.value = false; // Products section starts collapsed
 });
 
 // Format file size
@@ -72,6 +79,9 @@ const getFileIcon = (contentType) => {
   if (contentType.includes('csv')) return 'i-lucide-file-spreadsheet';
   if (contentType.includes('json')) return 'i-lucide-file-json';
   if (contentType.includes('text')) return 'i-lucide-file-text';
+  if (contentType.includes('image')) return 'i-lucide-image';
+  if (contentType.includes('audio')) return 'i-lucide-music';
+  if (contentType.includes('video')) return 'i-lucide-video';
   return 'i-lucide-file';
 };
 
@@ -177,74 +187,119 @@ const handleKeydown = (event) => {
           </div>
         </div>
 
-        <!-- Associated Products (paginated) -->
-        <div class="flex-1 overflow-y-auto p-6">
-          <h3 class="text-sm font-medium text-n-slate-12 mb-4 flex items-center gap-2">
-            <i class="i-lucide-package w-4 h-4" />
-            {{ t('KNOWLEDGE_BASE.RESOURCES.DRAWER.ASSOCIATED_PRODUCTS') }}
-            ({{ resource.product_catalogs?.length || 0 }})
-          </h3>
-
-          <!-- Empty state -->
-          <div
-            v-if="!resource.product_catalogs?.length"
-            class="flex flex-col items-center justify-center py-8 text-center"
-          >
-            <i class="i-lucide-package-open w-12 h-12 text-n-slate-9 mb-3" />
-            <p class="text-sm text-n-slate-11">
-              {{ t('KNOWLEDGE_BASE.RESOURCES.DRAWER.NO_PRODUCTS') }}
-            </p>
-          </div>
-
-          <!-- Products list -->
-          <div v-else class="space-y-2">
+        <!-- Associations Accordion -->
+        <div class="flex-1 overflow-y-auto">
+          <div class="border-b border-n-weak">
+            <!-- Accordion Header -->
             <button
-              v-for="product in paginatedProducts"
-              :key="product.id"
               type="button"
-              class="w-full flex items-center gap-3 p-3 rounded-lg border border-n-weak hover:bg-n-alpha-2 transition-colors text-left"
-              @click="navigateToProduct(product)"
+              class="w-full flex items-center justify-between px-6 py-4 hover:bg-n-alpha-1 transition-colors"
+              @click="associationsOpen = !associationsOpen"
             >
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono text-xs bg-n-blue-3 text-n-blue-11 px-1.5 py-0.5 rounded">
-                    {{ product.product_id }}
-                  </span>
-                  <span class="font-medium text-sm text-n-slate-12 truncate">
-                    {{ product.productName }}
-                  </span>
-                </div>
-                <div class="text-xs text-n-slate-10 mt-1">
-                  {{ product.type }} <span v-if="product.industry" class="text-n-slate-9">{{ product.industry }}</span>
-                </div>
-              </div>
-              <i class="i-lucide-external-link w-4 h-4 text-n-slate-10 flex-shrink-0" />
+              <span class="text-sm font-medium text-n-slate-12 flex items-center gap-2">
+                <i class="i-lucide-link w-4 h-4 text-n-slate-10" />
+                {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.ASSOCIATIONS') }}
+                <span class="text-xs text-n-slate-10 font-normal">
+                  ({{ resource.product_catalogs?.length || 0 }})
+                </span>
+              </span>
+              <i
+                :class="associationsOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                class="w-4 h-4 text-n-slate-10 transition-transform"
+              />
             </button>
 
-            <!-- Pagination -->
-            <div
-              v-if="totalProductPages > 1"
-              class="flex items-center justify-center gap-2 pt-4"
-            >
-              <button
-                type="button"
-                class="p-1 rounded hover:bg-n-alpha-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="currentProductPage === 1"
-                @click="currentProductPage--"
-              >
-                <i class="i-lucide-chevron-left w-4 h-4" />
-              </button>
-              <span class="text-sm text-n-slate-11">
-                {{ currentProductPage }} / {{ totalProductPages }}
-              </span>
-              <button
-                type="button"
-                class="p-1 rounded hover:bg-n-alpha-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="currentProductPage === totalProductPages"
-                @click="currentProductPage++"
-              >
-                <i class="i-lucide-chevron-right w-4 h-4" />
-              </button>
+            <!-- Accordion Content -->
+            <div v-if="associationsOpen" class="px-6 pb-4">
+              <!-- Products Section (collapsible) -->
+              <div class="border border-n-weak rounded-lg overflow-hidden">
+                <!-- Products Header (clickable to toggle) -->
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between px-3 py-2 bg-n-alpha-1 hover:bg-n-alpha-2 transition-colors"
+                  @click="productsOpen = !productsOpen"
+                >
+                  <span class="flex items-center gap-2">
+                    <i class="i-lucide-package w-4 h-4 text-n-slate-10" />
+                    <span class="text-xs font-medium text-n-slate-11">
+                      {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.PRODUCT_CATALOGS') }}
+                    </span>
+                    <span class="text-xs text-n-slate-10">
+                      ({{ resource.product_catalogs?.length || 0 }})
+                    </span>
+                  </span>
+                  <i
+                    :class="productsOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                    class="w-4 h-4 text-n-slate-10 transition-transform"
+                  />
+                </button>
+
+                <!-- Products Content (collapsible) -->
+                <div v-if="productsOpen" class="border-t border-n-weak">
+                  <!-- Empty state -->
+                  <div
+                    v-if="!resource.product_catalogs?.length"
+                    class="flex flex-col items-center justify-center py-6 text-center"
+                  >
+                    <i class="i-lucide-package-open w-10 h-10 text-n-slate-9 mb-2" />
+                    <p class="text-sm text-n-slate-11">
+                      {{ t('KNOWLEDGE_BASE.RESOURCES.DRAWER.NO_PRODUCTS') }}
+                    </p>
+                  </div>
+
+                  <!-- Products list -->
+                  <div v-else>
+                    <button
+                      v-for="product in paginatedProducts"
+                      :key="product.id"
+                      type="button"
+                      class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-n-alpha-2 transition-colors text-left border-b border-n-weak/50 last:border-b-0"
+                      @click="navigateToProduct(product)"
+                    >
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-mono text-xs bg-n-blue-3 text-n-blue-11 px-1.5 py-0.5 rounded">
+                            {{ product.product_id }}
+                          </span>
+                          <span class="font-medium text-sm text-n-slate-12 truncate">
+                            {{ product.productName }}
+                          </span>
+                        </div>
+                        <div class="text-xs text-n-slate-10 mt-0.5">
+                          {{ product.type }} <span v-if="product.industry">· {{ product.industry }}</span>
+                        </div>
+                      </div>
+                      <i class="i-lucide-external-link w-4 h-4 text-n-slate-10 flex-shrink-0" />
+                    </button>
+
+                    <!-- Pagination -->
+                    <div
+                      v-if="totalProductPages > 1"
+                      class="flex items-center justify-center gap-2 py-2 border-t border-n-weak"
+                    >
+                      <button
+                        type="button"
+                        class="p-1 rounded hover:bg-n-alpha-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="currentProductPage === 1"
+                        @click="currentProductPage--"
+                      >
+                        <i class="i-lucide-chevron-left w-4 h-4" />
+                      </button>
+                      <span class="text-xs text-n-slate-11">
+                        {{ currentProductPage }} / {{ totalProductPages }}
+                      </span>
+                      <button
+                        type="button"
+                        class="p-1 rounded hover:bg-n-alpha-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="currentProductPage === totalProductPages"
+                        @click="currentProductPage++"
+                      >
+                        <i class="i-lucide-chevron-right w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

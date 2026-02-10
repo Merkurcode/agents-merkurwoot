@@ -329,7 +329,7 @@
         "TITLE": "Upload Resource",
         "SELECT_FILE": "File",
         "DROP_OR_CLICK": "Click to select a file",
-        "FILE_TYPES": "PDF, Word, Excel, CSV, TXT, JSON, Markdown (max 100MB)",
+        "FILE_TYPES": "Documents, Images, Audio (max 100MB)",
         "SUBMIT": "Upload",
         "SUCCESS": "Resource uploaded successfully",
         "ERROR": "Failed to upload resource"
@@ -351,8 +351,9 @@
         "NAME_PLACEHOLDER": "Enter resource name",
         "DESCRIPTION": "Description",
         "DESCRIPTION_PLACEHOLDER": "Enter description (optional)",
+        "ASSOCIATIONS": "Associations",
         "PRODUCT_CATALOG": "Associated Product",
-        "PRODUCT_CATALOGS": "Associated Products",
+        "PRODUCT_CATALOGS": "Products",
         "NO_PRODUCT": "No product association"
       },
       "STORAGE": {
@@ -365,7 +366,11 @@
       },
       "PRODUCT_SEARCH": {
         "PLACEHOLDER": "Search products by ID or name...",
-        "NO_RESULTS": "No products found"
+        "NO_RESULTS": "No products found",
+        "AVAILABLE": "products available",
+        "SELECT_ALL": "Select all",
+        "DESELECT_ALL": "Deselect all",
+        "SELECTED": "selected"
       },
       "VIEW": {
         "LIST": "List view",
@@ -404,9 +409,14 @@
         "CREATE_ERROR": "Failed to create folder",
         "DELETE_TITLE": "Delete Folder",
         "DELETE_CONFIRM": "Are you sure you want to delete this folder?",
+        "DELETE_CONFIRM_FORCE": "This will permanently delete all contents. Type the phrase below to confirm.",
         "DELETE_WARNING": "The folder must be empty to be deleted.",
+        "NOT_EMPTY_WARNING": "This folder is not empty!",
+        "CONTENTS_INFO": "Contains {resources} file(s) and {subfolders} subfolder(s)",
+        "TYPE_TO_CONFIRM": "Type to confirm:",
         "DELETED": "Folder deleted successfully",
-        "DELETE_ERROR": "Failed to delete folder. Make sure the folder is empty."
+        "DELETED_WITH_CONTENTS": "Folder deleted with {resources} file(s) and {subfolders} subfolder(s)",
+        "DELETE_ERROR": "Failed to delete folder"
       },
       "ACTIONS": {
         "OPEN_FOLDER": "Open folder",

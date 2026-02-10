@@ -329,7 +329,7 @@
         "TITLE": "Subir Recurso",
         "SELECT_FILE": "Archivo",
         "DROP_OR_CLICK": "Haz clic para seleccionar un archivo",
-        "FILE_TYPES": "PDF, Word, Excel, CSV, TXT, JSON, Markdown (máx 100MB)",
+        "FILE_TYPES": "Documentos, Imágenes, Audio (máx 100MB)",
         "SUBMIT": "Subir",
         "SUCCESS": "Recurso subido exitosamente",
         "ERROR": "Error al subir recurso"
@@ -351,8 +351,9 @@
         "NAME_PLACEHOLDER": "Ingresa el nombre del recurso",
         "DESCRIPTION": "Descripción",
         "DESCRIPTION_PLACEHOLDER": "Ingresa una descripción (opcional)",
+        "ASSOCIATIONS": "Asociaciones",
         "PRODUCT_CATALOG": "Producto Asociado",
-        "PRODUCT_CATALOGS": "Productos Asociados",
+        "PRODUCT_CATALOGS": "Productos",
         "NO_PRODUCT": "Sin asociación de producto"
       },
       "STORAGE": {
@@ -365,7 +366,11 @@
       },
       "PRODUCT_SEARCH": {
         "PLACEHOLDER": "Buscar productos por ID o nombre...",
-        "NO_RESULTS": "No se encontraron productos"
+        "NO_RESULTS": "No se encontraron productos",
+        "AVAILABLE": "productos disponibles",
+        "SELECT_ALL": "Seleccionar todos",
+        "DESELECT_ALL": "Deseleccionar todos",
+        "SELECTED": "seleccionados"
       },
       "VIEW": {
         "LIST": "Vista de lista",
@@ -404,9 +409,14 @@
         "CREATE_ERROR": "Error al crear carpeta",
         "DELETE_TITLE": "Eliminar Carpeta",
         "DELETE_CONFIRM": "¿Estás seguro de que deseas eliminar esta carpeta?",
+        "DELETE_CONFIRM_FORCE": "Esto eliminará permanentemente todo el contenido. Escribe la frase de abajo para confirmar.",
         "DELETE_WARNING": "La carpeta debe estar vacía para poder eliminarla.",
+        "NOT_EMPTY_WARNING": "¡Esta carpeta no está vacía!",
+        "CONTENTS_INFO": "Contiene {resources} archivo(s) y {subfolders} subcarpeta(s)",
+        "TYPE_TO_CONFIRM": "Escribe para confirmar:",
         "DELETED": "Carpeta eliminada exitosamente",
-        "DELETE_ERROR": "Error al eliminar carpeta. Asegúrate de que la carpeta esté vacía."
+        "DELETED_WITH_CONTENTS": "Carpeta eliminada con {resources} archivo(s) y {subfolders} subcarpeta(s)",
+        "DELETE_ERROR": "Error al eliminar carpeta"
       },
       "ACTIONS": {
         "OPEN_FOLDER": "Abrir carpeta",

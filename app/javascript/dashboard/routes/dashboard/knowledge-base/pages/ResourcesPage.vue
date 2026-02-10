@@ -47,11 +47,26 @@ const folderToDelete = ref(null);
 const isDeletingFolder = ref(false);
 const parentFolderForNewFolder = ref('/'); // Used when creating folder from tree view
 
+// Force delete folder state (when folder is not empty)
+const folderDeleteRequiresConfirmation = ref(false);
+const folderDeleteContents = ref({ resources: 0, subfolders: 0 });
+const folderDeleteConfirmText = ref('');
+const expectedDeletePhrase = computed(() => `delete ${folderToDelete.value?.name || ''}`);
+const isDeletePhraseCorrect = computed(() =>
+  folderDeleteConfirmText.value.toLowerCase().trim() === expectedDeletePhrase.value.toLowerCase()
+);
+
 // List view selection state
 const selectedListFolder = ref(null); // Selected folder in list view
 
 // Move modal navigation state
 const moveBrowserPath = ref('/');
+
+// Accordion state for associations section
+const uploadAccordionOpen = ref(false);
+const uploadProductsAccordionOpen = ref(false);
+const editAccordionOpen = ref(false);
+const editProductsAccordionOpen = ref(false);
 
 // Form data - updated for multi-select
 const uploadForm = ref({
@@ -272,6 +287,9 @@ const getFileIcon = (contentType) => {
   if (contentType.includes('csv')) return 'i-lucide-file-spreadsheet';
   if (contentType.includes('json')) return 'i-lucide-file-json';
   if (contentType.includes('text')) return 'i-lucide-file-text';
+  if (contentType.includes('image')) return 'i-lucide-image';
+  if (contentType.includes('audio')) return 'i-lucide-music';
+  if (contentType.includes('video')) return 'i-lucide-video';
   return 'i-lucide-file';
 };
 
@@ -514,6 +532,8 @@ const closeResourceDetail = () => {
 const openUploadModal = () => {
   uploadForm.value = { file: null, name: '', description: '', product_catalog_ids: [] };
   selectedFileName.value = '';
+  uploadAccordionOpen.value = false;
+  uploadProductsAccordionOpen.value = false;
   showUploadModal.value = true;
 };
 
@@ -585,6 +605,9 @@ const openEditModal = (resource) => {
     description: resource.description || '',
     product_catalog_ids: catalogIds,
   };
+  // Open accordion if there are associations, otherwise closed
+  editAccordionOpen.value = catalogIds.length > 0;
+  editProductsAccordionOpen.value = false; // Products section starts collapsed
   showEditModal.value = true;
   // Close drawer if open
   selectedResource.value = null;
@@ -731,19 +754,54 @@ const createFolderFromTree = async () => {
 };
 
 // Delete folder
-const confirmDeleteFolder = (folder) => {
+const confirmDeleteFolder = async (folder) => {
   folderToDelete.value = folder;
-  showDeleteFolderModal.value = true;
-  clearTreeSelection();
+  folderDeleteConfirmText.value = '';
+  folderDeleteRequiresConfirmation.value = false;
+  folderDeleteContents.value = { resources: 0, subfolders: 0 };
+
+  // Try to delete without force first to check if empty
+  try {
+    await store.dispatch('kbResources/deleteFolder', folder.path);
+    // If successful, folder was empty
+    useAlert(t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETED'));
+    await refreshData();
+    await fetchTreeData();
+    clearTreeSelection();
+    return;
+  } catch (error) {
+    const response = error.response?.data;
+    if (response?.requires_confirmation) {
+      // Folder is not empty, show confirmation modal
+      folderDeleteRequiresConfirmation.value = true;
+      folderDeleteContents.value = {
+        resources: response.resources_count || 0,
+        subfolders: response.subfolders_count || 0,
+      };
+      showDeleteFolderModal.value = true;
+      clearTreeSelection();
+    } else {
+      useAlert(response?.error || t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETE_ERROR'));
+    }
+  }
 };
 
 const executeDeleteFolder = async () => {
   if (isDeletingFolder.value || !folderToDelete.value) return;
+  if (folderDeleteRequiresConfirmation.value && !isDeletePhraseCorrect.value) return;
 
   isDeletingFolder.value = true;
   try {
-    await store.dispatch('kbResources/deleteFolder', folderToDelete.value.path);
-    useAlert(t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETED'));
+    await store.dispatch('kbResources/deleteFolder', {
+      path: folderToDelete.value.path,
+      force: folderDeleteRequiresConfirmation.value,
+    });
+    const { resources, subfolders } = folderDeleteContents.value;
+    if (resources > 0 || subfolders > 0) {
+      useAlert(t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETED_WITH_CONTENTS', { resources, subfolders }));
+    } else {
+      useAlert(t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETED'));
+    }
     showDeleteFolderModal.value = false;
 
     // Always refresh both views to keep them in sync
@@ -843,7 +901,7 @@ onMounted(fetchData);
                   <input
                     ref="fileInputRef"
                     type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.json,.md"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.json,.md,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp3,.wav,.ogg,.m4a,.aac,.flac"
                     class="hidden"
                     @change="handleFileSelect"
                   />
@@ -894,15 +952,58 @@ onMounted(fetchData);
                   </div>
                 </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-n-slate-12 mb-1">
-                    {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.PRODUCT_CATALOGS') }}
-                  </label>
-                  <ProductSearchSelect
-                    v-model="uploadForm.product_catalog_ids"
-                    :products="productCatalogs"
-                    :placeholder="t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.PLACEHOLDER')"
-                  />
+                <!-- Associations Accordion -->
+                <div class="border border-n-weak rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    class="w-full flex items-center justify-between px-3 py-2.5 bg-n-alpha-1 hover:bg-n-alpha-2 transition-colors"
+                    @click="uploadAccordionOpen = !uploadAccordionOpen"
+                  >
+                    <span class="text-sm font-medium text-n-slate-12 flex items-center gap-2">
+                      <i class="i-lucide-link w-4 h-4 text-n-slate-10" />
+                      {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.ASSOCIATIONS') }}
+                      <span class="text-xs text-n-slate-10 font-normal">
+                        ({{ uploadForm.product_catalog_ids.length }})
+                      </span>
+                    </span>
+                    <i
+                      :class="uploadAccordionOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                      class="w-4 h-4 text-n-slate-10 transition-transform"
+                    />
+                  </button>
+                  <div v-if="uploadAccordionOpen" class="border-t border-n-weak max-h-[45vh] overflow-y-auto">
+                    <!-- Products section (collapsible) -->
+                    <div class="border-b border-n-weak last:border-b-0">
+                      <!-- Products Header -->
+                      <button
+                        type="button"
+                        class="w-full flex items-center justify-between px-3 py-2 hover:bg-n-alpha-1 transition-colors"
+                        @click="uploadProductsAccordionOpen = !uploadProductsAccordionOpen"
+                      >
+                        <span class="flex items-center gap-2">
+                          <i class="i-lucide-package w-3.5 h-3.5 text-n-slate-10" />
+                          <span class="text-xs font-medium text-n-slate-11">
+                            {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.PRODUCT_CATALOGS') }}
+                          </span>
+                          <span class="text-xs text-n-slate-10">
+                            ({{ uploadForm.product_catalog_ids.length }})
+                          </span>
+                        </span>
+                        <i
+                          :class="uploadProductsAccordionOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                          class="w-4 h-4 text-n-slate-10 transition-transform"
+                        />
+                      </button>
+                      <!-- Products Content -->
+                      <div v-if="uploadProductsAccordionOpen" class="px-3 pb-3">
+                        <ProductSearchSelect
+                          v-model="uploadForm.product_catalog_ids"
+                          :products="productCatalogs"
+                          :placeholder="t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.PLACEHOLDER')"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Storage Info -->
@@ -1441,6 +1542,9 @@ onMounted(fetchData);
                   <i :class="[getFileIcon(file.content_type), 'w-4 h-4 text-n-slate-11 shrink-0']" />
                   <span class="text-sm text-n-slate-12">{{ file.name }}</span>
                   <span v-if="!file.is_visible" class="text-xs text-n-amber-11 bg-n-amber-3 px-1 py-0.5 rounded ml-1 shrink-0">{{ t('KNOWLEDGE_BASE.RESOURCES.HIDDEN') }}</span>
+                  <span v-if="file.product_catalogs?.length" class="text-xs text-n-blue-11 bg-n-blue-3 px-1 py-0.5 rounded ml-1 shrink-0">
+                    {{ file.product_catalogs.length }} {{ file.product_catalogs.length === 1 ? 'product' : 'products' }}
+                  </span>
                   <span class="text-xs text-n-slate-10 ml-2 shrink-0">{{ formatFileSize(file.file_size) }}</span>
                 </div>
               </template>
@@ -1562,15 +1666,58 @@ onMounted(fetchData);
               </div>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-n-slate-12 mb-1">
-                {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.PRODUCT_CATALOGS') }}
-              </label>
-              <ProductSearchSelect
-                v-model="editForm.product_catalog_ids"
-                :products="productCatalogs"
-                :placeholder="t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.PLACEHOLDER')"
-              />
+            <!-- Associations Accordion -->
+            <div class="border border-n-weak rounded-lg overflow-hidden">
+              <button
+                type="button"
+                class="w-full flex items-center justify-between px-3 py-2.5 bg-n-alpha-1 hover:bg-n-alpha-2 transition-colors"
+                @click="editAccordionOpen = !editAccordionOpen"
+              >
+                <span class="text-sm font-medium text-n-slate-12 flex items-center gap-2">
+                  <i class="i-lucide-link w-4 h-4 text-n-slate-10" />
+                  {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.ASSOCIATIONS') }}
+                  <span class="text-xs text-n-slate-10 font-normal">
+                    ({{ editForm.product_catalog_ids.length }})
+                  </span>
+                </span>
+                <i
+                  :class="editAccordionOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="w-4 h-4 text-n-slate-10 transition-transform"
+                />
+              </button>
+              <div v-if="editAccordionOpen" class="border-t border-n-weak max-h-[45vh] overflow-y-auto">
+                <!-- Products section (collapsible) -->
+                <div class="border-b border-n-weak last:border-b-0">
+                  <!-- Products Header -->
+                  <button
+                    type="button"
+                    class="w-full flex items-center justify-between px-3 py-2 hover:bg-n-alpha-1 transition-colors"
+                    @click="editProductsAccordionOpen = !editProductsAccordionOpen"
+                  >
+                    <span class="flex items-center gap-2">
+                      <i class="i-lucide-package w-3.5 h-3.5 text-n-slate-10" />
+                      <span class="text-xs font-medium text-n-slate-11">
+                        {{ t('KNOWLEDGE_BASE.RESOURCES.FORM.PRODUCT_CATALOGS') }}
+                      </span>
+                      <span class="text-xs text-n-slate-10">
+                        ({{ editForm.product_catalog_ids.length }})
+                      </span>
+                    </span>
+                    <i
+                      :class="editProductsAccordionOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                      class="w-4 h-4 text-n-slate-10 transition-transform"
+                    />
+                  </button>
+                  <!-- Products Content -->
+                  <div v-if="editProductsAccordionOpen" class="px-3 pb-3">
+                    <ProductSearchSelect
+                      v-model="editForm.product_catalog_ids"
+                      :products="productCatalogs"
+                      :placeholder="t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.PLACEHOLDER')"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1684,7 +1831,7 @@ onMounted(fetchData);
       </div>
     </Teleport>
 
-    <!-- Delete Folder Modal -->
+    <!-- Delete Folder Modal (with force confirmation for non-empty folders) -->
     <div v-if="showDeleteFolderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showDeleteFolderModal = false">
       <div class="bg-n-solid-1 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div class="flex items-center gap-3 px-6 py-4 border-b border-n-weak">
@@ -1696,22 +1843,71 @@ onMounted(fetchData);
           </h2>
         </div>
         <div class="px-6 py-4">
+          <!-- Warning for non-empty folder -->
+          <div v-if="folderDeleteRequiresConfirmation" class="mb-4 p-3 bg-n-ruby-3 border border-n-ruby-6 rounded-lg">
+            <div class="flex items-start gap-2">
+              <i class="i-lucide-alert-triangle w-5 h-5 text-n-ruby-11 shrink-0 mt-0.5" />
+              <div>
+                <p class="text-sm font-medium text-n-ruby-11">
+                  {{ t('KNOWLEDGE_BASE.RESOURCES.FOLDER.NOT_EMPTY_WARNING') }}
+                </p>
+                <p class="text-xs text-n-ruby-10 mt-1">
+                  {{ t('KNOWLEDGE_BASE.RESOURCES.FOLDER.CONTENTS_INFO', {
+                    resources: folderDeleteContents.resources,
+                    subfolders: folderDeleteContents.subfolders
+                  }) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <p class="text-sm text-n-slate-11 mb-3">
-            {{ t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETE_CONFIRM') }}
+            {{ folderDeleteRequiresConfirmation
+              ? t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETE_CONFIRM_FORCE')
+              : t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETE_CONFIRM')
+            }}
           </p>
+
           <div class="p-3 bg-n-alpha-2 rounded-lg flex items-center gap-2">
             <i class="i-lucide-folder w-5 h-5 text-n-amber-11" />
             <p class="text-sm font-medium text-n-slate-12 truncate">
               {{ folderToDelete?.name }}
             </p>
           </div>
-          <p class="text-xs text-n-slate-10 mt-2">
+
+          <!-- Confirmation phrase input -->
+          <div v-if="folderDeleteRequiresConfirmation" class="mt-4">
+            <label class="block text-sm text-n-slate-11 mb-2">
+              {{ t('KNOWLEDGE_BASE.RESOURCES.FOLDER.TYPE_TO_CONFIRM') }}
+              <code class="px-1.5 py-0.5 bg-n-alpha-3 rounded text-n-ruby-11 font-mono text-xs">{{ expectedDeletePhrase }}</code>
+            </label>
+            <Input
+              v-model="folderDeleteConfirmText"
+              :placeholder="expectedDeletePhrase"
+              class="w-full"
+              @keyup.enter="isDeletePhraseCorrect && executeDeleteFolder()"
+            />
+          </div>
+
+          <p v-if="!folderDeleteRequiresConfirmation" class="text-xs text-n-slate-10 mt-2">
             {{ t('KNOWLEDGE_BASE.RESOURCES.FOLDER.DELETE_WARNING') }}
           </p>
         </div>
         <div class="flex justify-end gap-2 px-6 py-4 border-t border-n-weak">
-          <Button variant="faded" color="slate" :label="t('KNOWLEDGE_BASE.RESOURCES.CANCEL')" :disabled="isDeletingFolder" @click="showDeleteFolderModal = false" />
-          <Button color="ruby" :label="t('KNOWLEDGE_BASE.RESOURCES.DELETE.BUTTON')" :is-loading="isDeletingFolder" :disabled="isDeletingFolder" @click="executeDeleteFolder" />
+          <Button
+            variant="faded"
+            color="slate"
+            :label="t('KNOWLEDGE_BASE.RESOURCES.CANCEL')"
+            :disabled="isDeletingFolder"
+            @click="showDeleteFolderModal = false"
+          />
+          <Button
+            color="ruby"
+            :label="t('KNOWLEDGE_BASE.RESOURCES.DELETE.BUTTON')"
+            :is-loading="isDeletingFolder"
+            :disabled="isDeletingFolder || (folderDeleteRequiresConfirmation && !isDeletePhraseCorrect)"
+            @click="executeDeleteFolder"
+          />
         </div>
       </div>
     </div>

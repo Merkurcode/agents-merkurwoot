@@ -55,9 +55,9 @@ class KbResourcesAPI extends ApiClient {
     });
   }
 
-  deleteFolder(folderPath) {
+  deleteFolder(folderPath, force = false) {
     return axios.delete(`${this.url}/delete_folder`, {
-      params: { folder_path: folderPath },
+      params: { folder_path: folderPath, force },
     });
   }
 

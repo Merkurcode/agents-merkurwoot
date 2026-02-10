@@ -190,24 +190,36 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
 
   def delete_folder
     folder_path = normalize_folder_path(params[:folder_path])
+    force_delete = params[:force] == 'true' || params[:force] == true
 
-    # Check if folder has any resources
-    resources_count = Current.account.kb_resources.where(folder_path: folder_path).count
-    subfolders_count = Current.account.kb_folders.where(parent_path: folder_path).count
+    # Count contents recursively
+    resources_count = count_resources_recursively(folder_path)
+    subfolders_count = count_subfolders_recursively(folder_path)
 
-    if resources_count.positive? || subfolders_count.positive?
+    if (resources_count.positive? || subfolders_count.positive?) && !force_delete
+      # Return info about contents so frontend can show confirmation
       render json: {
         error: 'Folder is not empty',
+        requires_confirmation: true,
         resources_count: resources_count,
-        subfolders_count: subfolders_count
+        subfolders_count: subfolders_count,
+        folder_name: folder_path.split('/').last
       }, status: :unprocessable_entity
       return
+    end
+
+    # Force delete: recursively delete all contents
+    if force_delete
+      delete_folder_contents_recursively(folder_path)
     end
 
     folder = Current.account.kb_folders.find_by!(full_path: folder_path)
     folder.destroy!
 
-    head :ok
+    render json: {
+      deleted_resources: resources_count,
+      deleted_subfolders: subfolders_count
+    }, status: :ok
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Folder not found' }, status: :not_found
   end
@@ -236,6 +248,8 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
         file_size: resource.file_size,
         is_visible: resource.is_visible,
         s3_url: resource.presigned_url,
+        created_at: resource.created_at,
+        updated_at: resource.updated_at,
         product_catalog_ids: resource.product_catalog_ids,
         product_catalogs: resource.product_catalogs.map do |catalog|
           {
@@ -286,5 +300,52 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
     return nil if first_segment.blank?
 
     first_segment
+  end
+
+  # Count all resources in folder and subfolders recursively
+  def count_resources_recursively(folder_path)
+    # Resources directly in this folder
+    direct_count = Current.account.kb_resources.where(folder_path: folder_path).count
+
+    # Resources in subfolders (using LIKE for path prefix matching)
+    subfolder_prefix = folder_path == '/' ? '/%' : "#{folder_path}/%"
+    nested_count = Current.account.kb_resources.where('folder_path LIKE ?', subfolder_prefix).count
+
+    direct_count + nested_count
+  end
+
+  # Count all subfolders recursively
+  def count_subfolders_recursively(folder_path)
+    # Direct subfolders
+    direct_count = Current.account.kb_folders.where(parent_path: folder_path).count
+
+    # Nested subfolders (using LIKE for path prefix matching)
+    subfolder_prefix = folder_path == '/' ? '/%' : "#{folder_path}/%"
+    nested_count = Current.account.kb_folders.where('parent_path LIKE ?', subfolder_prefix).count
+
+    direct_count + nested_count
+  end
+
+  # Delete all contents of a folder recursively
+  def delete_folder_contents_recursively(folder_path)
+    uploader = KbResources::S3UploaderService.new(account_id: Current.account.id)
+
+    # Find all resources in this folder and subfolders
+    subfolder_prefix = folder_path == '/' ? '/%' : "#{folder_path}/%"
+    resources_to_delete = Current.account.kb_resources
+                                         .where('folder_path = ? OR folder_path LIKE ?', folder_path, subfolder_prefix)
+
+    # Delete each resource from S3 and database
+    resources_to_delete.find_each do |resource|
+      uploader.delete(resource.s3_key) if resource.s3_key.present?
+      resource.destroy!
+    end
+
+    # Delete all subfolders (deepest first to avoid foreign key issues)
+    subfolders = Current.account.kb_folders
+                                .where('parent_path = ? OR parent_path LIKE ?', folder_path, subfolder_prefix)
+                                .order('LENGTH(full_path) DESC')
+
+    subfolders.destroy_all
   end
 end

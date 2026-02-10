@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 
@@ -23,9 +23,6 @@ const emit = defineEmits(['update:modelValue']);
 const { t } = useI18n();
 
 const search = ref('');
-const open = ref(false);
-const containerRef = ref(null);
-const dropdownRef = ref(null);
 const searchDebounceTimer = ref(null);
 const debouncedSearch = ref('');
 
@@ -37,14 +34,14 @@ const selectedProducts = computed(() => {
 // Filter products by search term (ID or name)
 const filteredProducts = computed(() => {
   if (!debouncedSearch.value) {
-    return props.products.slice(0, 50); // Limit initial display
+    return props.products.slice(0, 100);
   }
   const term = debouncedSearch.value.toLowerCase();
   return props.products.filter(p => {
     const productId = p.product_id?.toLowerCase() || '';
     const name = p.productName?.toLowerCase() || '';
     return productId.includes(term) || name.includes(term);
-  }).slice(0, 50);
+  }).slice(0, 100);
 });
 
 const isSelected = (id) => props.modelValue.includes(id);
@@ -65,6 +62,15 @@ const removeProduct = (id) => {
   emit('update:modelValue', currentIds);
 };
 
+const selectAll = () => {
+  const allIds = props.products.map(p => p.id);
+  emit('update:modelValue', allIds);
+};
+
+const deselectAll = () => {
+  emit('update:modelValue', []);
+};
+
 // Debounce search
 watch(search, (newVal) => {
   if (searchDebounceTimer.value) {
@@ -75,33 +81,7 @@ watch(search, (newVal) => {
   }, 300);
 });
 
-// Handle click outside
-const handleClickOutside = (event) => {
-  const isInsideContainer = containerRef.value?.contains(event.target);
-  const isInsideDropdown = dropdownRef.value?.contains(event.target);
-  if (!isInsideContainer && !isInsideDropdown) {
-    open.value = false;
-  }
-};
-
-// Handle blur (for TAB navigation)
-const handleBlur = () => {
-  setTimeout(() => {
-    const activeElement = document.activeElement;
-    const isInsideContainer = containerRef.value?.contains(activeElement);
-    const isInsideDropdown = dropdownRef.value?.contains(activeElement);
-    if (!isInsideContainer && !isInsideDropdown) {
-      open.value = false;
-    }
-  }, 100);
-};
-
-onMounted(() => {
-  document.addEventListener('mousedown', handleClickOutside);
-});
-
 onUnmounted(() => {
-  document.removeEventListener('mousedown', handleClickOutside);
   if (searchDebounceTimer.value) {
     clearTimeout(searchDebounceTimer.value);
   }
@@ -109,13 +89,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="relative w-full">
-    <!-- Selected product chips and search input -->
+  <div class="w-full border border-n-weak rounded-lg overflow-hidden bg-n-alpha-1">
+    <!-- Selected product chips -->
     <div
-      class="flex flex-wrap gap-2 p-2 border border-n-weak rounded-lg min-h-[42px] bg-n-alpha-1 cursor-text focus-within:ring-2 focus-within:ring-n-blue-9 focus-within:border-n-blue-9"
-      @click="open = true"
+      v-if="selectedProducts.length > 0"
+      class="flex flex-wrap gap-2 p-2 border-b border-n-weak bg-n-solid-1 max-h-24 overflow-y-auto"
     >
-      <!-- Selected chips -->
       <div
         v-for="product in selectedProducts"
         :key="product.id"
@@ -131,62 +110,86 @@ onUnmounted(() => {
           <Icon icon="i-lucide-x" class="w-3 h-3" />
         </button>
       </div>
-
-      <!-- Search input -->
-      <input
-        v-model="search"
-        type="text"
-        :placeholder="selectedProducts.length === 0 ? (placeholder || t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.PLACEHOLDER')) : ''"
-        class="flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm text-n-slate-12 placeholder:text-n-slate-9"
-        @focus="open = true"
-        @blur="handleBlur"
-      />
     </div>
 
-    <!-- Dropdown with filtered products -->
-    <Teleport to="body">
-      <div
-        v-if="open"
-        ref="dropdownRef"
-        class="fixed z-[9999] bg-n-solid-1 border border-n-weak rounded-lg shadow-lg max-h-64 overflow-auto"
-        :style="{
-          top: containerRef ? `${containerRef.getBoundingClientRect().bottom + 4}px` : '0',
-          left: containerRef ? `${containerRef.getBoundingClientRect().left}px` : '0',
-          width: containerRef ? `${containerRef.getBoundingClientRect().width}px` : 'auto',
-        }"
-      >
-        <div v-if="filteredProducts.length === 0" class="p-4 text-center text-sm text-n-slate-11">
-          {{ t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.NO_RESULTS') }}
-        </div>
+    <!-- Search and quick actions header -->
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-n-weak bg-n-alpha-1">
+      <!-- Search input -->
+      <div class="flex-1 flex items-center gap-2">
+        <Icon icon="i-lucide-search" class="w-4 h-4 text-n-slate-10 shrink-0" />
+        <input
+          v-model="search"
+          type="text"
+          :placeholder="placeholder || t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.PLACEHOLDER')"
+          class="flex-1 bg-transparent border-none outline-none text-sm text-n-slate-12 placeholder:text-n-slate-9"
+        />
+      </div>
 
+      <!-- Quick actions -->
+      <div class="flex items-center gap-2 shrink-0">
         <button
-          v-for="product in filteredProducts"
-          :key="product.id"
           type="button"
-          class="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-n-alpha-2 transition-colors"
-          :class="{ 'bg-n-blue-2': isSelected(product.id) }"
-          @click="toggleProduct(product)"
+          class="text-xs text-n-blue-11 hover:text-n-blue-12 font-medium whitespace-nowrap"
+          @click="selectAll"
         >
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="font-mono text-xs bg-n-slate-3 px-1.5 py-0.5 rounded text-n-slate-11">
-                {{ product.product_id }}
-              </span>
-              <span class="text-sm font-medium text-n-slate-12 truncate">
-                {{ product.productName }}
-              </span>
-            </div>
-            <div class="text-xs text-n-slate-10 mt-0.5">
-              {{ product.type }} <span v-if="product.industry">{{ product.industry }}</span>
-            </div>
-          </div>
+          {{ t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.SELECT_ALL') }}
+        </button>
+        <span class="text-n-slate-8">|</span>
+        <button
+          type="button"
+          class="text-xs text-n-slate-11 hover:text-n-slate-12 font-medium whitespace-nowrap"
+          @click="deselectAll"
+        >
+          {{ t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.DESELECT_ALL') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Product list (always visible) -->
+    <div class="max-h-48 overflow-auto">
+      <div v-if="filteredProducts.length === 0" class="p-4 text-center text-sm text-n-slate-11">
+        {{ t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.NO_RESULTS') }}
+      </div>
+
+      <button
+        v-for="product in filteredProducts"
+        :key="product.id"
+        type="button"
+        class="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-n-alpha-2 transition-colors border-b border-n-weak/50 last:border-b-0"
+        :class="{ 'bg-n-blue-2': isSelected(product.id) }"
+        @click="toggleProduct(product)"
+      >
+        <!-- Checkbox indicator -->
+        <div
+          class="w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
+          :class="isSelected(product.id) ? 'bg-n-blue-9 border-n-blue-9' : 'border-n-slate-8'"
+        >
           <Icon
             v-if="isSelected(product.id)"
             icon="i-lucide-check"
-            class="w-4 h-4 text-n-blue-11 flex-shrink-0"
+            class="w-3 h-3 text-white"
           />
-        </button>
-      </div>
-    </Teleport>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-xs bg-n-slate-3 px-1.5 py-0.5 rounded text-n-slate-11">
+              {{ product.product_id }}
+            </span>
+            <span class="text-sm font-medium text-n-slate-12 truncate">
+              {{ product.productName }}
+            </span>
+          </div>
+          <div class="text-xs text-n-slate-10 mt-0.5">
+            {{ product.type }} <span v-if="product.industry">· {{ product.industry }}</span>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Footer with count -->
+    <div class="px-3 py-1.5 border-t border-n-weak bg-n-alpha-1 text-xs text-n-slate-10">
+      {{ selectedProducts.length }} / {{ products.length }} {{ t('KNOWLEDGE_BASE.RESOURCES.PRODUCT_SEARCH.SELECTED') }}
+    </div>
   </div>
 </template>

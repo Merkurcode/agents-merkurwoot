@@ -144,10 +144,14 @@ export const actions = {
     }
   },
 
-  deleteFolder: async ({ commit }, folderPath) => {
+  deleteFolder: async ({ commit }, payload) => {
+    // Support both string (path only) and object { path, force }
+    const folderPath = typeof payload === 'string' ? payload : payload.path;
+    const force = typeof payload === 'object' ? payload.force : false;
+
     commit(types.SET_KB_RESOURCE_UI_FLAG, { isDeleting: true });
     try {
-      await KbResourcesAPI.deleteFolder(folderPath);
+      await KbResourcesAPI.deleteFolder(folderPath, force);
       commit(types.DELETE_KB_RESOURCE_FOLDER, folderPath);
     } finally {
       commit(types.SET_KB_RESOURCE_UI_FLAG, { isDeleting: false });

@@ -1,6 +1,7 @@
 module KbResources
   class S3UploaderService
     ALLOWED_CONTENT_TYPES = [
+      # Documents
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -9,7 +10,25 @@ module KbResources
       'text/plain',
       'text/csv',
       'application/json',
-      'text/markdown'
+      'text/markdown',
+      # Images
+      'image/png',
+      'image/jpeg',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      # Audio
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/wav',
+      'audio/wave',
+      'audio/x-wav',
+      'audio/ogg',
+      'audio/mp4',
+      'audio/m4a',
+      'audio/x-m4a',
+      'audio/aac',
+      'audio/flac'
     ].freeze
 
     def initialize(account_id:, bucket: nil)

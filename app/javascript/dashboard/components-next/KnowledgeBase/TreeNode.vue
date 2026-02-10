@@ -125,6 +125,12 @@ const selectFile = (file) => {
         >
           {{ t('KNOWLEDGE_BASE.RESOURCES.HIDDEN') }}
         </span>
+        <span
+          v-if="file.product_catalogs?.length"
+          class="text-xs text-n-blue-11 bg-n-blue-3 px-1 py-0.5 rounded ml-1 shrink-0"
+        >
+          {{ file.product_catalogs.length }} {{ file.product_catalogs.length === 1 ? 'product' : 'products' }}
+        </span>
         <span class="text-xs text-n-slate-10 ml-2 shrink-0">
           {{ formatFileSize(file.file_size) }}
         </span>

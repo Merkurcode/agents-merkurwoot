@@ -979,7 +979,7 @@ onMounted(fetchData);
                 </div>
 
                 <!-- Associations Accordion -->
-                <div class="border border-n-weak rounded-lg overflow-hidden">
+                <div class="border border-n-weak rounded-lg overflow-hidden shrink-0">
                   <button
                     type="button"
                     class="w-full flex items-center justify-between px-3 py-2.5 bg-n-alpha-1 hover:bg-n-alpha-2 transition-colors"
@@ -1021,7 +1021,7 @@ onMounted(fetchData);
                         />
                       </button>
                       <!-- Products Content -->
-                      <div v-if="uploadProductsAccordionOpen" class="px-3 pb-3">
+                      <div v-if="uploadProductsAccordionOpen" class="px-3 pb-3 max-h-[300px] overflow-y-auto">
                         <ProductSearchSelect
                           v-model="uploadForm.product_catalog_ids"
                           :products="productCatalogs"
@@ -1693,7 +1693,7 @@ onMounted(fetchData);
             </div>
 
             <!-- Associations Accordion -->
-            <div class="border border-n-weak rounded-lg overflow-hidden">
+            <div class="border border-n-weak rounded-lg overflow-hidden shrink-0">
               <button
                 type="button"
                 class="w-full flex items-center justify-between px-3 py-2.5 bg-n-alpha-1 hover:bg-n-alpha-2 transition-colors"
@@ -1735,7 +1735,7 @@ onMounted(fetchData);
                     />
                   </button>
                   <!-- Products Content -->
-                  <div v-if="editProductsAccordionOpen" class="px-3 pb-3">
+                  <div v-if="editProductsAccordionOpen" class="px-3 pb-3 max-h-[300px] overflow-y-auto">
                     <ProductSearchSelect
                       v-model="editForm.product_catalog_ids"
                       :products="productCatalogs"

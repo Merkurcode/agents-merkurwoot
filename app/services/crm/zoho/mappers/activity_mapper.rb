@@ -64,6 +64,12 @@ module Crm
           is_appointment = appointment_or_params.is_a?(Appointment)
           p = is_appointment ? params : appointment_or_params
 
+          Rails.logger.info "🔍 [MAPPER] is_appointment: #{is_appointment}"
+          Rails.logger.info "🔍 [MAPPER] p (params hash): #{p.inspect}"
+          Rails.logger.info "🔍 [MAPPER] p[:contact_id]: #{p[:contact_id].inspect}"
+          Rails.logger.info "🔍 [MAPPER] p[:lead_id]: #{p[:lead_id].inspect}"
+          Rails.logger.info "🔍 [MAPPER] p[:se_module]: #{p[:se_module].inspect}"
+
           # Título/Asunto
           subject = if is_appointment
                       appointment_or_params.description
@@ -105,13 +111,17 @@ module Crm
 
           # Add Who_Id (Contact) if provided
           if p[:contact_id].present?
+            Rails.logger.info "🔍 [MAPPER] Añadiendo Who_Id con contact_id: #{p[:contact_id]}"
             event_data[:Who_Id] = { id: p[:contact_id] }
           end
 
           # Add What_Id (Lead or other related record) if provided
           if p[:lead_id].present?
+            Rails.logger.info "🔍 [MAPPER] Añadiendo What_Id con lead_id: #{p[:lead_id]}"
             event_data[:What_Id] = { id: p[:lead_id] }
             event_data[:'$se_module'] = p[:se_module] || 'Leads'
+          else
+            Rails.logger.info "🔍 [MAPPER] NO añadiendo What_Id porque lead_id no está present"
           end
 
           # Add Owner if specified

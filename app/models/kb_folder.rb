@@ -100,3 +100,5 @@ class KbFolder < ApplicationRecord
     end
   end
 end
+
+KbFolder.include_mod_with('Audit::KbFolder')

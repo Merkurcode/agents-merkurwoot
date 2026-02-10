@@ -439,7 +439,8 @@
         "INVALID_DESCRIPTION": "La descripción contiene caracteres inválidos",
         "INVALID_FOLDER_NAME": "El nombre de carpeta no puede contener caracteres especiales, empezar con punto, o incluir separadores de ruta",
         "NAME_TOO_LONG": "El nombre es demasiado largo",
-        "DESCRIPTION_TOO_LONG": "La descripción es demasiado larga"
+        "DESCRIPTION_TOO_LONG": "La descripción es demasiado larga",
+        "FILE_TOO_LARGE": "El archivo excede el tamaño máximo de {max}. Por favor selecciona un archivo más pequeño."
       }
     }
   }

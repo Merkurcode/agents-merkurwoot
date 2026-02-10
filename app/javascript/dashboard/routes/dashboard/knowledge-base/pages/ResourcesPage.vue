@@ -85,12 +85,15 @@ const searchDebounceTimer = ref(null);
 // File input ref
 const fileInputRef = ref(null);
 const selectedFileName = ref('');
+const selectedFileSize = ref(0);
+const fileSizeError = ref(false);
 
 // Validation limits (matching backend)
 const LIMITS = {
   RESOURCE_NAME_MAX: 255,
   RESOURCE_DESCRIPTION_MAX: 1000,
   FOLDER_NAME_MAX: 100,
+  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB in bytes
 };
 
 // Validation helpers
@@ -532,6 +535,8 @@ const closeResourceDetail = () => {
 const openUploadModal = () => {
   uploadForm.value = { file: null, name: '', description: '', product_catalog_ids: [] };
   selectedFileName.value = '';
+  selectedFileSize.value = 0;
+  fileSizeError.value = false;
   uploadAccordionOpen.value = false;
   uploadProductsAccordionOpen.value = false;
   showUploadModal.value = true;
@@ -540,8 +545,18 @@ const openUploadModal = () => {
 const handleFileSelect = (event) => {
   const file = event.target.files[0];
   if (file) {
-    uploadForm.value.file = file;
     selectedFileName.value = file.name;
+    selectedFileSize.value = file.size;
+
+    // Validate file size before processing
+    if (file.size > LIMITS.MAX_FILE_SIZE) {
+      fileSizeError.value = true;
+      uploadForm.value.file = null;
+      return;
+    }
+
+    fileSizeError.value = false;
+    uploadForm.value.file = file;
     if (!uploadForm.value.name) {
       uploadForm.value.name = file.name.replace(/\.[^/.]+$/, '');
     }
@@ -906,14 +921,25 @@ onMounted(fetchData);
                     @change="handleFileSelect"
                   />
                   <button
-                    class="w-full p-4 border-2 border-dashed border-n-weak rounded-lg hover:border-n-blue-9 transition-colors flex flex-col items-center gap-2"
+                    class="w-full p-4 border-2 border-dashed rounded-lg transition-colors flex flex-col items-center gap-2"
+                    :class="fileSizeError ? 'border-n-ruby-9 bg-n-ruby-2' : 'border-n-weak hover:border-n-blue-9'"
                     @click="triggerFileInput"
                   >
-                    <i class="i-lucide-upload-cloud w-8 h-8 text-n-slate-10" />
-                    <span v-if="selectedFileName" class="text-sm text-n-slate-12 font-medium">{{ selectedFileName }}</span>
+                    <i class="i-lucide-upload-cloud w-8 h-8" :class="fileSizeError ? 'text-n-ruby-11' : 'text-n-slate-10'" />
+                    <span v-if="selectedFileName" class="text-sm font-medium" :class="fileSizeError ? 'text-n-ruby-11' : 'text-n-slate-12'">
+                      {{ selectedFileName }}
+                      <span class="text-xs ml-1" :class="fileSizeError ? 'text-n-ruby-10' : 'text-n-slate-10'">
+                        ({{ formatFileSize(selectedFileSize) }})
+                      </span>
+                    </span>
                     <span v-else class="text-sm text-n-slate-11">{{ t('KNOWLEDGE_BASE.RESOURCES.UPLOAD.DROP_OR_CLICK') }}</span>
                     <span class="text-xs text-n-slate-10">{{ t('KNOWLEDGE_BASE.RESOURCES.UPLOAD.FILE_TYPES') }}</span>
                   </button>
+                  <!-- File size error message -->
+                  <p v-if="fileSizeError" class="mt-2 text-xs text-n-ruby-11 flex items-center gap-1">
+                    <i class="i-lucide-alert-circle w-3.5 h-3.5" />
+                    {{ t('KNOWLEDGE_BASE.RESOURCES.VALIDATION.FILE_TOO_LARGE', { max: '100MB' }) }}
+                  </p>
                 </div>
 
                 <div>

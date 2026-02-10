@@ -439,7 +439,8 @@
         "INVALID_DESCRIPTION": "Description contains invalid characters",
         "INVALID_FOLDER_NAME": "Folder name cannot contain special characters, start with a dot, or include path separators",
         "NAME_TOO_LONG": "Name is too long",
-        "DESCRIPTION_TOO_LONG": "Description is too long"
+        "DESCRIPTION_TOO_LONG": "Description is too long",
+        "FILE_TOO_LARGE": "File exceeds maximum size of {max}. Please select a smaller file."
       }
     }
   }

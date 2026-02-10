@@ -79,7 +79,7 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
     upload_result = uploader.upload(uploaded_file)
 
     begin
-      @kb_resource = Current.account.kb_resources.create!(
+      @kb_resource = Current.account.kb_resources.new(
         name: params[:name].presence || upload_result[:file_name],
         description: params[:description],
         folder_path: normalize_folder_path(params[:folder_path] || '/'),
@@ -90,11 +90,19 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
         created_by: current_user
       )
 
+      # Skip automatic callback to dispatch event after associations are set
+      @kb_resource.skip_create_callback = true
+      @kb_resource.save!
+
       # Handle product catalog associations
       if params[:product_catalog_ids].present?
         product_catalog_ids = Array(params[:product_catalog_ids]).map(&:to_i).uniq
         @kb_resource.product_catalog_ids = product_catalog_ids
       end
+
+      # Reload to get fresh associations and dispatch event with current state
+      @kb_resource.reload
+      @kb_resource.dispatch_create_event!
 
       render :show, status: :created
     rescue StandardError => e
@@ -107,15 +115,34 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
   end
 
   def update
+    # Skip automatic callback to dispatch event after all updates (including associations)
+    @kb_resource.skip_update_callback = true
+
+    # Track old product_ids before update
+    old_product_ids = @kb_resource.product_catalogs.pluck(:product_id)
+
     @kb_resource.update!(
       kb_resource_params.except(:product_catalog_ids).merge(updated_by: current_user)
     )
+
+    # Save changes before reload (excluding updated_at)
+    tracked_changes = @kb_resource.previous_changes.except('updated_at')
 
     # Handle product catalog associations if provided
     if params[:kb_resource].key?(:product_catalog_ids)
       product_catalog_ids = Array(params[:kb_resource][:product_catalog_ids]).map(&:to_i).uniq
       @kb_resource.product_catalog_ids = product_catalog_ids
+
+      # Track product_ids change if different
+      new_product_ids = ProductCatalog.where(id: product_catalog_ids).pluck(:product_id)
+      if old_product_ids.sort != new_product_ids.sort
+        tracked_changes['product_ids'] = [old_product_ids.sort, new_product_ids.sort]
+      end
     end
+
+    # Reload to get fresh associations and dispatch event with current state
+    @kb_resource.reload
+    @kb_resource.dispatch_update_event!(tracked_changes)
 
     render :show
   end

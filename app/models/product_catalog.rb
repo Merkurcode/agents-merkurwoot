@@ -163,6 +163,7 @@ class ProductCatalog < ApplicationRecord
   def cleanup_s3_folder
     ProductCatalogs::S3CleanupService.new.delete_product_folder(account_id, product_id || id)
   end
+
 end
 
 ProductCatalog.include_mod_with('Audit::ProductCatalog')

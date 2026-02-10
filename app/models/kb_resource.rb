@@ -44,12 +44,25 @@ class KbResource < ApplicationRecord
   scope :visible, -> { where(is_visible: true) }
   scope :ordered, -> { order(created_at: :desc) }
 
-  after_create_commit :dispatch_create_event
-  after_update_commit :dispatch_update_event
+  # Skip callbacks for manual event dispatch (used when updating associations separately)
+  attr_accessor :skip_create_callback, :skip_update_callback, :tracked_changes
+
+  after_create_commit :dispatch_create_event, unless: :skip_create_callback
+  after_update_commit :dispatch_update_event, unless: :skip_update_callback
   after_destroy_commit :dispatch_destroy_event
 
   def presigned_url
     KbResources::PresignedUrlService.new.generate_url(s3_key)
+  end
+
+  # Manually dispatch create event (used after updating associations)
+  def dispatch_create_event!
+    dispatch_create_event
+  end
+
+  # Manually dispatch update event (used after updating associations)
+  def dispatch_update_event!(changed_attrs = nil)
+    dispatch_update_event(changed_attrs || tracked_changes)
   end
 
   # Returns total storage used by account in bytes
@@ -123,13 +136,19 @@ class KbResource < ApplicationRecord
     end
   end
 
-  def resource_payload
-    {
+  def resource_payload(changed_attributes: nil)
+    payload = {
       id: id,
       name: name,
-      s3_url: presigned_url,
-      product_catalog_ids: product_catalog_ids
+      s3_url: presigned_url
     }
+    # Only include product_ids for create (no changed_attributes), for update it's in changed_attributes
+    if changed_attributes.present?
+      payload[:changed_attributes] = changed_attributes
+    else
+      payload[:product_ids] = product_catalogs.pluck(:product_id)
+    end
+    payload
   end
 
   def dispatch_resource_event(action:, resource_data:)
@@ -146,11 +165,14 @@ class KbResource < ApplicationRecord
     dispatch_resource_event(action: 'created', resource_data: resource_payload)
   end
 
-  def dispatch_update_event
-    dispatch_resource_event(action: 'updated', resource_data: resource_payload)
+  def dispatch_update_event(changed_attrs = nil)
+    changes = changed_attrs || previous_changes.except('updated_at')
+    dispatch_resource_event(action: 'updated', resource_data: resource_payload(changed_attributes: changes))
   end
 
   def dispatch_destroy_event
     dispatch_resource_event(action: 'deleted', resource_data: { id: id, name: name })
   end
 end
+
+KbResource.include_mod_with('Audit::KbResource')

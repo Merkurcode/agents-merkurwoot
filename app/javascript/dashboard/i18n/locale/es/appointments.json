@@ -114,7 +114,7 @@
       "ERROR": "Error al eliminar la cita"
     },
     "PAGINATION_FOOTER": {
-      "SHOWING": "Mostrando {from} a {to} de {count} citas"
+      "SHOWING": "Mostrando {startItem} a {endItem} de {totalItems} cita | Mostrando {startItem} a {endItem} de {totalItems} citas"
     }
   }
 }

@@ -33,7 +33,7 @@ const showPagination = computed(() => {
       <header
         class="sticky top-0 z-10 flex flex-col bg-n-background border-b border-n-weak"
       >
-        <div class="w-full mx-auto max-w-[60rem] px-4 py-4">
+        <div class="w-full mx-auto max-w-[90rem] px-4 py-4">
           <div class="flex items-start justify-between gap-4">
             <div class="flex-1">
               <h1 class="text-2xl font-semibold text-n-slate-12">
@@ -55,7 +55,7 @@ const showPagination = computed(() => {
 
       <!-- Main content -->
       <main class="flex-1 overflow-y-auto">
-        <div class="w-full mx-auto max-w-[60rem] px-4 py-4">
+        <div class="w-full mx-auto max-w-[90rem] px-4 py-4">
           <slot name="default" />
         </div>
       </main>

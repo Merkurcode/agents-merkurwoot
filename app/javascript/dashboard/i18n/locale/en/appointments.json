@@ -114,7 +114,7 @@
       "ERROR": "Failed to delete appointment"
     },
     "PAGINATION_FOOTER": {
-      "SHOWING": "Showing {from} to {to} of {count} appointments"
+      "SHOWING": "Showing {startItem} to {endItem} of {totalItems} appointment | Showing {startItem} to {endItem} of {totalItems} appointments"
     }
   }
 }

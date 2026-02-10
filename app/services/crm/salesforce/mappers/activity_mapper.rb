@@ -51,7 +51,7 @@ module Crm
                    end
 
           location = is_appointment ? appointment_or_params.location : p[:venue]
-          description = is_appointment ? appointment_or_params.additional_notes : p[:description]
+          description = is_appointment ? appointment_or_params.description : p[:description]
 
           {
             Subject: subject,

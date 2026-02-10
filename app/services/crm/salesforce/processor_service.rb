@@ -46,7 +46,18 @@ module Crm
       # ============================================================================
 
       def authenticated?
-        credentials['access_token'].present? && !hook.token_expired?
+        # Verificar si tiene access_token
+        return false unless @hook.credentials['access_token'].present?
+
+        # Si el token está expirado, intentar refrescarlo
+        if @hook.token_expired?
+          Rails.logger.info "Salesforce token expired, attempting refresh..."
+          @hook.refresh_token_if_needed
+          @hook.reload
+        end
+
+        # Verificar de nuevo después del posible refresh
+        @hook.credentials['access_token'].present? && !@hook.token_expired?
       rescue StandardError => e
         Rails.logger.error "Salesforce authentication check failed: #{e.message}"
         false

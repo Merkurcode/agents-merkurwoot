@@ -75,6 +75,9 @@ class ProductCatalog < ApplicationRecord
   # Public association - only returns media with completed S3 uploads (for API responses)
   has_many :product_media, -> { where(s3_status: 'completed') }, class_name: 'ProductMedium'
 
+  has_many :kb_resource_product_catalogs, dependent: :destroy
+  has_many :kb_resources, through: :kb_resource_product_catalogs
+
   validates :account_id, presence: true
   validates :industry, presence: true
   validates :productName, presence: true

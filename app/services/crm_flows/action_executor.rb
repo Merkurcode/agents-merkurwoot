@@ -1,6 +1,16 @@
 module CrmFlows
   class ActionExecutor
-    CRM_ACTIONS = %w[create_lead create_opportunity create_call create_task create_event add_crm_tag add_note].freeze
+    CRM_ACTIONS = %w[
+      create_lead
+      create_opportunity
+      create_call
+      create_task
+      create_event
+      add_crm_tag
+      add_note
+      create_appointment
+      update_appointment_status
+    ].freeze
     CHATWOOT_ACTIONS = %w[assign_chatwoot_agent add_chatwoot_label].freeze
 
     # Mapeo de nombres de acción del flow → nombres que espera el ProcessorService
@@ -12,6 +22,8 @@ module CrmFlows
       'create_lead' => :check_external_id,
       'create_opportunity' => :check_external_id,
       'create_event' => :check_external_id,
+      'create_appointment' => :check_appointment_external_id,
+      'update_appointment_status' => :always_sync,
       'add_crm_tag' => :idempotent_by_nature,
       'create_task' => :none,
       'create_call' => :none,
@@ -29,12 +41,14 @@ module CrmFlows
     def execute(actions)
       results = []
       (actions || []).sort_by { |a| a['order'] || 0 }.each do |action|
+        Rails.logger.info "Executing action: #{action['action']}"
         if CHATWOOT_ACTIONS.include?(action['action'])
           results << execute_chatwoot_action(action)
         elsif CRM_ACTIONS.include?(action['action'])
           results.concat(execute_crm_action(action))
         end
       end
+      Rails.logger.info "Execution results: #{results}"
       results
     end
 
@@ -71,21 +85,53 @@ module CrmFlows
     end
 
     def execute_crm_action(action)
-      @crm_hooks.map { |hook| execute_single_crm_action(hook, action) }
+      @crm_hooks.map do |hook|
+        # Validar autenticación antes de ejecutar
+        unless hook_authenticated?(hook)
+          next {
+            action: action['action'],
+            crm: hook.app_id,
+            status: 'skipped',
+            reason: 'not_authenticated',
+            type: 'crm'
+          }
+        end
+
+        execute_single_crm_action(hook, action)
+      end.compact
     end
 
     def execute_single_crm_action(hook, action)
       action_name = action['action']
       crm_name = hook.app_id
 
-      strategy = IDEMPOTENCY_STRATEGIES[action_name]
-      if strategy == :check_external_id && external_id_exists?(hook, action_name)
-        return { action: action_name, crm: crm_name, status: 'skipped', reason: 'already_exists', type: 'crm' }
+      # ROUTING INTELIGENTE: Si es create_appointment, resolver el action correcto por tipo
+      if action_name == 'create_appointment'
+        appointment = Appointment.find_by(id: @metadata[:appointment_id])
+        unless appointment
+          return { action: action_name, crm: crm_name, status: 'failed', error: 'Appointment not found', type: 'crm' }
+        end
+
+        config = Crm::AppointmentTypeConfig.resolve(crm_name, appointment.appointment_type)
+        unless config
+          return { action: action_name, crm: crm_name, status: 'skipped', reason: 'unsupported_type', type: 'crm' }
+        end
+
+        action_name = config[:action] # create_call, create_event, create_task, etc.
+      end
+
+      strategy = IDEMPOTENCY_STRATEGIES[action['action']] # Usar action original para strategy
+      if strategy == :check_external_id && external_id_exists?(hook, action['action'])
+        return { action: action['action'], crm: crm_name, status: 'skipped', reason: 'already_exists', type: 'crm' }
+      end
+
+      if strategy == :check_appointment_external_id && appointment_external_id_exists?(hook)
+        return { action: action['action'], crm: crm_name, status: 'skipped', reason: 'already_synced', type: 'crm' }
       end
 
       processor = build_processor(hook)
       unless processor
-        return { action: action_name, crm: crm_name, status: 'skipped', reason: 'unsupported', type: 'crm' }
+        return { action: action['action'], crm: crm_name, status: 'skipped', reason: 'unsupported', type: 'crm' }
       end
 
       params = build_params(action)
@@ -94,9 +140,9 @@ module CrmFlows
 
       if result[:success]
         eid = result[:lead_id] || result[:call_id] || result[:task_id] || result[:event_id] || result[:opportunity_id] || result[:note_id]
-        { action: action_name, crm: crm_name, status: 'success', external_id: eid, type: 'crm' }
+        { action: action['action'], crm: crm_name, status: 'success', external_id: eid, type: 'crm' }
       else
-        { action: action_name, crm: crm_name, status: 'failed', error: result[:error], type: 'crm' }
+        { action: action['action'], crm: crm_name, status: 'failed', error: result[:error], type: 'crm' }
       end
     rescue StandardError => e
       Rails.logger.error "CrmFlows::ActionExecutor (#{action['action']}/#{hook.app_id}): #{e.message}"
@@ -109,9 +155,29 @@ module CrmFlows
         @contact.additional_attributes&.dig('external', "#{hook.app_id}_lead_id").present?
       when 'create_opportunity'
         @contact.additional_attributes&.dig('external', "#{hook.app_id}_opportunity_id").present?
+      when 'create_appointment'
+        appointment_external_id_exists?(hook)
       else
         false
       end
+    end
+
+    def appointment_external_id_exists?(hook)
+      appointment = Appointment.find_by(id: @metadata[:appointment_id])
+      return false unless appointment
+
+      appointment.external_id_for(hook.app_id).present?
+    end
+
+    def hook_authenticated?(hook)
+      # Verificar que el hook tiene token válido y no expirado
+      return false if hook.token_expired?
+
+      processor = build_processor(hook)
+      processor&.authenticated?
+    rescue StandardError => e
+      Rails.logger.error "Authentication check failed for #{hook.app_id}: #{e.message}"
+      false
     end
 
     def build_processor(hook)
@@ -126,10 +192,17 @@ module CrmFlows
     end
 
     def build_params(action)
-      (action['params'] || {}).merge(
+      base_params = (action['params'] || {}).merge(
         'contact_id' => @contact.id,
         'metadata' => @metadata
-      ).symbolize_keys
+      )
+
+      # Si hay appointment_id en metadata, añadirlo directamente a params
+      if @metadata[:appointment_id].present?
+        base_params['appointment_id'] = @metadata[:appointment_id]
+      end
+
+      base_params.symbolize_keys
     end
   end
 end

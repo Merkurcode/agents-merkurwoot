@@ -32,19 +32,6 @@ const toLocalDatetimeString = utcDateString => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const formData = ref({
-  contact_id: props.appointment?.contact_id || null,
-  appointment_type: props.appointment?.appointment_type || 'phone_call',
-  scheduled_at: toLocalDatetimeString(props.appointment?.scheduled_at),
-  ended_at: toLocalDatetimeString(props.appointment?.ended_at),
-  owner_id: props.appointment?.owner_id || null,
-  description: props.appointment?.description || '',
-  phone_number: props.appointment?.phone_number || '',
-  meeting_url: props.appointment?.meeting_url || '',
-  location: props.appointment?.location || '',
-  status: props.appointment?.status || 'scheduled',
-});
-
 // Cargar datos necesarios
 const contacts = computed(() => {
   const contactsList = getters['contacts/getContacts'].value || [];
@@ -60,6 +47,29 @@ const currentAccount = computed(() => {
     return account(currentAccountId.value) || {};
   }
   return account || {};
+});
+
+// Obtener el primer tipo de cita habilitado como valor por defecto
+const getDefaultAppointmentType = () => {
+  const enabledTypes = currentAccount.value.settings?.enabled_appointment_types || [
+    'physical_visit',
+    'digital_meeting',
+    'phone_call',
+  ];
+  return enabledTypes[0] || 'phone_call';
+};
+
+const formData = ref({
+  contact_id: props.appointment?.contact_id || null,
+  appointment_type: props.appointment?.appointment_type || getDefaultAppointmentType(),
+  scheduled_at: toLocalDatetimeString(props.appointment?.scheduled_at),
+  ended_at: toLocalDatetimeString(props.appointment?.ended_at),
+  owner_id: props.appointment?.owner_id || null,
+  description: props.appointment?.description || '',
+  phone_number: props.appointment?.phone_number || '',
+  meeting_url: props.appointment?.meeting_url || '',
+  location: props.appointment?.location || '',
+  status: props.appointment?.status || 'scheduled',
 });
 
 const contactOptions = computed(() =>
@@ -102,11 +112,22 @@ const accountAddress = computed(() => {
   return parts.join(', ');
 });
 
-const appointmentTypeOptions = [
+// Tipos de citas disponibles según configuración de la cuenta
+const allAppointmentTypes = [
   { value: 'phone_call', label: t('APPOINTMENTS.TYPE.PHONE_CALL') },
   { value: 'digital_meeting', label: t('APPOINTMENTS.TYPE.DIGITAL_MEETING') },
   { value: 'physical_visit', label: t('APPOINTMENTS.TYPE.PHYSICAL_VISIT') },
 ];
+
+const appointmentTypeOptions = computed(() => {
+  const enabledTypes = currentAccount.value.settings?.enabled_appointment_types || [
+    'physical_visit',
+    'digital_meeting',
+    'phone_call',
+  ];
+
+  return allAppointmentTypes.filter(type => enabledTypes.includes(type.value));
+});
 
 const statusOptions = [
   { value: 'scheduled', label: t('APPOINTMENTS.STATUS.SCHEDULED') },

@@ -491,3 +491,8 @@ en:
       contacted: contacted
       proposal_sent: proposal sent
       closed: closed
+  appointments:
+    types:
+      physical_visit: Physical Visit
+      digital_meeting: Digital Meeting
+      phone_call: Phone Call

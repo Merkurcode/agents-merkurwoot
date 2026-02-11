@@ -16,6 +16,18 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
   before_action :set_current_page, only: [:index, :search, :filter]
   before_action :appointment, only: [:show, :update, :destroy, :start, :complete, :cancel, :mark_no_show]
 
+  # GET /api/v1/accounts/:account_id/appointments/available_types
+  # Returns the appointment types enabled for this account
+  def available_types
+    types = Current.account.available_appointment_types.map do |type|
+      {
+        key: type,
+        label: I18n.t("appointments.types.#{type}", locale: Current.account.locale, default: type.humanize)
+      }
+    end
+    render json: { appointment_types: types }, status: :ok
+  end
+
   def index
     appointments = Current.account.appointments.includes(:contact, :owner)
     # Supervisor only sees appointments of contacts with conversations assigned to themselves or subordinates
@@ -59,6 +71,12 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
   def create
     contact = Current.account.contacts.find_by(id: params[:contact_id])
     return render_error('Contact not found', :not_found) unless contact
+
+    # Validar que el tipo de cita esté habilitado
+    appointment_type = appointment_params[:appointment_type]
+    if appointment_type.present? && !Current.account.appointment_type_enabled?(appointment_type)
+      return render_error("Appointment type '#{appointment_type}' is not enabled for this account", :unprocessable_entity)
+    end
 
     @appointment = contact.appointments.build(appointment_params)
     @appointment.account = Current.account

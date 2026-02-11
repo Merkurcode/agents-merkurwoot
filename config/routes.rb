@@ -199,6 +199,7 @@ Rails.application.routes.draw do
               get :search
               post :filter
               post :validate_appointment_token
+              get :available_types
             end
 
             member do

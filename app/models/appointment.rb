@@ -34,6 +34,7 @@ class Appointment < ApplicationRecord
   validates :owner_id, presence: true
   validate :ended_at_after_scheduled_at
   validate :type_specific_fields
+  validate :appointment_type_enabled
 
   # Callbacks
   before_create :generate_access_token
@@ -109,6 +110,14 @@ class Appointment < ApplicationRecord
       errors.add(:phone_number, 'is required for phone calls') if phone_number.blank?
     when 'physical_visit'
       errors.add(:location, 'is required for physical visits') if location.blank?
+    end
+  end
+
+  def appointment_type_enabled
+    return if appointment_type.blank? || account.blank?
+
+    unless account.appointment_type_enabled?(appointment_type)
+      errors.add(:appointment_type, "#{appointment_type} is not enabled for this account")
     end
   end
 

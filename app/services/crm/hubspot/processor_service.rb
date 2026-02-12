@@ -33,6 +33,42 @@ module Crm
       end
 
       # ============================================================================
+      # PROFILE SYNC
+      # ============================================================================
+
+      # Sync contact profile from HubSpot to Nauto Console Contact
+      #
+      # @param contact [Contact] The contact to sync
+      # @return [Hash] Result with success status and synced fields
+      def sync_profile(contact)
+        external_id = get_external_id(contact)
+        return { success: false, error: 'No external_id found for contact' } unless external_id
+
+        # Fetch contact profile from HubSpot
+        profile = @contact_client.get_contact(external_id)
+        return { success: false, error: 'Contact not found in HubSpot' } unless profile && profile['id'].present?
+
+        # Map CRM profile to Contact attributes
+        mapped_attrs = Crm::Hubspot::Mappers::ProfileMapper.map_to_contact_attributes(profile)
+
+        # Merge additional_attributes instead of replacing
+        if mapped_attrs[:additional_attributes].present?
+          contact.additional_attributes ||= {}
+          contact.additional_attributes.deep_merge!(mapped_attrs[:additional_attributes])
+          mapped_attrs.delete(:additional_attributes)
+        end
+
+        # Update contact with mapped attributes
+        contact.update!(mapped_attrs.merge(additional_attributes: contact.additional_attributes))
+
+        Rails.logger.info "Profile synced from HubSpot for contact #{contact.id}"
+        { success: true, synced_fields: mapped_attrs.keys }
+      rescue StandardError => e
+        Rails.logger.error "Error syncing profile from HubSpot: #{e.message}"
+        { success: false, error: e.message }
+      end
+
+      # ============================================================================
       # LEAD (CONTACT) OPERATIONS
       # ============================================================================
 

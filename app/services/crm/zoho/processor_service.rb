@@ -12,6 +12,10 @@ module Crm
         @activity_client = Crm::Zoho::Api::ActivityClient.new(hook)
       end
 
+      def self.crm_name
+        'zoho'
+      end
+
       # ============================================================================
       # ACTION DISPATCHER
       # ============================================================================
@@ -66,6 +70,46 @@ module Crm
       rescue StandardError => e
         Rails.logger.error "Zoho authentication check failed: #{e.message}"
         false
+      end
+
+      # ============================================================================
+      # PROFILE SYNC
+      # ============================================================================
+
+      # Sync lead profile from Zoho to Nauto Console Contact
+      #
+      # @param contact [Contact] The contact to sync
+      # @return [Hash] Result with success status and synced fields
+      def sync_profile(contact)
+        external_id = get_external_id(contact)
+        return { success: false, error: 'No external_id found for contact' } unless external_id
+
+        # Fetch lead profile from Zoho
+        response = @lead_client.get_lead(external_id)
+        profile = response.dig('data', 0) if response && response['data'].is_a?(Array)
+        return { success: false, error: 'Lead not found in Zoho' } unless profile && profile['id'].present?
+
+        # Get org_id from credentials for URL construction
+        org_id = @hook.credentials['soid'] || @hook.credentials.dig('credentials', 'soid')
+
+        # Map CRM profile to Contact attributes
+        mapped_attrs = Crm::Zoho::Mappers::ProfileMapper.map_to_contact_attributes(profile, org_id: org_id)
+
+        # Merge additional_attributes instead of replacing
+        if mapped_attrs[:additional_attributes].present?
+          contact.additional_attributes ||= {}
+          contact.additional_attributes.deep_merge!(mapped_attrs[:additional_attributes])
+          mapped_attrs.delete(:additional_attributes)
+        end
+
+        # Update contact with mapped attributes
+        contact.update!(mapped_attrs.merge(additional_attributes: contact.additional_attributes))
+
+        Rails.logger.info "Profile synced from Zoho for contact #{contact.id}"
+        { success: true, synced_fields: mapped_attrs.keys }
+      rescue StandardError => e
+        Rails.logger.error "Error syncing profile from Zoho: #{e.message}"
+        { success: false, error: e.message }
       end
 
       # ============================================================================
@@ -202,7 +246,7 @@ module Crm
       # Create call log in Zoho CRM
       #
       # @param params [Hash] Call parameters
-      # @option params [Integer] :appointment_id Chatwoot appointment ID (optional)
+      # @option params [Integer] :appointment_id Nauto Console appointment ID (optional)
       # @option params [String] :subject Call subject
       # @option params [String] :description Call description
       # @option params [String] :call_type Call type (Inbound/Outbound)
@@ -280,10 +324,10 @@ module Crm
       # EVENT OPERATIONS
       # ============================================================================
 
-      # Create event in Zoho CRM from Chatwoot appointment
+      # Create event in Zoho CRM from Nauto Console appointment
       #
       # @param params [Hash] Event parameters
-      # @option params [Integer] :appointment_id Chatwoot appointment ID
+      # @option params [Integer] :appointment_id Nauto Console appointment ID
       # @option params [String] :owner_id Zoho owner ID
       # @option params [Boolean] :send_notification Send notification
       # @return [Hash] Result with success status and event_id
@@ -307,7 +351,7 @@ module Crm
         # Preparamos los parámetros base
         event_params = if appointment
                          # Cuando hay appointment, combinar params con lead_id y se_module
-                         # IMPORTANTE: Eliminar contact_id de Chatwoot para evitar conflicto con Who_Id
+                         # IMPORTANTE: Eliminar contact_id de Nauto Console para evitar conflicto con Who_Id
                          params.except(:contact_id).merge(
                            lead_id: lead_id,
                            se_module: 'Leads'
@@ -432,7 +476,7 @@ module Crm
         note_text = params[:note_text]
         return { success: false, error: 'Note text not provided' } unless note_text
 
-        note_title = params[:note_title] || 'Note from Chatwoot'
+        note_title = params[:note_title] || 'Note from Nauto Console'
 
         response = @lead_client.add_note(lead_id, note_title, note_text, se_module: 'Leads')
 
@@ -460,7 +504,7 @@ module Crm
       # Zoho object (Call or Event) based on appointment type
       #
       # @param params [Hash] Update parameters
-      # @option params [Integer] :appointment_id Chatwoot appointment ID
+      # @option params [Integer] :appointment_id Nauto Console appointment ID
       # @return [Hash] Result with success status
       def update_appointment_status(params)
         appointment_id = params[:appointment_id]
@@ -471,7 +515,7 @@ module Crm
         external_id = appointment.external_id_for('zoho')
         return { success: false, error: 'Appointment not synced to Zoho' } unless external_id
 
-        # Mapear status de Chatwoot a Zoho
+        # Mapear status de Nauto Console a Zoho
         zoho_status = Crm::AppointmentStatusConfig.resolve('zoho', appointment.status)
         return { success: false, error: 'Status mapping not found' } unless zoho_status
 

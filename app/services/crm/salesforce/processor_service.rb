@@ -13,6 +13,10 @@ module Crm
         @task_client = Crm::Salesforce::Api::TaskClient.new(hook)
       end
 
+      def self.crm_name
+        'salesforce'
+      end
+
       # ============================================================================
       # ACTION DISPATCHER
       # ============================================================================
@@ -61,6 +65,42 @@ module Crm
       rescue StandardError => e
         Rails.logger.error "Salesforce authentication check failed: #{e.message}"
         false
+      end
+
+      # ============================================================================
+      # PROFILE SYNC
+      # ============================================================================
+
+      # Sync lead profile from Salesforce to Nauto Console Contact
+      #
+      # @param contact [Contact] The contact to sync
+      # @return [Hash] Result with success status and synced fields
+      def sync_profile(contact)
+        external_id = get_external_id(contact, 'salesforce_lead_id')
+        return { success: false, error: 'No external_id found for contact' } unless external_id
+
+        # Fetch lead profile from Salesforce
+        profile = @lead_client.get_lead(external_id)
+        return { success: false, error: 'Lead not found in Salesforce' } unless profile && profile['Id'].present?
+
+        # Map CRM profile to Contact attributes
+        mapped_attrs = Crm::Salesforce::Mappers::ProfileMapper.map_to_contact_attributes(profile)
+
+        # Merge additional_attributes instead of replacing
+        if mapped_attrs[:additional_attributes].present?
+          contact.additional_attributes ||= {}
+          contact.additional_attributes.deep_merge!(mapped_attrs[:additional_attributes])
+          mapped_attrs.delete(:additional_attributes)
+        end
+
+        # Update contact with mapped attributes
+        contact.update!(mapped_attrs.merge(additional_attributes: contact.additional_attributes))
+
+        Rails.logger.info "Profile synced from Salesforce for contact #{contact.id}"
+        { success: true, synced_fields: mapped_attrs.keys }
+      rescue StandardError => e
+        Rails.logger.error "Error syncing profile from Salesforce: #{e.message}"
+        { success: false, error: e.message }
       end
 
       # ============================================================================
@@ -185,7 +225,7 @@ module Crm
 
         # Map to Salesforce task format
         task_data = Crm::Salesforce::Mappers::ActivityMapper.map_task(
-          subject: params[:subject] || 'Task from Chatwoot',
+          subject: params[:subject] || 'Task from Nauto Console',
           description: params[:description],
           due_date: params[:due_date],
           priority: params[:priority] || 'Normal',
@@ -215,7 +255,7 @@ module Crm
       # Create event (meeting) in Salesforce
       #
       # @param params [Hash] Event parameters
-      # @option params [Integer] :appointment_id Chatwoot appointment ID (opcional)
+      # @option params [Integer] :appointment_id Nauto Console appointment ID (opcional)
       # @option params [Hash] :metadata Metadata del agente AI
       # @return [Hash] Result with success status and event_id
       def create_event(params)
@@ -280,7 +320,7 @@ module Crm
         note_text = params[:note_text]
         return { success: false, error: 'Note text not provided' } unless note_text
 
-        note_title = params[:note_title] || 'Note from Chatwoot'
+        note_title = params[:note_title] || 'Note from Nauto Console'
 
         response = @lead_client.add_note(lead_id, note_title, note_text)
 

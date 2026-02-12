@@ -108,20 +108,19 @@ module CrmFlows
       # ROUTING INTELIGENTE: Si es create_appointment, resolver el action correcto por tipo
       if action_name == 'create_appointment'
         appointment = Appointment.find_by(id: @metadata[:appointment_id])
-        unless appointment
-          return { action: action_name, crm: crm_name, status: 'failed', error: 'Appointment not found', type: 'crm' }
-        end
+        return { action: action_name, crm: crm_name, status: 'failed', error: 'Appointment not found', type: 'crm' } unless appointment
 
         config = Crm::AppointmentTypeConfig.resolve(crm_name, appointment.appointment_type)
-        unless config
-          return { action: action_name, crm: crm_name, status: 'skipped', reason: 'unsupported_type', type: 'crm' }
-        end
+        return { action: action_name, crm: crm_name, status: 'skipped', reason: 'unsupported_type', type: 'crm' } unless config
 
         action_name = config[:action] # create_call, create_event, create_task, etc.
       end
 
       strategy = IDEMPOTENCY_STRATEGIES[action['action']] # Usar action original para strategy
       if strategy == :check_external_id && external_id_exists?(hook, action['action'])
+        # Si es create_lead y necesita sincronización, sincronizar en lugar de skip
+        return sync_lead_profile(hook, action) if action['action'] == 'create_lead' && should_sync_profile?(hook)
+
         return { action: action['action'], crm: crm_name, status: 'skipped', reason: 'already_exists', type: 'crm' }
       end
 
@@ -130,9 +129,7 @@ module CrmFlows
       end
 
       processor = build_processor(hook)
-      unless processor
-        return { action: action['action'], crm: crm_name, status: 'skipped', reason: 'unsupported', type: 'crm' }
-      end
+      return { action: action['action'], crm: crm_name, status: 'skipped', reason: 'unsupported', type: 'crm' } unless processor
 
       params = build_params(action)
       processor_action = PROCESSOR_ACTION_MAP[action_name] || action_name
@@ -185,7 +182,6 @@ module CrmFlows
       when 'zoho'       then Crm::Zoho::ProcessorService.new(hook)
       when 'salesforce' then Crm::Salesforce::ProcessorService.new(hook)
       when 'hubspot'    then Crm::Hubspot::ProcessorService.new(hook)
-      else nil
       end
     rescue StandardError
       nil
@@ -198,11 +194,76 @@ module CrmFlows
       )
 
       # Si hay appointment_id en metadata, añadirlo directamente a params
-      if @metadata[:appointment_id].present?
-        base_params['appointment_id'] = @metadata[:appointment_id]
-      end
+      base_params['appointment_id'] = @metadata[:appointment_id] if @metadata[:appointment_id].present?
 
       base_params.symbolize_keys
+    end
+
+    # Check if profile should be synced based on last sync time
+    #
+    # @param hook [Integrations::Hook] CRM hook
+    # @return [Boolean] true if sync is needed
+    def should_sync_profile?(hook)
+      # Check if sync is enabled via ENV
+      return false unless ENV['CRM_PROFILE_SYNC_ENABLED'] == 'true'
+
+      crm_name = hook.app_id
+      last_synced = @contact.additional_attributes
+                            &.dig('crm_metadata', crm_name, 'last_synced_at')
+
+      # If never synced, sync now
+      return true if last_synced.blank?
+
+      # Check if sync interval has passed
+      interval_hours = ENV.fetch('CRM_PROFILE_SYNC_INTERVAL_HOURS', '24').to_i
+      interval = interval_hours.hours
+
+      Time.zone.parse(last_synced) < interval.ago
+    rescue StandardError => e
+      Rails.logger.error "Error checking sync profile status: #{e.message}"
+      true # If error, sync to be safe
+    end
+
+    # Sync lead profile from CRM
+    #
+    # @param hook [Integrations::Hook] CRM hook
+    # @param action [Hash] Original action hash
+    # @return [Hash] Result hash
+    def sync_lead_profile(hook, action)
+      processor = build_processor(hook)
+      return { action: action['action'], crm: hook.app_id, status: 'skipped', reason: 'no_processor', type: 'crm' } unless processor
+
+      result = processor.sync_profile(@contact)
+
+      if result[:success]
+        {
+          action: action['action'],
+          crm: hook.app_id,
+          status: 'success',
+          reason: 'profile_synced',
+          synced_fields: result[:synced_fields],
+          type: 'crm'
+        }
+      else
+        {
+          action: action['action'],
+          crm: hook.app_id,
+          status: 'skipped',
+          reason: 'sync_failed',
+          error: result[:error],
+          type: 'crm'
+        }
+      end
+    rescue StandardError => e
+      Rails.logger.error "Error syncing lead profile: #{e.message}"
+      {
+        action: action['action'],
+        crm: hook.app_id,
+        status: 'skipped',
+        reason: 'sync_error',
+        error: e.message,
+        type: 'crm'
+      }
     end
   end
 end

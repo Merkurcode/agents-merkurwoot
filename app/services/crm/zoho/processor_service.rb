@@ -12,6 +12,7 @@ module Crm
         super(hook)
         @lead_client = Crm::Zoho::Api::LeadClient.new(hook)
         @activity_client = Crm::Zoho::Api::ActivityClient.new(hook)
+        @ticket_client = Crm::Zoho::Api::TicketClient.new(hook) if hook.settings&.dig('desk_soid').present?
       end
 
       def self.crm_name
@@ -51,6 +52,8 @@ module Crm
           add_note(params)
         when 'update_appointment_status'
           update_appointment_status(params)
+        when 'create_ticket'
+          create_ticket(params)
         else
           { success: false, error: "Unknown action type: #{action_type}" }
         end
@@ -676,6 +679,36 @@ module Crm
       end
 
       # ============================================================================
+      # TICKET OPERATIONS (Zoho Desk)
+      # ============================================================================
+
+      def create_ticket(params)
+        return { success: false, error: 'Zoho Desk not configured' } unless @ticket_client
+
+        department_id = resolve_desk_department_id
+        return { success: false, error: 'No departments found in Zoho Desk' } if department_id.blank?
+
+        contact = find_contact_from_params(params)
+        ticket_data = Crm::Zoho::Mappers::TicketMapper.map_ticket(contact, params)
+        ticket_data[:departmentId] = department_id
+
+        return { success: false, error: 'Ticket subject is required' } if ticket_data[:subject].blank?
+
+        response = @ticket_client.create_ticket(ticket_data)
+
+        if response && response['id'].present?
+          ticket_id = response['id']
+          Rails.logger.info "Ticket created successfully in Zoho Desk: #{ticket_id}"
+          { success: true, ticket_id: ticket_id, response: response }
+        else
+          { success: false, error: 'Failed to create ticket', response: response }
+        end
+      rescue StandardError => e
+        Rails.logger.error "Error creating ticket in Zoho Desk: #{e.message}"
+        { success: false, error: e.message }
+      end
+
+      # ============================================================================
       # HELPER METHODS
       # ============================================================================
 
@@ -687,6 +720,22 @@ module Crm
       end
 
       private
+
+      def resolve_desk_department_id
+        cached = @hook.settings&.dig('desk_department_id')
+        return cached if cached.present?
+
+        response = @ticket_client.get_departments
+        Rails.logger.info "Zoho Desk departments response: #{response.inspect}"
+
+        departments = response.is_a?(Array) ? response : (response&.dig('data') || [])
+        department = departments.first
+        return nil unless department
+
+        department_id = department['id'].to_s
+        @hook.update!(settings: @hook.settings.merge('desk_department_id' => department_id))
+        department_id
+      end
 
       def find_contact_from_params(params)
         contact_id = params[:contact_id]

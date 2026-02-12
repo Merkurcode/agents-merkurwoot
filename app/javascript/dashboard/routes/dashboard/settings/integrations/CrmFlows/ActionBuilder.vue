@@ -26,6 +26,13 @@ const CRM_ACTION_OPTIONS = [
   { value: 'add_note', label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_NOTE' },
 ];
 
+const DESK_ACTION_OPTIONS = [
+  {
+    value: 'create_ticket',
+    label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_TICKET',
+  },
+];
+
 const CHATWOOT_ACTION_OPTIONS = [
   {
     value: 'assign_chatwoot_agent',
@@ -70,6 +77,13 @@ const connectedCrms = computed(() => {
     .map(i => i.id);
 });
 
+const isDeskConnected = computed(() => {
+  const integrations = getters['integrations/getAppIntegrations'].value || [];
+  const zoho = integrations.find(i => i.id === 'zoho' && i.enabled);
+  if (!zoho) return false;
+  return zoho.hooks?.some(h => h.settings?.desk_soid);
+});
+
 const actions = computed(() => props.modelValue);
 
 function update(newActions) {
@@ -96,10 +110,14 @@ function changeAction(index, newAction) {
   const updated = actions.value.map((a, i) => {
     if (i !== index) return a;
     const isCrm = CRM_ACTION_OPTIONS.some(o => o.value === newAction);
+    const isDesk = DESK_ACTION_OPTIONS.some(o => o.value === newAction);
+    let type = 'chatwoot';
+    if (isCrm) type = 'crm';
+    if (isDesk) type = 'desk';
     return {
       ...a,
       action: newAction,
-      type: isCrm ? 'crm' : 'chatwoot',
+      type,
       params: {},
     };
   });
@@ -116,6 +134,10 @@ function changeParam(index, key, value) {
 
 function isCrmAction(actionName) {
   return CRM_ACTION_OPTIONS.some(o => o.value === actionName);
+}
+
+function isDeskAction(actionName) {
+  return DESK_ACTION_OPTIONS.some(o => o.value === actionName);
 }
 
 function crmSupports(crm, actionName) {
@@ -149,6 +171,18 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
           <optgroup :label="$t('CRM_FLOWS.ACTIONS_BUILDER.CRM_ACTIONS')">
             <option
               v-for="opt in CRM_ACTION_OPTIONS"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ $t(opt.label) }}
+            </option>
+          </optgroup>
+          <optgroup
+            v-if="isDeskConnected"
+            :label="$t('CRM_FLOWS.ACTIONS_BUILDER.DESK_ACTIONS')"
+          >
+            <option
+              v-for="opt in DESK_ACTION_OPTIONS"
               :key="opt.value"
               :value="opt.value"
             >
@@ -258,6 +292,40 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
           class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
           @input="changeParam(index, 'description', $event.target.value)"
         />
+      </div>
+
+      <div
+        v-else-if="action.action === 'create_ticket'"
+        class="ml-7 flex flex-col gap-2"
+      >
+        <input
+          :value="action.params.subject"
+          type="text"
+          :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.SUBJECT')"
+          class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
+          @input="changeParam(index, 'subject', $event.target.value)"
+        />
+        <input
+          :value="action.params.description"
+          type="text"
+          :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.DESCRIPTION')"
+          class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
+          @input="changeParam(index, 'description', $event.target.value)"
+        />
+      </div>
+
+      <!-- Indicadores de compatibilidad Desk -->
+      <div v-if="isDeskAction(action.action)" class="ml-7 flex gap-2">
+        <span
+          :class="isDeskConnected ? 'text-green-600' : 'text-n-slate-9'"
+          class="text-xs flex items-center gap-1"
+        >
+          <span
+            :class="isDeskConnected ? 'bg-green-500' : 'bg-n-slate-4'"
+            class="inline-block w-1.5 h-1.5 rounded-full"
+          />
+          Zoho Desk
+        </span>
       </div>
 
       <!-- Indicadores de compatibilidad CRM -->

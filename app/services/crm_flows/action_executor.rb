@@ -12,7 +12,9 @@ class CrmFlows::ActionExecutor
     update_appointment_status
     update_lead
     update_contact
+    create_ticket
   ].freeze
+  DESK_ACTIONS = %w[create_ticket].freeze
   CHATWOOT_ACTIONS = %w[assign_chatwoot_agent add_chatwoot_label].freeze
 
   # Mapeo de nombres de acción del flow → nombres que espera el ProcessorService
@@ -22,7 +24,6 @@ class CrmFlows::ActionExecutor
 
   IDEMPOTENCY_STRATEGIES = {
     'create_lead' => :check_external_id,
-    'create_contact' => :check_external_id,
     'create_opportunity' => :check_external_id,
     'create_event' => :check_external_id,
     'create_appointment' => :check_appointment_external_id,
@@ -30,7 +31,8 @@ class CrmFlows::ActionExecutor
     'add_crm_tag' => :idempotent_by_nature,
     'create_task' => :none,
     'create_call' => :none,
-    'add_note' => :none
+    'add_note' => :none,
+    'create_ticket' => :none
   }.freeze
 
   def initialize(account:, contact:, conversation:, metadata: {})
@@ -100,7 +102,13 @@ class CrmFlows::ActionExecutor
   end
 
   def execute_crm_action(action)
-    @crm_hooks.filter_map do |hook|
+      hooks = if DESK_ACTIONS.include?(action['action'])
+              @crm_hooks.select { |h| h.app_id == 'zoho' && h.settings&.dig('desk_soid').present? }
+            else
+              @crm_hooks
+            end
+
+      hooks.map do |hook|
       # Validar autenticación antes de ejecutar
       unless hook_authenticated?(hook)
         next {
@@ -152,7 +160,7 @@ class CrmFlows::ActionExecutor
 
     if result[:success]
       eid = result[:lead_id] || result[:contact_id] || result[:call_id] ||
-            result[:task_id] || result[:event_id] || result[:opportunity_id] || result[:note_id]
+            result[:task_id] || result[:event_id] || result[:opportunity_id] || result[:note_id] || result[:ticket_id]
       { action: action['action'], crm: crm_name, status: 'success', external_id: eid, type: 'crm' }
     else
       { action: action['action'], crm: crm_name, status: 'failed', error: result[:error], type: 'crm' }

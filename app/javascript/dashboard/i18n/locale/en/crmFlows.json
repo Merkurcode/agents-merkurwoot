@@ -74,6 +74,8 @@
       "CREATE_EVENT": "Create Event",
       "ADD_CRM_TAG": "Add CRM Tag",
       "ADD_NOTE": "Add Note",
+      "CREATE_TICKET": "Create Ticket",
+      "DESK_ACTIONS": "Zoho Desk Actions",
       "ASSIGN_AGENT": "Assign Agent",
       "ADD_LABEL": "Add Label",
       "PARAMS": {

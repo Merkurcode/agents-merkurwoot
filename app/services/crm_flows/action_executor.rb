@@ -119,7 +119,7 @@ module CrmFlows
       strategy = IDEMPOTENCY_STRATEGIES[action['action']] # Usar action original para strategy
       if strategy == :check_external_id && external_id_exists?(hook, action['action'])
         # Si es create_lead y necesita sincronización, sincronizar en lugar de skip
-        return sync_lead_profile(hook, action) if action['action'] == 'create_lead' && should_sync_profile?(hook)
+        return sync_lead_profile(hook, action) if action['action'] == 'create_lead' 
 
         return { action: action['action'], crm: crm_name, status: 'skipped', reason: 'already_exists', type: 'crm' }
       end

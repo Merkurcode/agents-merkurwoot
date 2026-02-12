@@ -348,6 +348,10 @@ en:
       name: 'Zoho CRM'
       short_description: 'Sync your contacts, leads, and activities with Zoho CRM automatically.'
       description: 'Connect Zoho CRM to automatically sync contacts as leads, create tasks and events, add tags and notes. This integration provides your sales team with complete context and streamlines your CRM workflow.'
+    test:
+      name: 'test'
+      short_description: 'test'
+      description: 'test'
     salesforce:
       name: 'Salesforce'
       short_description: 'Sync your contacts, leads, and opportunities with Salesforce CRM.'

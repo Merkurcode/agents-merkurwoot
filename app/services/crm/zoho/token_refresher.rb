@@ -3,7 +3,7 @@
 module Crm
   module Zoho
     class TokenRefresher
-      OAUTH_TOKEN_URL = 'https://accounts.zoho.com/oauth/v2/token'
+      OAUTH_TOKEN_URL = 'https://accounts.zoho.eu/oauth/v2/token'
 
       # Scopes necesarios para Zoho CRM
       DEFAULT_SCOPES = [
@@ -13,6 +13,11 @@ module Crm
         'ZohoCRM.templates.email.READ',
         'ZohoCRM.templates.inventory.READ',
         'ZohoCRM.modules.ALL'
+      ].freeze
+
+      DEFAULT_DESK_SCOPES = [
+        'Desk.tickets.ALL',
+        'Desk.basic.READ'
       ].freeze
 
       def initialize(hook)
@@ -60,13 +65,19 @@ module Crm
           client_secret: client_secret,
           grant_type: 'client_credentials',
           scope: scope_string,
-          soid: "ZohoCRM.#{soid}"
+          soid: soid_string
         }
       end
 
+      def soid_string
+        values = ["ZohoCRM.#{soid}"]
+        values << "Desk.#{desk_soid}" if desk_soid.present?
+        values.join(',')
+      end
+
       def scope_string
-        # Usar scopes personalizados si están configurados, sino usar los default
         scopes = @credentials['scopes'] || DEFAULT_SCOPES
+        scopes += DEFAULT_DESK_SCOPES if desk_soid.present?
         scopes.join(',')
       end
 
@@ -80,6 +91,10 @@ module Crm
 
       def soid
         @credentials['soid'] || @credentials.dig('credentials', 'soid')
+      end
+
+      def desk_soid
+        @credentials['desk_soid'] || @credentials.dig('credentials', 'desk_soid')
       end
     end
   end

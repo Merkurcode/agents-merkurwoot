@@ -312,6 +312,7 @@ zoho:
           'api_domain': { 'type': 'string' },
           'token_type': { 'type': 'string' },
           'triggers': { 'type': 'object' },
+          'desk_soid': { 'type': 'string' },
         },
       'required': ['client_id', 'client_secret', 'soid'],
       'additionalProperties': false,

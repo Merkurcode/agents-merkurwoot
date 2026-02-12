@@ -994,6 +994,24 @@
         "ERROR_MESSAGE": "Error al configurar la integración de Zoho CRM. Por favor verifica tus credenciales e intenta nuevamente."
       }
     },
+    "ZOHO_DESK": {
+      "TITLE": "Zoho Desk",
+      "DESCRIPTION": "Integra Zoho Desk para sincronizar tickets, contactos y actividades automáticamente.",
+      "INHERITED_FROM_CRM": "Heredado de la configuración de Zoho CRM",
+      "FORM": {
+        "DESK_SOID_LABEL": "ID de Organización de Zoho Desk (SOID)",
+        "DESK_SOID_PLACEHOLDER": "123456789",
+        "DESK_SOID_HELP": "El ID de organización de tu cuenta Zoho Desk",
+        "SUBMIT": "Conectar Zoho Desk",
+        "CANCEL": "Cancelar",
+        "EDIT": "Editar"
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Zoho Desk configurado exitosamente",
+        "ERROR_MESSAGE": "Error al configurar Zoho Desk. Por favor intenta nuevamente.",
+        "DISCONNECT_MESSAGE": "Zoho Desk desconectado exitosamente"
+      }
+    },
     "SALESFORCE": {
       "TITLE": "Salesforce",
       "DESCRIPTION": "Integra Salesforce para sincronizar contactos, leads y oportunidades automáticamente.",

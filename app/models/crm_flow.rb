@@ -3,7 +3,14 @@ class CrmFlow < ApplicationRecord
   belongs_to :inbox, optional: true
   has_many :crm_flow_executions, dependent: :destroy
 
-  TRIGGER_TYPES = %w[quote_request advisor_transfer appointment_scheduling lead_creation].freeze
+  TRIGGER_TYPES = %w[
+    quote_request
+    advisor_transfer
+    appointment_scheduling
+    lead_creation
+    customer_creation
+    contact_type_changed
+  ].freeze
   SCOPE_TYPES = %w[global inbox].freeze
 
   validates :name, presence: true

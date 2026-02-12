@@ -72,17 +72,36 @@ class Crm::Salesforce::ProcessorService < Crm::BaseProcessorService
   # PROFILE SYNC
   # ============================================================================
 
-  # Sync lead profile from Salesforce to Nauto Console Contact
+  # Sync profile from Salesforce to Nauto Console Contact
+  #
+  # Syncs from Lead or Contact object based on contact_type:
+  # - lead: syncs from Salesforce Lead object
+  # - customer: syncs from Salesforce Contact object
   #
   # @param contact [Contact] The contact to sync
   # @return [Hash] Result with success status and synced fields
   def sync_profile(contact)
-    external_id = get_external_id(contact, 'salesforce_lead_id')
-    return { success: false, error: 'No external_id found for contact' } unless external_id
+    # Determine which Salesforce object to sync from based on contact_type
+    if contact.contact_type == 'customer'
+      external_id = get_external_id(contact, 'salesforce_contact_id')
+      return { success: false, error: 'No external_id found for customer contact' } unless external_id
 
-    # Fetch lead profile from Salesforce
-    profile = @lead_client.get_lead(external_id)
-    return { success: false, error: 'Lead not found in Salesforce' } unless profile && profile['Id'].present?
+      # Fetch contact profile from Salesforce
+      profile = @contact_client.get_contact(external_id)
+      return { success: false, error: 'Contact not found in Salesforce' } unless profile && profile['Id'].present?
+
+      object_type = 'Contact'
+    else
+      # Default to Lead for 'lead' and 'visitor' types
+      external_id = get_external_id(contact, 'salesforce_lead_id')
+      return { success: false, error: 'No external_id found for lead' } unless external_id
+
+      # Fetch lead profile from Salesforce
+      profile = @lead_client.get_lead(external_id)
+      return { success: false, error: 'Lead not found in Salesforce' } unless profile && profile['Id'].present?
+
+      object_type = 'Lead'
+    end
 
     # Map CRM profile to Contact attributes
     mapped_attrs = Crm::Salesforce::Mappers::ProfileMapper.map_to_contact_attributes(profile)
@@ -97,7 +116,7 @@ class Crm::Salesforce::ProcessorService < Crm::BaseProcessorService
     # Update contact with mapped attributes
     contact.update!(mapped_attrs.merge(additional_attributes: contact.additional_attributes))
 
-    Rails.logger.info "Profile synced from Salesforce for contact #{contact.id}"
+    Rails.logger.info "Profile synced from Salesforce #{object_type} for contact #{contact.id}"
     { success: true, synced_fields: mapped_attrs.keys }
   rescue StandardError => e
     Rails.logger.error "Error syncing profile from Salesforce: #{e.message}"

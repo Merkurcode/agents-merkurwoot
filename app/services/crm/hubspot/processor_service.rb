@@ -37,11 +37,18 @@ class Crm::Hubspot::ProcessorService < Crm::BaseProcessorService
 
   # Sync contact profile from HubSpot to Nauto Console Contact
   #
+  # Note: HubSpot only has "Contacts" (no separate Lead object)
+  # This method determines which external_id to use based on contact_type:
+  # - lead: uses hubspot_lead_id
+  # - customer: uses hubspot_contact_id
+  #
   # @param contact [Contact] The contact to sync
   # @return [Hash] Result with success status and synced fields
   def sync_profile(contact)
-    external_id = get_external_id(contact)
-    return { success: false, error: 'No external_id found for contact' } unless external_id
+    # Determine which external_id key to use based on contact_type
+    external_id_key = contact.contact_type == 'customer' ? 'hubspot_contact_id' : 'hubspot_lead_id'
+    external_id = get_external_id(contact, external_id_key)
+    return { success: false, error: "No external_id found for #{contact.contact_type} contact" } unless external_id
 
     # Fetch contact profile from HubSpot
     profile = @contact_client.get_contact(external_id)
@@ -60,7 +67,7 @@ class Crm::Hubspot::ProcessorService < Crm::BaseProcessorService
     # Update contact with mapped attributes
     contact.update!(mapped_attrs.merge(additional_attributes: contact.additional_attributes))
 
-    Rails.logger.info "Profile synced from HubSpot for contact #{contact.id}"
+    Rails.logger.info "Profile synced from HubSpot for #{contact.contact_type} contact #{contact.id}"
     { success: true, synced_fields: mapped_attrs.keys }
   rescue StandardError => e
     Rails.logger.error "Error syncing profile from HubSpot: #{e.message}"

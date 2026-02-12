@@ -62,7 +62,7 @@ module Crm
 
         # Si el token está expirado, intentar refrescarlo
         if @hook.token_expired?
-          Rails.logger.info "Zoho token expired, attempting refresh..."
+          Rails.logger.info 'Zoho token expired, attempting refresh...'
           @hook.refresh_token_if_needed
           @hook.reload
         end
@@ -78,18 +78,38 @@ module Crm
       # PROFILE SYNC
       # ============================================================================
 
-      # Sync lead profile from Zoho to Nauto Console Contact
+      # Sync profile from Zoho to Nauto Console Contact
+      #
+      # Syncs from Lead or Contact object based on contact_type:
+      # - lead: syncs from Zoho Lead object
+      # - customer: syncs from Zoho Contact object
       #
       # @param contact [Contact] The contact to sync
       # @return [Hash] Result with success status and synced fields
       def sync_profile(contact)
-        external_id = get_external_id(contact)
-        return { success: false, error: 'No external_id found for contact' } unless external_id
+        # Determine which Zoho object to sync from based on contact_type
+        if contact.contact_type == 'customer'
+          external_id = get_external_id(contact, 'zoho_contact_id')
+          return { success: false, error: 'No external_id found for customer contact' } unless external_id
 
-        # Fetch lead profile from Zoho
-        response = @lead_client.get_lead(external_id)
-        profile = response.dig('data', 0) if response && response['data'].is_a?(Array)
-        return { success: false, error: 'Lead not found in Zoho' } unless profile && profile['id'].present?
+          # Fetch contact profile from Zoho
+          response = @lead_client.get_contact(external_id)
+          profile = response.dig('data', 0) if response && response['data'].is_a?(Array)
+          return { success: false, error: 'Contact not found in Zoho' } unless profile && profile['id'].present?
+
+          object_type = 'Contact'
+        else
+          # Default to Lead for 'lead' and 'visitor' types
+          external_id = get_external_id(contact)
+          return { success: false, error: 'No external_id found for lead' } unless external_id
+
+          # Fetch lead profile from Zoho
+          response = @lead_client.get_lead(external_id)
+          profile = response.dig('data', 0) if response && response['data'].is_a?(Array)
+          return { success: false, error: 'Lead not found in Zoho' } unless profile && profile['id'].present?
+
+          object_type = 'Lead'
+        end
 
         # Get org_id from credentials for URL construction
         org_id = @hook.credentials['soid'] || @hook.credentials.dig('credentials', 'soid')
@@ -107,7 +127,7 @@ module Crm
         # Update contact with mapped attributes
         contact.update!(mapped_attrs.merge(additional_attributes: contact.additional_attributes))
 
-        Rails.logger.info "Profile synced from Zoho for contact #{contact.id}"
+        Rails.logger.info "Profile synced from Zoho #{object_type} for contact #{contact.id}"
         { success: true, synced_fields: mapped_attrs.keys }
       rescue StandardError => e
         Rails.logger.error "Error syncing profile from Zoho: #{e.message}"
@@ -305,7 +325,7 @@ module Crm
         if appointment
           # Usar datos del appointment para crear la llamada
           contact = appointment.contact
-          lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
+          contact&.additional_attributes&.dig('external', 'zoho_lead_id')
 
           # Usar el mapper específico para appointments
           call_data = Crm::Zoho::Mappers::ActivityMapper.map_call_from_appointment(appointment, params)
@@ -405,12 +425,12 @@ module Crm
                          {
                            event_title: metadata['event_title'] || metadata['subject'] || params[:subject],
                            description: metadata['event_description'] || metadata['description'] || params[:description],
-                           start_time:  metadata['start_time'] || metadata['scheduled_at'] || params[:start_time],
-                           end_time:    metadata['end_time'] || params[:end_time],
-                           venue:       metadata['venue'] || params[:venue],
-                           lead_id:     lead_id,
-                           se_module:   'Leads',
-                           owner_id:    params[:owner_id],
+                           start_time: metadata['start_time'] || metadata['scheduled_at'] || params[:start_time],
+                           end_time: metadata['end_time'] || params[:end_time],
+                           venue: metadata['venue'] || params[:venue],
+                           lead_id: lead_id,
+                           se_module: 'Leads',
+                           owner_id: params[:owner_id],
                            send_notification: params[:send_notification] || false
                          }
                        end

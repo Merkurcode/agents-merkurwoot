@@ -16,6 +16,7 @@ class AsyncDispatcher < BaseDispatcher
       CsatSurveyListener.instance,
       HookListener.instance,
       InstallationWebhookListener.instance,
+      LeadCreationOrchestratorListener.instance,
       LeadFollowUpListener.instance,
       NotificationListener.instance,
       ParticipationListener.instance,

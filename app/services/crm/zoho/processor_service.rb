@@ -29,6 +29,8 @@ module Crm
         case action_type.to_s
         when 'create_lead'
           create_lead(params)
+        when 'create_contact'
+          create_contact(params)
         when 'update_lead'
           update_lead(params)
         when 'create_task'
@@ -187,6 +189,49 @@ module Crm
         end
       rescue StandardError => e
         Rails.logger.error "Error updating lead in Zoho: #{e.message}"
+        { success: false, error: e.message }
+      end
+
+      # ============================================================================
+      # CONTACT OPERATIONS
+      # ============================================================================
+
+      # Create contact in Zoho CRM (for customers, not leads)
+      #
+      # @param params [Hash] Contact parameters
+      # @return [Hash] Result with success status and contact_id
+      def create_contact(params)
+        contact = find_contact_from_params(params)
+        return { success: false, error: 'Contact not found' } unless contact
+
+        # Check if contact already exists in Zoho
+        external_id = contact.additional_attributes&.dig('external', 'zoho_contact_id')
+        if external_id.present?
+          Rails.logger.info "Contact already exists in Zoho: #{external_id}"
+          return { success: true, contact_id: external_id, action: 'existing' }
+        end
+
+        # Map contact to Zoho contact format
+        mapper = Crm::Zoho::Mappers::ContactMapper.new(contact)
+        contact_data = mapper.map_to_contact(custom_fields: params[:contact_custom_fields] || {})
+
+        # Create contact in Zoho
+        response = @lead_client.create_contact(contact_data)
+
+        if response && response['data']&.any?
+          contact_record = response['data'].first
+          contact_id = contact_record['details']['id']
+
+          # Store external ID with different key for contacts
+          store_external_id(contact, contact_id, 'zoho_contact_id')
+
+          Rails.logger.info "Contact created successfully in Zoho: #{contact_id}"
+          { success: true, contact_id: contact_id, action: 'created', response: contact_record }
+        else
+          { success: false, error: 'Failed to create contact', response: response }
+        end
+      rescue StandardError => e
+        Rails.logger.error "Error creating contact in Zoho: #{e.message}"
         { success: false, error: e.message }
       end
 
@@ -577,10 +622,10 @@ module Crm
         contact&.additional_attributes&.dig('external', 'zoho_lead_id')
       end
 
-      def store_external_id(contact, external_id)
+      def store_external_id(contact, external_id, key = 'zoho_lead_id')
         contact.additional_attributes ||= {}
         contact.additional_attributes['external'] ||= {}
-        contact.additional_attributes['external']['zoho_lead_id'] = external_id
+        contact.additional_attributes['external'][key] = external_id
         contact.save(validate: false)
       end
 

@@ -12,6 +12,10 @@ const getters = useStoreGetters();
 const CRM_ACTION_OPTIONS = [
   { value: 'create_lead', label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_LEAD' },
   {
+    value: 'create_contact',
+    label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_CONTACT',
+  },
+  {
     value: 'create_opportunity',
     label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_OPPORTUNITY',
   },
@@ -34,6 +38,7 @@ const CHATWOOT_ACTION_OPTIONS = [
 const CRM_SUPPORT = {
   salesforce: [
     'create_lead',
+    'create_contact',
     'create_opportunity',
     'create_task',
     'create_event',
@@ -41,6 +46,7 @@ const CRM_SUPPORT = {
   ],
   zoho: [
     'create_lead',
+    'create_contact',
     'create_task',
     'create_call',
     'create_event',
@@ -49,6 +55,7 @@ const CRM_SUPPORT = {
   ],
   hubspot: [
     'create_lead',
+    'create_contact',
     'create_opportunity',
     'create_task',
     'create_event',

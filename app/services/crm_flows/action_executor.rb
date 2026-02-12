@@ -77,6 +77,73 @@ class CrmFlows::ActionExecutor
     when 'add_chatwoot_label'    then add_label(action)
     else { action: action['action'], status: 'failed', error: 'Unknown chatwoot action', type: 'chatwoot' }
     end
+
+    # Check if profile should be synced based on last sync time
+    #
+    # @param hook [Integrations::Hook] CRM hook
+    # @return [Boolean] true if sync is needed
+    def should_sync_profile?(hook)
+      # Check if sync is enabled via ENV
+      return false unless ENV['CRM_PROFILE_SYNC_ENABLED'] == 'true'
+
+      crm_name = hook.app_id
+      last_synced = @contact.additional_attributes
+                            &.dig('crm_metadata', crm_name, 'last_synced_at')
+
+      # If never synced, sync now
+      return true if last_synced.blank?
+
+      # Check if sync interval has passed
+      interval_hours = ENV.fetch('CRM_PROFILE_SYNC_INTERVAL_HOURS', '24').to_i
+      interval = interval_hours.hours
+
+      Time.zone.parse(last_synced) < interval.ago
+    rescue StandardError => e
+      Rails.logger.error "Error checking sync profile status: #{e.message}"
+      true # If error, sync to be safe
+    end
+
+    # Sync lead profile from CRM
+    #
+    # @param hook [Integrations::Hook] CRM hook
+    # @param action [Hash] Original action hash
+    # @return [Hash] Result hash
+    def sync_lead_profile(hook, action)
+      processor = build_processor(hook)
+      return { action: action['action'], crm: hook.app_id, status: 'skipped', reason: 'no_processor', type: 'crm' } unless processor
+
+      result = processor.sync_profile(@contact)
+
+      if result[:success]
+        {
+          action: action['action'],
+          crm: hook.app_id,
+          status: 'success',
+          reason: 'profile_synced',
+          synced_fields: result[:synced_fields],
+          type: 'crm'
+        }
+      else
+        {
+          action: action['action'],
+          crm: hook.app_id,
+          status: 'skipped',
+          reason: 'sync_failed',
+          error: result[:error],
+          type: 'crm'
+        }
+      end
+    rescue StandardError => e
+      Rails.logger.error "Error syncing lead profile: #{e.message}"
+      {
+        action: action['action'],
+        crm: hook.app_id,
+        status: 'skipped',
+        reason: 'sync_error',
+        error: e.message,
+        type: 'crm'
+      }
+    end
   end
 
   def assign_agent(action)

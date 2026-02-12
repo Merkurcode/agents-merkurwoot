@@ -24,6 +24,11 @@ const TRIGGER_OPTIONS = [
     label: 'CRM_FLOWS.TRIGGERS.APPOINTMENT_SCHEDULING',
   },
   { value: 'lead_creation', label: 'CRM_FLOWS.TRIGGERS.LEAD_CREATION' },
+  { value: 'customer_creation', label: 'CRM_FLOWS.TRIGGERS.CUSTOMER_CREATION' },
+  {
+    value: 'contact_type_changed',
+    label: 'CRM_FLOWS.TRIGGERS.CONTACT_TYPE_CHANGED',
+  },
 ];
 
 const DEFAULT_DEDUP = {
@@ -31,6 +36,8 @@ const DEFAULT_DEDUP = {
   advisor_transfer: 30,
   appointment_scheduling: 60,
   lead_creation: 1440,
+  customer_creation: 1440,
+  contact_type_changed: 60,
 };
 
 const isEditMode = computed(() => !!props.flow);

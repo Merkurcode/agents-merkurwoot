@@ -54,7 +54,9 @@
       "QUOTE_REQUEST": "Solicitud de cotización",
       "ADVISOR_TRANSFER": "Transferencia a asesor",
       "APPOINTMENT_SCHEDULING": "Programación de cita",
-      "LEAD_CREATION": "Creación de lead"
+      "LEAD_CREATION": "Creación de lead",
+      "CUSTOMER_CREATION": "Creación de cliente",
+      "CONTACT_TYPE_CHANGED": "Cambio de tipo de contacto"
     },
     "ACTIONS_BUILDER": {
       "TITLE": "Acciones",
@@ -63,6 +65,7 @@
       "CHATWOOT_ACTIONS": "Acciones Nauto Console",
       "REMOVE": "Eliminar",
       "CREATE_LEAD": "Crear Lead",
+      "CREATE_CONTACT": "Crear Contacto",
       "CREATE_OPPORTUNITY": "Crear Oportunidad",
       "CREATE_TASK": "Crear Tarea",
       "CREATE_CALL": "Programar Llamada",

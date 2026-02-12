@@ -54,7 +54,9 @@
       "QUOTE_REQUEST": "Quote request",
       "ADVISOR_TRANSFER": "Advisor transfer",
       "APPOINTMENT_SCHEDULING": "Appointment scheduling",
-      "LEAD_CREATION": "Lead creation"
+      "LEAD_CREATION": "Lead creation",
+      "CUSTOMER_CREATION": "Customer creation",
+      "CONTACT_TYPE_CHANGED": "Contact type changed"
     },
     "ACTIONS_BUILDER": {
       "TITLE": "Actions",
@@ -63,6 +65,7 @@
       "CHATWOOT_ACTIONS": "Nauto Console Actions",
       "REMOVE": "Remove",
       "CREATE_LEAD": "Create Lead",
+      "CREATE_CONTACT": "Create Contact",
       "CREATE_OPPORTUNITY": "Create Opportunity",
       "CREATE_TASK": "Create Task",
       "CREATE_CALL": "Schedule Call",

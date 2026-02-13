@@ -138,6 +138,10 @@ export const actions = {
       const response = await KbResourcesAPI.createFolder(name, parentPath);
       // Add the new folder to the list
       commit(types.ADD_KB_RESOURCE_FOLDER, response.data);
+      // Update storage used
+      if (response.data.storage_used !== undefined) {
+        commit(types.SET_KB_RESOURCE_META, { storage_used: response.data.storage_used });
+      }
       return response.data;
     } finally {
       commit(types.SET_KB_RESOURCE_UI_FLAG, { isCreating: false });
@@ -151,8 +155,12 @@ export const actions = {
 
     commit(types.SET_KB_RESOURCE_UI_FLAG, { isDeleting: true });
     try {
-      await KbResourcesAPI.deleteFolder(folderPath, force);
+      const response = await KbResourcesAPI.deleteFolder(folderPath, force);
       commit(types.DELETE_KB_RESOURCE_FOLDER, folderPath);
+      // Update storage used
+      if (response.data.storage_used !== undefined) {
+        commit(types.SET_KB_RESOURCE_META, { storage_used: response.data.storage_used });
+      }
     } finally {
       commit(types.SET_KB_RESOURCE_UI_FLAG, { isDeleting: false });
     }

@@ -1,7 +1,7 @@
 class KbResource < ApplicationRecord
   include Events::Types
 
-  MAX_FILE_SIZE = 100.megabytes
+  MAX_FILE_SIZE = 200.megabytes
   MAX_STORAGE_PER_ACCOUNT = 2.gigabytes
 
   # Security limits
@@ -65,9 +65,11 @@ class KbResource < ApplicationRecord
     dispatch_update_event(changed_attrs || tracked_changes)
   end
 
-  # Returns total storage used by account in bytes
+  # Returns total storage used by account in bytes (files + folder names)
   def self.storage_used_by_account(account_id)
-    where(account_id: account_id).sum(:file_size) || 0
+    files_size = where(account_id: account_id).sum(:file_size) || 0
+    folders_size = KbFolder.where(account_id: account_id).sum('LENGTH(name)') || 0
+    files_size + folders_size
   end
 
   # Returns remaining storage available for account in bytes

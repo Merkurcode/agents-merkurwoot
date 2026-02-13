@@ -1,7 +1,7 @@
 class RequestSizeLimiter
   # Only apply to kb_resources upload endpoint
   KB_RESOURCES_PATH = %r{/api/v1/accounts/\d+/kb_resources\z}.freeze
-  MAX_SIZE = 100.megabytes
+  MAX_SIZE = 200.megabytes
 
   def initialize(app)
     @app = app

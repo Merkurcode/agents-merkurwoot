@@ -93,7 +93,7 @@ const LIMITS = {
   RESOURCE_NAME_MAX: 255,
   RESOURCE_DESCRIPTION_MAX: 1000,
   FOLDER_NAME_MAX: 100,
-  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB in bytes
+  MAX_FILE_SIZE: 200 * 1024 * 1024, // 200MB in bytes
 };
 
 // Validation helpers
@@ -938,7 +938,7 @@ onMounted(fetchData);
                   <!-- File size error message -->
                   <p v-if="fileSizeError" class="mt-2 text-xs text-n-ruby-11 flex items-center gap-1">
                     <i class="i-lucide-alert-circle w-3.5 h-3.5" />
-                    {{ t('KNOWLEDGE_BASE.RESOURCES.VALIDATION.FILE_TOO_LARGE', { max: '100MB' }) }}
+                    {{ t('KNOWLEDGE_BASE.RESOURCES.VALIDATION.FILE_TOO_LARGE', { max: '200MB' }) }}
                   </p>
                 </div>
 

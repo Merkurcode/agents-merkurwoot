@@ -329,7 +329,7 @@
         "TITLE": "Subir Recurso",
         "SELECT_FILE": "Archivo",
         "DROP_OR_CLICK": "Haz clic para seleccionar un archivo",
-        "FILE_TYPES": "Documentos, Imágenes, Audio (máx 100MB)",
+        "FILE_TYPES": "Documentos, Imágenes, Audio (máx 200MB)",
         "SUBMIT": "Subir",
         "SUCCESS": "Recurso subido exitosamente",
         "ERROR": "Error al subir recurso"

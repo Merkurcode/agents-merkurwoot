@@ -209,7 +209,8 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
       name: @kb_folder.name,
       path: @kb_folder.full_path,
       parent_path: @kb_folder.parent_path,
-      created_at: @kb_folder.created_at
+      created_at: @kb_folder.created_at,
+      storage_used: KbResource.storage_used_by_account(Current.account.id)
     }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity
@@ -245,7 +246,8 @@ class Api::V1::Accounts::KbResourcesController < Api::V1::Accounts::BaseControll
 
     render json: {
       deleted_resources: resources_count,
-      deleted_subfolders: subfolders_count
+      deleted_subfolders: subfolders_count,
+      storage_used: KbResource.storage_used_by_account(Current.account.id)
     }, status: :ok
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Folder not found' }, status: :not_found

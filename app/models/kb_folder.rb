@@ -21,6 +21,7 @@ class KbFolder < ApplicationRecord
   validate :validate_name_security
   validate :validate_nesting_depth
   validate :validate_path_security
+  validate :validate_storage_limit, on: :create
 
   scope :in_folder, ->(path) { where(parent_path: path) }
   scope :ordered, -> { order(:name) }
@@ -98,6 +99,17 @@ class KbFolder < ApplicationRecord
     unless parent_path.start_with?('/')
       errors.add(:parent_path, 'must start with /')
     end
+  end
+
+  def validate_storage_limit
+    return if account_id.blank? || name.blank?
+
+    current_storage = KbResource.storage_used_by_account(account_id)
+    new_total = current_storage + name.bytesize
+
+    return unless new_total > KbResource::MAX_STORAGE_PER_ACCOUNT
+
+    errors.add(:name, "would exceed account storage limit of #{KbResource::MAX_STORAGE_PER_ACCOUNT / 1.gigabyte}GB")
   end
 end
 

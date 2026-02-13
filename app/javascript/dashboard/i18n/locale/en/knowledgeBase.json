@@ -329,7 +329,7 @@
         "TITLE": "Upload Resource",
         "SELECT_FILE": "File",
         "DROP_OR_CLICK": "Click to select a file",
-        "FILE_TYPES": "Documents, Images, Audio (max 100MB)",
+        "FILE_TYPES": "Documents, Images, Audio (max 200MB)",
         "SUBMIT": "Upload",
         "SUCCESS": "Resource uploaded successfully",
         "ERROR": "Failed to upload resource"

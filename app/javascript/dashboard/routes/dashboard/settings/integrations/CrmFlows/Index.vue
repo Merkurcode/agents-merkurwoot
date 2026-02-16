@@ -25,6 +25,8 @@ const TRIGGER_LABELS = {
   advisor_transfer: 'CRM_FLOWS.TRIGGERS.ADVISOR_TRANSFER',
   appointment_scheduling: 'CRM_FLOWS.TRIGGERS.APPOINTMENT_SCHEDULING',
   lead_creation: 'CRM_FLOWS.TRIGGERS.LEAD_CREATION',
+  customer_creation: 'CRM_FLOWS.TRIGGERS.CUSTOMER_CREATION',
+  contact_type_changed: 'CRM_FLOWS.TRIGGERS.CONTACT_TYPE_CHANGED',
 };
 
 onMounted(() => {
@@ -119,7 +121,11 @@ async function toggleActive(flow) {
           >
             <td class="py-3 pr-4 text-sm font-medium">{{ flow.name }}</td>
             <td class="py-3 pr-4 text-sm">
-              {{ $t(TRIGGER_LABELS[flow.trigger_type]) }}
+              {{
+                flow.trigger_type
+                  ? $t(TRIGGER_LABELS[flow.trigger_type] || flow.trigger_type)
+                  : ''
+              }}
             </td>
             <td class="py-3 pr-4 text-sm">
               {{

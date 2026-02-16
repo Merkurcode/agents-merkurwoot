@@ -27,6 +27,7 @@ const TRIGGER_LABELS = {
   lead_creation: 'CRM_FLOWS.TRIGGERS.LEAD_CREATION',
   customer_creation: 'CRM_FLOWS.TRIGGERS.CUSTOMER_CREATION',
   contact_type_changed: 'CRM_FLOWS.TRIGGERS.CONTACT_TYPE_CHANGED',
+  ticket_created: 'CRM_FLOWS.TRIGGERS.TICKET_CREATED',
 };
 
 onMounted(() => {

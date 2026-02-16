@@ -29,6 +29,7 @@ const TRIGGER_OPTIONS = [
     value: 'contact_type_changed',
     label: 'CRM_FLOWS.TRIGGERS.CONTACT_TYPE_CHANGED',
   },
+  { value: 'ticket_created', label: 'CRM_FLOWS.TRIGGERS.TICKET_CREATED' },
 ];
 
 const DEFAULT_DEDUP = {
@@ -38,6 +39,7 @@ const DEFAULT_DEDUP = {
   lead_creation: 1440,
   customer_creation: 1440,
   contact_type_changed: 60,
+  ticket_created: 60,
 };
 
 const isEditMode = computed(() => !!props.flow);

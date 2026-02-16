@@ -56,7 +56,8 @@
       "APPOINTMENT_SCHEDULING": "Appointment scheduling",
       "LEAD_CREATION": "Lead creation",
       "CUSTOMER_CREATION": "Customer creation",
-      "CONTACT_TYPE_CHANGED": "Contact type changed"
+      "CONTACT_TYPE_CHANGED": "Contact type changed",
+      "TICKET_CREATED": "Ticket created"
     },
     "ACTIONS_BUILDER": {
       "TITLE": "Actions",

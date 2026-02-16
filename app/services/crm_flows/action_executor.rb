@@ -193,9 +193,6 @@ class CrmFlows::ActionExecutor
   end
 
   def hook_authenticated?(hook)
-    # Verificar que el hook tiene token válido y no expirado
-    return false if hook.token_expired?
-
     processor = build_processor(hook)
     processor&.authenticated?
   rescue StandardError => e

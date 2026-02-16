@@ -294,26 +294,6 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
         />
       </div>
 
-      <div
-        v-else-if="action.action === 'create_ticket'"
-        class="ml-7 flex flex-col gap-2"
-      >
-        <input
-          :value="action.params.subject"
-          type="text"
-          :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.SUBJECT')"
-          class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
-          @input="changeParam(index, 'subject', $event.target.value)"
-        />
-        <input
-          :value="action.params.description"
-          type="text"
-          :placeholder="$t('CRM_FLOWS.ACTIONS_BUILDER.PARAMS.DESCRIPTION')"
-          class="w-full text-sm border border-n-weak rounded px-2 py-1.5 bg-n-solid-1 text-n-slate-12"
-          @input="changeParam(index, 'description', $event.target.value)"
-        />
-      </div>
-
       <!-- Indicadores de compatibilidad Desk -->
       <div v-if="isDeskAction(action.action)" class="ml-7 flex gap-2">
         <span

@@ -10,6 +10,7 @@ class CrmFlow < ApplicationRecord
     lead_creation
     customer_creation
     contact_type_changed
+    ticket_created
   ].freeze
   SCOPE_TYPES = %w[global inbox].freeze
 

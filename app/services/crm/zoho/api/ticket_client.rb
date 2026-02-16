@@ -18,6 +18,19 @@ module Crm
           request(:get, "#{API_PATH}/departments")
         end
 
+        def upload_attachment(ticket_id, file_io)
+          url = "#{base_url}#{API_PATH}/tickets/#{ticket_id}/attachments"
+          headers = {
+            'Authorization' => "Zoho-oauthtoken #{@credentials['access_token']}",
+            'orgId' => desk_org_id
+          }
+
+          ensure_valid_token!
+
+          response = HTTParty.post(url, headers: headers, multipart: true, body: { file: file_io })
+          handle_response(response)
+        end
+
         private
 
         def base_url

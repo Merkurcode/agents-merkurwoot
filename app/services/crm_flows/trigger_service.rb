@@ -33,15 +33,20 @@ module CrmFlows
       # Almacenar pending y encolear
       IdempotencyService.store_pending(@idempotency_key, flow_id: flow.id, conversation_id: @conversation_id)
 
+      ticket = create_ticket(conversation) if flow.trigger_type == 'ticket_created'
+
       CrmFlows::ExecutionJob.perform_later(
         flow_id: flow.id,
         conversation_id: @conversation_id,
         contact_id: @contact_id,
         metadata: @metadata,
-        idempotency_key: @idempotency_key
+        idempotency_key: @idempotency_key,
+        ticket_id: ticket&.id
       )
 
-      { status: :queued, flow_id: flow.id, flow_name: flow.name }
+      result = { status: :queued, flow_id: flow.id, flow_name: flow.name }
+      result[:ticket_id] = ticket.id if ticket
+      result
     end
 
     private
@@ -69,6 +74,19 @@ module CrmFlows
         valid: missing.empty?,
         missing: missing.map { |f| { key: f['key'], label: f['label'], type: f['type'] } }
       }
+    end
+
+    def create_ticket(conversation)
+      contact = Contact.find_by(id: @contact_id)
+      stringified = @metadata.stringify_keys
+      Ticket.create!(
+        account: @account,
+        contact: contact,
+        conversation: conversation,
+        subject: stringified['ticket_subject'].presence || stringified['subject'].presence || 'Untitled Ticket',
+        description: stringified['ticket_description'].presence || stringified['description'],
+        metadata: @metadata
+      )
     end
   end
 end

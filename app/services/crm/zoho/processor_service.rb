@@ -6,6 +6,8 @@ module Crm
     #
     # Implements CRM actions for Zoho CRM API
     class ProcessorService < Crm::BaseProcessorService
+      include Crm::Concerns::OwnerAssignable
+
       def initialize(hook)
         super(hook)
         @lead_client = Crm::Zoho::Api::LeadClient.new(hook)
@@ -33,6 +35,8 @@ module Crm
           create_contact(params)
         when 'update_lead'
           update_lead(params)
+        when 'update_contact'
+          update_contact(params)
         when 'create_task'
           create_task(params)
         when 'create_call'
@@ -198,6 +202,9 @@ module Crm
         mapper = Crm::Zoho::Mappers::ContactMapper.new(contact)
         lead_data = mapper.map_to_lead(custom_fields: params[:lead_custom_fields] || {})
 
+        # Add owner if specified (for advisor transfer)
+        add_owner_to_data(lead_data, params, action: 'update_lead')
+
         # Update lead
         response = @lead_client.update_lead(lead_id, lead_data)
 
@@ -252,6 +259,41 @@ module Crm
         end
       rescue StandardError => e
         Rails.logger.error "Error creating contact in Zoho: #{e.message}"
+        { success: false, error: e.message }
+      end
+
+      # Update contact in Zoho CRM
+      #
+      # @param params [Hash] Contact parameters
+      # @option params [String] :contact_id Zoho contact ID
+      # @option params [String] :owner_id Zoho owner ID
+      # @return [Hash] Result with success status
+      def update_contact(params)
+        contact_id = params[:contact_id]
+        contact_id ||= find_contact_from_params(params)&.additional_attributes&.dig('external', 'zoho_contact_id')
+        return { success: false, error: 'Contact ID not provided' } unless contact_id
+
+        contact = find_contact_from_params(params)
+        return { success: false, error: 'Contact not found' } unless contact
+
+        # Map contact to Zoho format
+        mapper = Crm::Zoho::Mappers::ContactMapper.new(contact)
+        contact_data = mapper.map_to_contact(custom_fields: params[:contact_custom_fields] || {})
+
+        # Add owner if specified (for advisor transfer)
+        add_owner_to_data(contact_data, params, action: 'update_contact')
+
+        # Update contact
+        response = @lead_client.update_contact(contact_id, contact_data)
+
+        if response && response['data']&.any?
+          Rails.logger.info "Contact updated successfully in Zoho: #{contact_id}"
+          { success: true, contact_id: contact_id, action: 'updated' }
+        else
+          { success: false, error: 'Failed to update contact', response: response }
+        end
+      rescue StandardError => e
+        Rails.logger.error "Error updating contact in Zoho: #{e.message}"
         { success: false, error: e.message }
       end
 

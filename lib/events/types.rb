@@ -69,4 +69,7 @@ module Events::Types
 
   # Product Catalog events (bulk)
   PRODUCT_CATALOG_UPDATED = 'product_catalog.updated'
+
+  # KB Resource events
+  KB_RESOURCE_UPDATED = 'kb_resource.updated'
 end

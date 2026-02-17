@@ -327,8 +327,18 @@ module Crm
           contact = appointment.contact
           contact&.additional_attributes&.dig('external', 'zoho_lead_id')
 
-          # Usar el mapper específico para appointments
-          call_data = Crm::Zoho::Mappers::ActivityMapper.map_call_from_appointment(appointment, params)
+          # Get CRM owner ID from appointment owner if available
+          crm_owner_id = nil
+          if appointment.owner
+            account_user = appointment.owner.account_users.find_by(account_id: appointment.account_id)
+            crm_owner_id = account_user&.crm_external_id
+            Rails.logger.info "🔍 [ZOHO CALL] Appointment owner: #{appointment.owner.email}, CRM ID: #{crm_owner_id}"
+          end
+
+          # Usar el mapper específico para appointments, pasando owner_id
+          mapper_params = params.dup
+          mapper_params[:owner_id] = crm_owner_id if crm_owner_id.present?
+          call_data = Crm::Zoho::Mappers::ActivityMapper.map_call_from_appointment(appointment, mapper_params)
 
           response = @activity_client.create_call(call_data)
 
@@ -405,6 +415,14 @@ module Crm
         contact = appointment&.contact || find_contact_from_params(params)
         lead_id = contact&.additional_attributes&.dig('external', 'zoho_lead_id')
 
+        # Get CRM owner ID from appointment owner if available
+        crm_owner_id = nil
+        if appointment&.owner
+          account_user = appointment.owner.account_users.find_by(account_id: appointment.account_id)
+          crm_owner_id = account_user&.crm_external_id
+          Rails.logger.info "🔍 [ZOHO EVENT] Appointment owner: #{appointment.owner.email}, CRM ID: #{crm_owner_id}"
+        end
+
         Rails.logger.info "🔍 [ZOHO EVENT] params: #{params.inspect}"
         Rails.logger.info "🔍 [ZOHO EVENT] contact_id: #{contact&.id}, lead_id: #{lead_id}"
 
@@ -415,12 +433,15 @@ module Crm
 
         # Preparamos los parámetros base
         event_params = if appointment
-                         # Cuando hay appointment, combinar params con lead_id y se_module
+                         # Cuando hay appointment, combinar params con lead_id, se_module y owner_id
                          # IMPORTANTE: Eliminar contact_id de Nauto Console para evitar conflicto con Who_Id
-                         params.except(:contact_id).merge(
+                         base_params = params.except(:contact_id).merge(
                            lead_id: lead_id,
                            se_module: 'Leads'
                          )
+                         # Add CRM owner ID if available
+                         base_params[:owner_id] = crm_owner_id if crm_owner_id.present?
+                         base_params
                        else
                          {
                            event_title: metadata['event_title'] || metadata['subject'] || params[:subject],

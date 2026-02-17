@@ -149,6 +149,7 @@ module Crm
         #
         # @param appointment [Appointment] Chatwoot appointment
         # @param params [Hash] Additional parameters
+        # @option params [String] :owner_id CRM owner ID
         # @return [Hash] Zoho Call data
         def self.map_call_from_appointment(appointment, params = {})
           contact = appointment.contact
@@ -168,7 +169,8 @@ module Crm
             duration: appointment.duration_minutes ? appointment.duration_minutes * 60 : nil,
             status: zoho_status,
             lead_id: lead_id,
-            se_module: 'Leads'
+            se_module: 'Leads',
+            owner_id: params[:owner_id]
           )
         end
 
@@ -248,6 +250,11 @@ module Crm
             call_data[:'$se_module'] = params[:se_module] || 'Leads'
           elsif params[:contact_id].present?
             call_data[:Who_Id] = { id: params[:contact_id] }
+          end
+
+          # Add Owner if specified
+          if params[:owner_id].present?
+            call_data[:Owner] = { id: params[:owner_id] }
           end
 
           call_data.compact

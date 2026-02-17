@@ -24,6 +24,7 @@ const SUPPORTED_WEBHOOK_EVENTS = [
   // Catalog bulk events
   'faq_catalog_updated',
   'product_catalog_updated',
+  'kb_resource_updated',
 ];
 
 export default {

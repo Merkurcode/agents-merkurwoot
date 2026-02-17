@@ -235,7 +235,27 @@ class CrmFlows::ActionExecutor
     # Si hay appointment_id en metadata, añadirlo directamente a params
     base_params['appointment_id'] = @metadata[:appointment_id] if @metadata[:appointment_id].present?
 
+    # Resolve CRM owner ID using OwnerResolver
+    appointment = @metadata[:appointment_id].present? ? Appointment.find_by(id: @metadata[:appointment_id]) : nil
+    owner_id = resolve_owner_id(appointment: appointment)
+    base_params['owner_id'] = owner_id if owner_id.present?
+
     base_params.symbolize_keys
+  end
+
+  # Resolve CRM owner ID using OwnerResolver
+  # Uses priority: metadata > appointment.owner > conversation.assignee
+  #
+  # @param appointment [Appointment, nil] Optional appointment
+  # @return [String, nil] CRM external ID or nil
+  def resolve_owner_id(appointment: nil)
+    @owner_resolver ||= CrmFlows::OwnerResolver.new(
+      account: @account,
+      conversation: @conversation,
+      appointment: appointment,
+      metadata: @metadata
+    )
+    @owner_resolver.resolve
   end
 
   # Check if profile should be synced based on last sync time

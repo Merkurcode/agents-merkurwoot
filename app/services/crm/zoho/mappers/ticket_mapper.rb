@@ -17,10 +17,14 @@ module Crm
 
           subject = metadata['ticket_subject'].presence || metadata['subject'].presence || params[:subject]
           description = metadata['ticket_description'].presence || metadata['description'].presence || params[:description]
+          priority = metadata['priority'].presence || params[:priority]
+          classification = metadata['classification'].presence || params[:classification]
 
           ticket_data = {
             subject: subject,
-            description: description
+            description: description,
+            priority: priority,
+            classification: classification
           }.compact
 
           if contact

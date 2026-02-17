@@ -419,7 +419,6 @@ Rails.application.routes.draw do
               get :trigger_schema
               get :agent_schema
               get :executions_by_conversation
-              post 'tickets/:ticket_id/attachments', action: :attach_files, as: :ticket_attachments
             end
             member do
               get :executions

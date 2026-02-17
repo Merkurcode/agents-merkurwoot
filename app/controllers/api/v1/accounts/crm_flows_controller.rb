@@ -56,15 +56,6 @@ class Api::V1::Accounts::CrmFlowsController < Api::V1::Accounts::BaseController
     render_trigger_result(result)
   end
 
-  # POST /api/v1/accounts/:account_id/crm_flows/tickets/:ticket_id/attachments
-  def attach_files
-    ticket = Ticket.find_by!(id: params[:ticket_id], account_id: Current.account.id)
-    ticket.files.attach(params[:files])
-    enqueue_zoho_uploads(ticket, Array(params[:files]).size)
-
-    render json: { status: 'attached', ticket_id: ticket.id, file_count: ticket.files.count }, status: :ok
-  end
-
   # GET /api/v1/accounts/:account_id/crm_flows/trigger_schema
   def trigger_schema
     flow = CrmFlow.resolve_for(
@@ -128,18 +119,6 @@ class Api::V1::Accounts::CrmFlowsController < Api::V1::Accounts::BaseController
     end
   end
 
-  def enqueue_zoho_uploads(ticket, count)
-    return unless ticket.external_id_for('zoho').present?
-
-    hook = Integrations::Hook.where(account_id: Current.account.id).crm_hooks.enabled
-                             .find { |h| h.app_id == 'zoho' && h.settings&.dig('desk_soid').present? }
-    return unless hook
-
-    ticket.files.last(count).each do |file|
-      Crm::Zoho::TicketAttachmentJob.perform_later(ticket_id: ticket.id, blob_id: file.blob_id, hook_id: hook.id)
-    end
-  end
-
   def crm_flow_params
     params.require(:crm_flow).permit(
       :name, :trigger_type, :scope_type, :inbox_id, :active, :dedup_window_minutes,
@@ -186,9 +165,7 @@ class Api::V1::Accounts::CrmFlowsController < Api::V1::Accounts::BaseController
   def render_trigger_result(result)
     case result[:status]
     when :queued
-      body = { status: 'queued', flow_id: result[:flow_id], flow_name: result[:flow_name] }
-      body[:ticket_id] = result[:ticket_id] if result[:ticket_id]
-      render json: body, status: :accepted
+      render json: { status: 'queued', flow_id: result[:flow_id], flow_name: result[:flow_name] }, status: :accepted
     when :processing
       render json: { status: 'processing' }, status: :conflict
     when :completed

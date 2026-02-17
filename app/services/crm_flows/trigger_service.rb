@@ -44,9 +44,7 @@ module CrmFlows
         ticket_id: ticket&.id
       )
 
-      result = { status: :queued, flow_id: flow.id, flow_name: flow.name }
-      result[:ticket_id] = ticket.id if ticket
-      result
+      { status: :queued, flow_id: flow.id, flow_name: flow.name }
     end
 
     private
@@ -85,6 +83,8 @@ module CrmFlows
         conversation: conversation,
         subject: stringified['ticket_subject'].presence || stringified['subject'].presence || 'Untitled Ticket',
         description: stringified['ticket_description'].presence || stringified['description'],
+        priority: stringified['priority'],
+        classification: stringified['classification'],
         metadata: @metadata
       )
     end

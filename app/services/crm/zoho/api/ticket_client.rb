@@ -34,7 +34,7 @@ module Crm
         private
 
         def base_url
-          crm_domain = @credentials['api_domain'] || 'https://www.zohoapis.eu'
+          crm_domain = @credentials['api_domain'] || ENV.fetch('ZOHO_API_DOMAIN', 'https://www.zohoapis.com')
           crm_domain.gsub('www.zohoapis', 'desk.zoho')
         end
 

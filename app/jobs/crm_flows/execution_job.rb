@@ -72,13 +72,15 @@ module CrmFlows
     end
 
     def sync_pending_attachments(ticket)
-      return unless ticket.external_id_for('zoho').present? && ticket.files.attached?
+      urls = Array(ticket.metadata&.dig('attachment_urls')).compact_blank
+      return if urls.empty?
+      return unless ticket.external_id_for('zoho').present?
 
       hook = find_zoho_desk_hook(ticket.account_id)
       return unless hook
 
-      ticket.files.each do |file|
-        Crm::Zoho::TicketAttachmentJob.perform_later(ticket_id: ticket.id, blob_id: file.blob_id, hook_id: hook.id)
+      urls.each do |url|
+        Crm::Zoho::TicketUrlAttachmentJob.perform_later(ticket_id: ticket.id, url: url, hook_id: hook.id)
       end
     end
 

@@ -66,6 +66,8 @@
       "REMOVE": "Remove",
       "CREATE_LEAD": "Create Lead",
       "CREATE_CONTACT": "Create Contact",
+      "UPDATE_LEAD": "Update Lead",
+      "UPDATE_CONTACT": "Update Contact",
       "CREATE_OPPORTUNITY": "Create Opportunity",
       "CREATE_TASK": "Create Task",
       "CREATE_CALL": "Schedule Call",

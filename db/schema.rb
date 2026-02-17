@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_04_100002) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_17_011526) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -76,6 +76,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_04_100002) do
     t.string "timezone", default: "UTC"
     t.bigint "responsible_id"
     t.bigint "location_id"
+    t.string "crm_external_id"
+    t.datetime "crm_synced_at"
+    t.string "crm_role"
+    t.index ["account_id", "crm_external_id"], name: "index_account_users_on_account_and_crm_external_id"
     t.index ["account_id", "user_id"], name: "uniq_user_id_per_account_id", unique: true
     t.index ["account_id"], name: "index_account_users_on_account_id"
     t.index ["agent_capacity_policy_id"], name: "index_account_users_on_agent_capacity_policy_id"
@@ -1487,7 +1491,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_04_100002) do
     t.bigint "product_catalog_id", null: false
     t.string "file_type", null: false
     t.string "file_name", null: false
-    t.string "file_url", null: false
+    t.string "file_url", null: false, comment: "Static URL from external server. By default, uses the URL from the upload file"
     t.string "thumbnail_url"
     t.integer "file_size"
     t.string "mime_type"
@@ -1497,11 +1501,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_04_100002) do
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.bigint "last_updated_by_id"
+    t.string "s3_key"
+    t.string "s3_status", default: "pending"
+    t.string "original_url", comment: "Original URL received from the upload file"
+    t.text "s3_error"
+    t.datetime "s3_uploaded_at"
     t.index ["file_type"], name: "index_product_media_on_file_type"
     t.index ["is_primary"], name: "index_product_media_on_is_primary"
     t.index ["last_updated_by_id"], name: "index_product_media_on_last_updated_by_id"
     t.index ["product_catalog_id", "display_order"], name: "index_product_media_on_product_catalog_id_and_display_order"
     t.index ["product_catalog_id"], name: "index_product_media_on_product_catalog_id"
+    t.index ["s3_key"], name: "index_product_media_on_s3_key"
+    t.index ["s3_status"], name: "index_product_media_on_s3_status"
     t.index ["user_id"], name: "index_product_media_on_user_id"
   end
 

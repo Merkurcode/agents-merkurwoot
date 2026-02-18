@@ -235,6 +235,12 @@ class CrmFlows::ActionExecutor
     # Si hay appointment_id en metadata, añadirlo directamente a params
     base_params['appointment_id'] = @metadata[:appointment_id] if @metadata[:appointment_id].present?
 
+    # Promote custom fields from metadata if present
+    %w[lead_custom_fields contact_custom_fields].each do |key|
+      sym_key = key.to_sym
+      base_params[key] = @metadata[key] || @metadata[sym_key] if @metadata[key].present? || @metadata[sym_key].present?
+    end
+
     # Resolve CRM owner ID using OwnerResolver
     appointment = @metadata[:appointment_id].present? ? Appointment.find_by(id: @metadata[:appointment_id]) : nil
     owner_id = resolve_owner_id(appointment: appointment)

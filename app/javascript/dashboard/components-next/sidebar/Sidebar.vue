@@ -340,8 +340,6 @@ const menuItems = computed(() => {
             }),
           })),
         },
-
-
       ],
     },
     {
@@ -437,12 +435,6 @@ const menuItems = computed(() => {
           activeOn: ['contacts_dashboard_active'],
         },
         {
-          name: 'Appointments',
-          label: t('SIDEBAR.APPOINTMENTS'),
-          to: accountScopedRoute('contacts_dashboard_appointments'),
-          activeOn: ['contacts_dashboard_appointments'],
-        },
-        {
           name: 'Segments',
           icon: 'i-lucide-group',
           label: t('SIDEBAR.CUSTOM_VIEWS_SEGMENTS'),
@@ -483,6 +475,13 @@ const menuItems = computed(() => {
           })),
         },
       ],
+    },
+    {
+      name: 'Appointments',
+      label: t('SIDEBAR.APPOINTMENTS'),
+      icon: 'i-lucide-calendar-check',
+      to: accountScopedRoute('appointments_dashboard'),
+      activeOn: ['appointments_dashboard'],
     },
     {
       name: 'Companies',

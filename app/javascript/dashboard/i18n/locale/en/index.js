@@ -43,6 +43,7 @@ import whatsappTemplates from './whatsappTemplates.json';
 import contentTemplates from './contentTemplates.json';
 import mfa from './mfa.json';
 import yearInReview from './yearInReview.json';
+import crmFlows from './crmFlows.json';
 
 export default {
   ...advancedFilters,

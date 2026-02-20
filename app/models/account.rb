@@ -266,6 +266,14 @@ class Account < ApplicationRecord
     available_appointment_types.include?(type.to_s)
   end
 
+  def increment_product_catalog_version!
+    increment!(:product_catalog_version)
+  end
+
+  def product_catalog_full_sync_threshold
+    PRODUCT_CATALOG_FULL_SYNC_THRESHOLD
+  end
+
   private
 
   def notify_creation

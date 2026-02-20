@@ -31,6 +31,8 @@ class Account < ApplicationRecord
   include CaptainFeaturable
   include AccountEmailRateLimitable
 
+  PRODUCT_CATALOG_FULL_SYNC_THRESHOLD = 500
+
   SETTINGS_PARAMS_SCHEMA = {
     'type': 'object',
     'properties':
@@ -266,6 +268,14 @@ class Account < ApplicationRecord
 
   def appointment_type_enabled?(type)
     available_appointment_types.include?(type.to_s)
+  end
+
+  def increment_product_catalog_version!
+    increment!(:product_catalog_version)
+  end
+
+  def product_catalog_full_sync_threshold
+    PRODUCT_CATALOG_FULL_SYNC_THRESHOLD
   end
 
   private

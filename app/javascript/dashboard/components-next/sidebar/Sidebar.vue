@@ -1,19 +1,21 @@
 <script setup>
-import { h, computed, onMounted } from 'vue';
+import { h, ref, computed, onMounted } from 'vue';
 import { provideSidebarContext } from './provider';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useKbd } from 'dashboard/composables/utils/useKbd';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
-import { useStorage } from '@vueuse/core';
 import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
 import { vOnClickOutside } from '@vueuse/components';
+import { emitter } from 'shared/helpers/mitt';
+import { BUS_EVENTS } from 'shared/constants/busEvents';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
 import SidebarProfileMenu from './SidebarProfileMenu.vue';
 import SidebarChangelogCard from './SidebarChangelogCard.vue';
+import YearInReviewBanner from '../year-in-review/YearInReviewBanner.vue';
 import ChannelLeaf from './ChannelLeaf.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
 import Logo from 'next/icon/Logo.vue';
@@ -52,14 +54,7 @@ const toggleShortcutModalFn = show => {
 
 useSidebarKeyboardShortcuts(toggleShortcutModalFn);
 
-// We're using localStorage to store the expanded item in the sidebar
-// This helps preserve context when navigating between portal and dashboard layouts
-// and also when the user refreshes the page
-const expandedItem = useStorage(
-  'next-sidebar-expanded-item',
-  null,
-  sessionStorage
-);
+const expandedItem = ref(null);
 
 const setExpandedItem = name => {
   expandedItem.value = expandedItem.value === name ? null : name;
@@ -72,6 +67,7 @@ provideSidebarContext({
 const inboxes = useMapGetter('inboxes/getInboxes');
 const labels = useMapGetter('labels/getLabelsOnSidebar');
 const teams = useMapGetter('teams/getMyTeams');
+const userLocations = useMapGetter('locations/getUserLocations');
 const contactCustomViews = useMapGetter('customViews/getContactCustomViews');
 const conversationCustomViews = useMapGetter(
   'customViews/getConversationCustomViews'
@@ -80,6 +76,7 @@ const conversationCustomViews = useMapGetter(
 onMounted(() => {
   store.dispatch('labels/get');
   store.dispatch('inboxes/get');
+  store.dispatch('locations/getUserLocations');
   store.dispatch('notifications/unReadCount');
   store.dispatch('teams/get');
   store.dispatch('attributes/get');
@@ -94,6 +91,15 @@ const sortedInboxes = computed(() =>
 const closeMobileSidebar = () => {
   if (!props.isMobileSidebarOpen) return;
   emit('closeMobileSidebar');
+};
+
+const onComposeOpen = toggleFn => {
+  toggleFn();
+  emitter.emit(BUS_EVENTS.NEW_CONVERSATION_MODAL, true);
+};
+
+const onComposeClose = () => {
+  emitter.emit(BUS_EVENTS.NEW_CONVERSATION_MODAL, false);
 };
 
 const newReportRoutes = () => [
@@ -119,6 +125,12 @@ const newReportRoutes = () => [
     label: t('SIDEBAR.REPORTS_TEAM'),
     to: accountScopedRoute('team_reports_index'),
     activeOn: ['team_reports_show'],
+  },
+  {
+    name: 'Meta Campaigns',
+    label: t('SIDEBAR.META_CAMPAIGNS'),
+    to: accountScopedRoute('meta_campaign_reports_index'),
+    activeOn: ['meta_campaign_reports_show'],
   },
 ];
 
@@ -146,6 +158,12 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.ALL_CONVERSATIONS'),
           activeOn: ['inbox_conversation'],
           to: accountScopedRoute('home'),
+        },
+        {
+          name: 'Board',
+          label: t('SIDEBAR.CRM_LIST'),
+          activeOn: ['conversation_through_board'],
+          to: accountScopedRoute('conversation_board'),
         },
         {
           name: 'Mentions',
@@ -212,6 +230,19 @@ const menuItems = computed(() => {
             }),
             to: accountScopedRoute('label_conversations', {
               label: label.title,
+            }),
+          })),
+        },
+        {
+          name: 'Locations',
+          label: t('SIDEBAR.LOCATIONS'),
+          icon: 'i-lucide-map-pin',
+          activeOn: ['conversations_through_location'],
+          children: userLocations.value.map(location => ({
+            name: `${location.name}-${location.id}`,
+            label: location.name,
+            to: accountScopedRoute('location_conversations', {
+              locationId: location.id,
             }),
           })),
         },
@@ -352,6 +383,13 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'Appointments',
+      label: t('SIDEBAR.APPOINTMENTS'),
+      icon: 'i-lucide-calendar-check',
+      to: accountScopedRoute('appointments_dashboard'),
+      activeOn: ['appointments_dashboard'],
+    },
+    {
       name: 'Companies',
       label: t('SIDEBAR.COMPANIES'),
       icon: 'i-lucide-building-2',
@@ -421,6 +459,33 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.WHATSAPP'),
           to: accountScopedRoute('campaigns_whatsapp_index'),
         },
+        {
+          name: 'Marketing',
+          label: t('SIDEBAR.MARKETING'),
+          to: accountScopedRoute('campaigns_marketing_index'),
+        },
+      ],
+    },
+    {
+      name: 'Knowledge Base',
+      label: t('SIDEBAR.KNOWLEDGE_BASE.TITLE'),
+      icon: 'i-lucide-book-open',
+      children: [
+        {
+          name: 'Product Catalog',
+          label: t('SIDEBAR.KNOWLEDGE_BASE.PRODUCT_CATALOG'),
+          to: accountScopedRoute('knowledge_base_products'),
+        },
+        {
+          name: 'FAQs',
+          label: t('SIDEBAR.KNOWLEDGE_BASE.FAQS'),
+          to: accountScopedRoute('knowledge_base_faqs'),
+        },
+        {
+          name: 'Resources',
+          label: t('SIDEBAR.KNOWLEDGE_BASE.RESOURCES'),
+          to: accountScopedRoute('knowledge_base_resources'),
+        },
       ],
     },
     {
@@ -481,6 +546,12 @@ const menuItems = computed(() => {
           icon: 'i-lucide-briefcase',
           to: accountScopedRoute('general_settings_index'),
         },
+        // {
+        //   name: 'Settings Captain',
+        //   label: t('SIDEBAR.CAPTAIN_AI'),
+        //   icon: 'i-woot-captain',
+        //   to: accountScopedRoute('captain_settings_index'),
+        // },
         {
           name: 'Settings Agents',
           label: t('SIDEBAR.AGENTS'),
@@ -512,6 +583,12 @@ const menuItems = computed(() => {
           to: accountScopedRoute('labels_list'),
         },
         {
+          name: 'Settings Locations',
+          label: t('SIDEBAR.LOCATIONS'),
+          icon: 'i-lucide-map-pin',
+          to: accountScopedRoute('locations_list'),
+        },
+        {
           name: 'Settings Custom Attributes',
           label: t('SIDEBAR.CUSTOM_ATTRIBUTES'),
           icon: 'i-lucide-code',
@@ -520,14 +597,26 @@ const menuItems = computed(() => {
         {
           name: 'Settings Automation',
           label: t('SIDEBAR.AUTOMATION'),
-          icon: 'i-lucide-workflow',
+          icon: 'i-lucide-repeat',
           to: accountScopedRoute('automation_list'),
+        },
+        {
+          name: 'Settings Lead Retargeting',
+          label: t('SIDEBAR.LEAD_RETARGETING'),
+          icon: 'i-lucide-target',
+          to: accountScopedRoute('copilots_list'),
         },
         {
           name: 'Settings Agent Bots',
           label: t('SIDEBAR.AGENT_BOTS'),
           icon: 'i-lucide-bot',
           to: accountScopedRoute('agent_bots'),
+        },
+        {
+          name: 'Settings Surveys',
+          label: t('SIDEBAR.SURVEYS'),
+          icon: 'i-lucide-clipboard-list',
+          to: accountScopedRoute('surveys_list'),
         },
         {
           name: 'Settings Macros',
@@ -564,6 +653,12 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.SLA'),
           icon: 'i-lucide-clock-alert',
           to: accountScopedRoute('sla_list'),
+        },
+        {
+          name: 'Conversation Workflow',
+          label: t('SIDEBAR.CONVERSATION_WORKFLOW'),
+          icon: 'i-lucide-workflow',
+          to: accountScopedRoute('conversation_workflow_index'),
         },
         {
           name: 'Settings Security',
@@ -623,14 +718,14 @@ const menuItems = computed(() => {
             {{ searchShortcut }}
           </span>
         </RouterLink>
-        <ComposeConversation align-position="right">
+        <ComposeConversation align-position="right" @close="onComposeClose">
           <template #trigger="{ toggle }">
             <Button
               icon="i-lucide-pen-line"
               color="slate"
               size="sm"
               class="!h-7 !bg-n-solid-3 dark:!bg-n-black/30 !outline-n-weak !text-n-slate-11"
-              @click="toggle"
+              @click="onComposeOpen(toggle)"
             />
           </template>
         </ComposeConversation>
@@ -646,11 +741,12 @@ const menuItems = computed(() => {
       </ul>
     </nav>
     <section
-      class="flex flex-col flex-shrink-0 relative gap-1 justify-between items-center"
+      class="flex relative flex-col flex-shrink-0 gap-1 justify-between items-center"
     >
       <div
         class="pointer-events-none absolute inset-x-0 -top-[31px] h-8 bg-gradient-to-t from-n-solid-2 to-transparent"
       />
+      <YearInReviewBanner />
       <SidebarChangelogCard
         v-if="isOnChatwootCloud && !isACustomBrandedInstance"
       />

@@ -22,8 +22,10 @@ class Conversations::MessageWindowService
       messenger_messaging_window
     when 'Channel::Instagram'
       instagram_messaging_window
+    when 'Channel::Tiktok'
+      tiktok_messaging_window
     when 'Channel::Whatsapp'
-      MESSAGING_WINDOW_24_HOURS
+      whatsapp_messaging_window
     when 'Channel::TwilioSms'
       twilio_messaging_window
     end
@@ -41,6 +43,13 @@ class Conversations::MessageWindowService
     @conversation.inbox.channel.additional_attributes['agent_reply_time_window'].to_i.hours
   end
 
+  # WhatsApp Light does not have a messaging window restriction
+  def whatsapp_messaging_window
+    return nil if @conversation.inbox.channel.provider == 'whatsapp_light'
+
+    MESSAGING_WINDOW_24_HOURS
+  end
+
   # Check medium of the inbox to determine the messaging window
   def twilio_messaging_window
     @conversation.inbox.channel.medium == 'whatsapp' ? MESSAGING_WINDOW_24_HOURS : nil
@@ -52,6 +61,10 @@ class Conversations::MessageWindowService
 
   def instagram_messaging_window
     meta_messaging_window('ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT')
+  end
+
+  def tiktok_messaging_window
+    48.hours
   end
 
   def meta_messaging_window(config_key)

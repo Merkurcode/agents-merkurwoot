@@ -159,6 +159,7 @@ class Notification < ApplicationRecord
     # In future, we could probably add condition here to enqueue the job for 30 seconds later
     # when push enabled and then check in email job whether notification has been read already.
     Notification::EmailNotificationJob.perform_later(self) if user_subscribed_to_notification?('email')
+    Notification::WhatsappNotificationJob.perform_later(self) if user_subscribed_to_notification?('whatsapp')
 
     Notification::RemoveDuplicateNotificationJob.perform_later(self)
   end
@@ -180,7 +181,17 @@ class Notification < ApplicationRecord
   end
 
   def dispatch_destroy_event
-    Rails.configuration.dispatcher.dispatch(NOTIFICATION_DELETED, Time.zone.now, notification: self)
+    # Pass serialized data instead of ActiveRecord object to avoid DeserializationError
+    # when the async EventDispatcherJob runs after the notification has been deleted
+    Rails.configuration.dispatcher.dispatch(
+      NOTIFICATION_DELETED,
+      Time.zone.now,
+      notification_data: {
+        id: id,
+        user_id: user_id,
+        account_id: account_id
+      }
+    )
   end
 
   def set_last_activity_at

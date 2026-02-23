@@ -5,7 +5,7 @@
 #  id            :bigint           not null, primary key
 #  name          :string
 #  subscriptions :jsonb
-#  url           :string
+#  url           :text
 #  webhook_type  :integer          default("account_type")
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
@@ -28,7 +28,8 @@ class Webhook < ApplicationRecord
 
   ALLOWED_WEBHOOK_EVENTS = %w[conversation_status_changed conversation_updated conversation_created contact_created contact_updated
                               message_created message_updated webwidget_triggered inbox_created inbox_updated
-                              conversation_typing_on conversation_typing_off].freeze
+                              conversation_typing_on conversation_typing_off agent_added
+                              faq_catalog_updated product_catalog_updated kb_resource_updated].freeze
 
   private
 

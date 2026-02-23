@@ -7,7 +7,6 @@ import {
   buildAttributesFilterTypes,
   CONVERSATION_ATTRIBUTES,
 } from './helper/filterHelper';
-import countries from 'shared/constants/countries.js';
 import languages from 'dashboard/components/widgets/conversation/advancedFilterItems/languages.js';
 
 /**
@@ -60,6 +59,7 @@ export function useConversationFilterContext() {
   const inboxes = useMapGetter('inboxes/getInboxes');
   const teams = useMapGetter('teams/getTeams');
   const campaigns = useMapGetter('campaigns/getAllCampaigns');
+  const contacts = useMapGetter('contacts/getContactsList');
 
   const {
     equalityOperators,
@@ -160,6 +160,22 @@ export function useConversationFilterContext() {
       attributeModel: 'standard',
     },
     {
+      attributeKey: CONVERSATION_ATTRIBUTES.CONTACT_ID,
+      value: CONVERSATION_ATTRIBUTES.CONTACT_ID,
+      attributeName: t('FILTER.ATTRIBUTES.CONTACT_NAME'),
+      label: t('FILTER.ATTRIBUTES.CONTACT_NAME'),
+      inputType: 'searchSelect',
+      options: contacts.value.map(contact => {
+        return {
+          id: contact.id,
+          name: contact.name,
+        };
+      }),
+      dataType: 'number',
+      filterOperators: presenceOperators.value,
+      attributeModel: 'standard',
+    },
+    {
       attributeKey: CONVERSATION_ATTRIBUTES.DISPLAY_ID,
       value: CONVERSATION_ATTRIBUTES.DISPLAY_ID,
       attributeName: t('FILTER.ATTRIBUTES.CONVERSATION_IDENTIFIER'),
@@ -208,23 +224,28 @@ export function useConversationFilterContext() {
       attributeModel: 'standard',
     },
     {
+      attributeKey: CONVERSATION_ATTRIBUTES.CONVERSATION_TYPE,
+      value: CONVERSATION_ATTRIBUTES.CONVERSATION_TYPE,
+      attributeName: t('FILTER.ATTRIBUTES.CONVERSATION_TYPE'),
+      label: t('FILTER.ATTRIBUTES.CONVERSATION_TYPE'),
+      inputType: 'multiSelect',
+      options: ['default', 'whatsapp_group'].map(id => {
+        return {
+          id,
+          name: t(`CONVERSATION.TYPE.${id.toUpperCase()}`),
+        };
+      }),
+      dataType: 'text',
+      filterOperators: equalityOperators.value,
+      attributeModel: 'standard',
+    },
+    {
       attributeKey: CONVERSATION_ATTRIBUTES.BROWSER_LANGUAGE,
       value: CONVERSATION_ATTRIBUTES.BROWSER_LANGUAGE,
       attributeName: t('FILTER.ATTRIBUTES.BROWSER_LANGUAGE'),
       label: t('FILTER.ATTRIBUTES.BROWSER_LANGUAGE'),
       inputType: 'searchSelect',
       options: languages,
-      dataType: 'text',
-      filterOperators: equalityOperators.value,
-      attributeModel: 'additional',
-    },
-    {
-      attributeKey: CONVERSATION_ATTRIBUTES.COUNTRY_CODE,
-      value: CONVERSATION_ATTRIBUTES.COUNTRY_CODE,
-      attributeName: t('FILTER.ATTRIBUTES.COUNTRY_NAME'),
-      label: t('FILTER.ATTRIBUTES.COUNTRY_NAME'),
-      inputType: 'searchSelect',
-      options: countries,
       dataType: 'text',
       filterOperators: equalityOperators.value,
       attributeModel: 'additional',

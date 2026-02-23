@@ -39,12 +39,22 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
         )
       )
       @inbox.save!
+      trigger_landing_page_generation
     end
   end
 
   def update
-    inbox_params = permitted_params.except(:channel, :csat_config)
+    return if @inbox.whatsapp_groups_inbox?
+
+    inbox_params = permitted_params.except(:channel, :csat_config, :auto_assignment_config)
     inbox_params[:csat_config] = format_csat_config(permitted_params[:csat_config]) if permitted_params[:csat_config].present?
+
+    if permitted_params[:auto_assignment_config].present?
+      current_config = @inbox.auto_assignment_config || {}
+      new_config = current_config.merge(permitted_params[:auto_assignment_config].to_h)
+      inbox_params[:auto_assignment_config] = new_config
+    end
+
     @inbox.update!(inbox_params)
     update_inbox_working_hours
     update_channel if channel_update_required?
@@ -61,6 +71,16 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
       agent_bot_inbox.save!
     elsif @inbox.agent_bot_inbox.present?
       @inbox.agent_bot_inbox.destroy!
+    end
+    head :ok
+  end
+
+  def set_survey
+    if params[:survey_id].present?
+      survey = Current.account.surveys.find(params[:survey_id])
+      @inbox.update!(survey: survey)
+    else
+      @inbox.update!(survey: nil)
     end
     head :ok
   end
@@ -152,31 +172,56 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def format_csat_config(config)
-    {
-      display_type: config['display_type'] || 'emoji',
-      message: config['message'] || '',
-      survey_rules: {
-        operator: config.dig('survey_rules', 'operator') || 'contains',
-        values: config.dig('survey_rules', 'values') || []
-      }
+    formatted = {
+      'display_type' => config['display_type'] || 'emoji',
+      'message' => config['message'] || '',
+      :survey_rules => {
+        'operator' => config.dig('survey_rules', 'operator') || 'contains',
+        'values' => config.dig('survey_rules', 'values') || []
+      },
+      'button_text' => config['button_text'] || 'Please rate us',
+      'language' => config['language'] || 'en'
     }
+    format_template_config(config, formatted)
+    formatted
+  end
+
+  def format_template_config(config, formatted)
+    formatted['template'] = config['template'] if config['template'].present?
+  end
+
+  def format_auto_assignment_config(config)
+    formatted = {}
+    formatted[:max_assignment_limit] = config['max_assignment_limit'] if config.key?('max_assignment_limit')
+    formatted[:assignment_type] = config['assignment_type'] if config.key?('assignment_type')
+    formatted
   end
 
   def inbox_attributes
     [:name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
      :lock_to_single_conversation, :portal_id, :sender_name_type, :business_name,
-     { csat_config: [:display_type, :message, { survey_rules: [:operator, { values: [] }] }] }]
+     { csat_config: [:display_type, :message, :button_text, :language,
+                     { survey_rules: [:operator, { values: [] }],
+                       template: [:name, :template_id, :friendly_name, :content_sid, :approval_sid, :created_at, :language, :status] }] },
+     { auto_assignment_config: {} }]
   end
 
   def permitted_params(channel_attributes = [])
     # We will remove this line after fixing https://linear.app/chatwoot/issue/CW-1567/null-value-passed-as-null-string-to-backend
     params.each { |k, v| params[k] = params[k] == 'null' ? nil : v }
 
-    params.permit(
+    permitted = params.permit(
       *inbox_attributes,
       channel: [:type, *channel_attributes]
     )
+
+    # Manually permit all auto_assignment_config params
+    if params[:auto_assignment_config].present?
+      permitted[:auto_assignment_config] = params[:auto_assignment_config].permit!
+    end
+
+    permitted
   end
 
   def channel_type_from_params
@@ -192,11 +237,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def get_channel_attributes(channel_type)
-    if channel_type.constantize.const_defined?(:EDITABLE_ATTRS)
-      channel_type.constantize::EDITABLE_ATTRS.presence
-    else
-      []
-    end
+    channel_type.constantize.const_defined?(:EDITABLE_ATTRS) ? channel_type.constantize::EDITABLE_ATTRS.presence : []
   end
 
   def whatsapp_channel?
@@ -209,6 +250,13 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     elsif @inbox.twilio? && @inbox.channel.whatsapp?
       Channels::Twilio::TemplatesSyncJob.perform_later(@inbox.channel)
     end
+  end
+
+  def trigger_landing_page_generation
+    return unless @inbox.web_widget?
+    return unless @inbox.channel.auto_generate_landing_page
+
+    LandingPage::GenerateLandingPageJob.perform_later(@inbox.id)
   end
 end
 

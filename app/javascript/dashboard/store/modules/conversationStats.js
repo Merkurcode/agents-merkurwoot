@@ -6,6 +6,7 @@ const state = {
   mineCount: 0,
   unAssignedCount: 0,
   allCount: 0,
+  missingPages: 0,
 };
 
 export const getters = {
@@ -44,6 +45,9 @@ export const actions = {
       debouncedFetchMetaData(commit, params);
     }
   },
+  forceGet: async ({ commit }, params) => {
+    await fetchMetaData(commit, params);
+  },
   set({ commit }, meta) {
     commit(types.SET_CONV_TAB_META, meta);
   },
@@ -56,11 +60,13 @@ export const mutations = {
       mine_count: mineCount,
       unassigned_count: unAssignedCount,
       all_count: allCount,
+      missing_pages: missingPages,
     } = {}
   ) {
     $state.mineCount = mineCount;
     $state.allCount = allCount;
     $state.unAssignedCount = unAssignedCount;
+    $state.missingPages = missingPages;
     $state.updatedOn = new Date();
   },
 };

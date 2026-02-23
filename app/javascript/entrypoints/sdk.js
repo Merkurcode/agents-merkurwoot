@@ -47,7 +47,9 @@ const runSDK = ({ baseUrl, websiteToken }) => {
     restoreWidgetInDOM(event.newDocument.body)
   );
 
-  const chatwootSettings = window.chatwootSettings || {};
+  // window.chatwootSettings is deprecated, but kept for backward compatibility
+  const chatwootSettings =
+    window.nautoConsoleSettings || window.chatwootSettings || {};
   let locale = chatwootSettings.locale;
   let baseDomain = chatwootSettings.baseDomain;
 
@@ -76,7 +78,7 @@ const runSDK = ({ baseUrl, websiteToken }) => {
     welcomeDescription: chatwootSettings.welcomeDescription || '',
     availableMessage: chatwootSettings.availableMessage || '',
     unavailableMessage: chatwootSettings.unavailableMessage || '',
-    enableFileUpload: chatwootSettings.enableFileUpload ?? true,
+    enableFileUpload: chatwootSettings.enableFileUpload,
     enableEmojiPicker: chatwootSettings.enableEmojiPicker ?? true,
     enableEndConversation: chatwootSettings.enableEndConversation ?? true,
 
@@ -216,6 +218,11 @@ const runSDK = ({ baseUrl, websiteToken }) => {
   });
 };
 
+// deprecated, but kept for backward compatibility
 window.chatwootSDK = {
+  run: runSDK,
+};
+
+window.nautoConsoleSDK = {
   run: runSDK,
 };

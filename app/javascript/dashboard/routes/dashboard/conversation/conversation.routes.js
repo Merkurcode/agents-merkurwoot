@@ -1,9 +1,11 @@
 /* eslint arrow-body-style: 0 */
 import { frontendURL } from '../../../helper/URLHelper';
 import ConversationView from './ConversationView.vue';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 const CONVERSATION_PERMISSIONS = [
   'administrator',
+  'supervisor',
   'agent',
   'conversation_manage',
   'conversation_unassigned_manage',
@@ -82,6 +84,29 @@ export default {
       props: route => ({
         conversationId: route.params.conversation_id,
         label: route.params.label,
+      }),
+    },
+    {
+      path: frontendURL('accounts/:accountId/location/:locationId'),
+      name: 'location_conversations',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: route => ({ locationId: route.params.locationId }),
+    },
+    {
+      path: frontendURL(
+        'accounts/:accountId/location/:locationId/conversations/:conversation_id'
+      ),
+      name: 'conversations_through_location',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: route => ({
+        conversationId: route.params.conversation_id,
+        locationId: route.params.locationId,
       }),
     },
     {
@@ -175,6 +200,31 @@ export default {
         conversationId: route.params.conversationId,
         conversationType: 'unattended',
       }),
+    },
+    {
+      path: frontendURL(
+        'accounts/:accountId/board/conversations/:conversationId'
+      ),
+      name: 'conversation_through_board',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+        featureFlag: FEATURE_FLAGS.BOARD,
+      },
+      component: ConversationView,
+      props: route => ({
+        conversationId: route.params.conversationId,
+        conversationType: 'board',
+      }),
+    },
+    {
+      path: frontendURL('accounts/:accountId/board/conversations'),
+      name: 'conversation_board',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+        featureFlag: FEATURE_FLAGS.BOARD,
+      },
+      component: ConversationView,
+      props: () => ({ conversationType: 'board' }),
     },
     {
       path: frontendURL('accounts/:accountId/participating/conversations'),

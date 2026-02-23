@@ -83,6 +83,14 @@ export const getters = {
         return false;
       }
 
+      // Filter out CSAT templates (customer_satisfaction_survey and its versions)
+      if (
+        template.name &&
+        template.name.startsWith('customer_satisfaction_survey')
+      ) {
+        return false;
+      }
+
       // Filter out interactive templates (LIST, PRODUCT, CATALOG), location templates, and call permission templates
       const hasUnsupportedComponents = template.components.some(
         component =>
@@ -143,7 +151,9 @@ export const getters = {
   },
   getWhatsAppInboxes($state) {
     return $state.records.filter(
-      item => item.channel_type === INBOX_TYPES.WHATSAPP
+      item =>
+        item.channel_type === INBOX_TYPES.WHATSAPP &&
+        item.provider !== 'whatsapp_light'
     );
   },
   dialogFlowEnabledInboxes($state) {
@@ -163,6 +173,13 @@ export const getters = {
       item =>
         item.instagram_id === instagramId &&
         item.channel_type === INBOX_TYPES.INSTAGRAM
+    );
+  },
+  getTiktokInboxByBusinessId: $state => businessId => {
+    return $state.records.find(
+      item =>
+        item.business_id === businessId &&
+        item.channel_type === INBOX_TYPES.TIKTOK
     );
   },
 };
@@ -194,6 +211,10 @@ export const actions = {
     } catch (error) {
       commit(types.default.SET_INBOXES_UI_FLAG, { isFetching: false });
     }
+  },
+  fetchInbox: async ({ commit }, inboxId) => {
+    const response = await InboxesAPI.getInbox(inboxId);
+    commit(types.default.EDIT_INBOXES, response.data);
   },
   createChannel: async ({ commit }, params) => {
     try {
@@ -333,6 +354,56 @@ export const actions = {
   syncTemplates: async (_, inboxId) => {
     try {
       await InboxesAPI.syncTemplates(inboxId);
+    } catch (error) {
+      throw new Error(error);
+    }
+  },
+  setSurvey: async ({ commit, state }, { inboxId, surveyId }) => {
+    try {
+      await InboxesAPI.setSurvey(inboxId, surveyId);
+
+      const updatedInboxes = state.records.map(inbox => {
+        if (inbox.id === Number(inboxId)) {
+          return {
+            ...inbox,
+            survey_id: surveyId,
+          };
+        }
+        return inbox;
+      });
+
+      commit(types.default.SET_INBOXES, updatedInboxes);
+      return true;
+    } catch (error) {
+      throw new Error(error);
+    }
+  },
+
+  createCSATTemplate: async (_, { inboxId, template }) => {
+    const response = await InboxesAPI.createCSATTemplate(inboxId, template);
+    return response.data;
+  },
+
+  getCSATTemplateStatus: async (_, { inboxId }) => {
+    const response = await InboxesAPI.getCSATTemplateStatus(inboxId);
+    return response.data;
+  },
+  setSurvey: async ({ commit, state }, { inboxId, surveyId }) => {
+    try {
+      await InboxesAPI.setSurvey(inboxId, surveyId);
+
+      const updatedInboxes = state.records.map(inbox => {
+        if (inbox.id === Number(inboxId)) {
+          return {
+            ...inbox,
+            survey_id: surveyId,
+          };
+        }
+        return inbox;
+      });
+
+      commit(types.default.SET_INBOXES, updatedInboxes);
+      return true;
     } catch (error) {
       throw new Error(error);
     }

@@ -121,13 +121,82 @@
       "FEATURES": {
         "INBOUND_EMAIL_ENABLED": "Conversation continuity with emails is enabled for your account.",
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "You can receive emails in your custom domain now."
+      },
+      "BUSINESS_HOURS": {
+        "TITLE": "Business hours",
+        "NOTE": "Configure your business working hours. This information helps AI agents provide accurate availability information to customers.",
+        "ENABLE": "Enable business hours",
+        "TIMEZONE": "Timezone",
+        "WEEKLY_SCHEDULE": "Weekly schedule",
+        "DAYS": {
+          "SUNDAY": "Sunday",
+          "MONDAY": "Monday",
+          "TUESDAY": "Tuesday",
+          "WEDNESDAY": "Wednesday",
+          "THURSDAY": "Thursday",
+          "FRIDAY": "Friday",
+          "SATURDAY": "Saturday"
+        },
+        "UPDATE_BUTTON": "Save business hours",
+        "ERROR": "Please fix the schedule errors before saving",
+        "API": {
+          "SUCCESS": "Business hours updated successfully",
+          "ERROR": "Failed to update business hours"
+        }
+      },
+      "ACCOUNT_ADDRESS": {
+        "TITLE": "Company address",
+        "NOTE": "Configure the physical address information for your company. This information can be used in templates and communications.",
+        "STREET": "Street",
+        "STREET_PLACEHOLDER": "Enter street name",
+        "EXTERIOR_NUMBER": "Exterior number",
+        "EXTERIOR_NUMBER_PLACEHOLDER": "Ext. #",
+        "INTERIOR_NUMBER": "Interior number",
+        "INTERIOR_NUMBER_PLACEHOLDER": "Int. #",
+        "NEIGHBORHOOD": "Neighborhood",
+        "NEIGHBORHOOD_PLACEHOLDER": "Enter neighborhood",
+        "POSTAL_CODE": "Postal code",
+        "POSTAL_CODE_PLACEHOLDER": "Enter postal code",
+        "CITY": "City",
+        "CITY_PLACEHOLDER": "Enter city",
+        "STATE": "State",
+        "STATE_PLACEHOLDER": "Enter state",
+        "EMAIL": "Email",
+        "EMAIL_PLACEHOLDER": "Enter email address",
+        "PHONE": "Phone",
+        "PHONE_PLACEHOLDER": "Enter phone number",
+        "WEBPAGE": "Webpage",
+        "WEBPAGE_PLACEHOLDER": "https://example.com",
+        "ESTABLISHMENT_SUMMARY": "Establishment summary",
+        "ESTABLISHMENT_SUMMARY_PLACEHOLDER": "Brief description of the establishment",
+        "UPDATE_BUTTON": "Save address",
+        "ERROR": "Please fill in all required fields",
+        "API": {
+          "SUCCESS": "Account address updated successfully",
+          "ERROR": "Failed to update account address"
+        }
+      },
+      "APPOINTMENT_TYPES": {
+        "TITLE": "Appointment types",
+        "NOTE": "Configure which appointment types are available for your establishment. AI agents will only offer the types you enable here.",
+        "PHYSICAL_VISIT": "Physical visit",
+        "PHYSICAL_VISIT_DESCRIPTION": "In-person appointments at your location",
+        "DIGITAL_MEETING": "Digital meeting",
+        "DIGITAL_MEETING_DESCRIPTION": "Virtual appointments via video call",
+        "PHONE_CALL": "Phone call",
+        "PHONE_CALL_DESCRIPTION": "Appointments via phone call",
+        "UPDATE_BUTTON": "Save appointment types",
+        "API": {
+          "SUCCESS": "Appointment types updated successfully",
+          "ERROR": "Failed to update appointment types"
+        }
       }
     },
-    "UPDATE_CHATWOOT": "An update {latestChatwootVersion} for Chatwoot is available. Please update your instance.",
+    "UPDATE_CHATWOOT": "An update {latestChatwootVersion} for Nauto Console is available. Please update your instance.",
     "LEARN_MORE": "Learn more",
-    "PAYMENT_PENDING": "Your payment is pending. Please update your payment information to continue using Chatwoot",
-    "UPGRADE": "Upgrade to continue using Chatwoot",
-    "LIMITS_UPGRADE": "Your account has exceeded the usage limits, please upgrade your plan to continue using Chatwoot",
+    "PAYMENT_PENDING": "Your payment is pending. Please update your payment information to continue using Nauto Console",
+    "UPGRADE": "Upgrade to continue using Nauto Console",
+    "LIMITS_UPGRADE": "Your account has exceeded the usage limits, please upgrade your plan to continue using Nauto Console",
     "OPEN_BILLING": "Open billing"
   },
   "FORMS": {

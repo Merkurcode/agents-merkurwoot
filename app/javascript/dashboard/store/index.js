@@ -4,6 +4,9 @@ import accounts from './modules/accounts';
 import agentBots from './modules/agentBots';
 import agentCapacityPolicies from './modules/agentCapacityPolicies';
 import agents from './modules/agents';
+import appointments from './modules/appointments';
+import locations from './modules/locations';
+import pipelineStatuses from './modules/pipelineStatuses';
 import assignmentPolicies from './modules/assignmentPolicies';
 import articles from './modules/helpCenterArticles';
 import attributes from './modules/attributes';
@@ -12,6 +15,12 @@ import auth from './modules/auth';
 import automations from './modules/automations';
 import bulkActions from './modules/bulkActions';
 import campaigns from './modules/campaigns';
+import marketingCampaigns from './modules/marketingCampaigns';
+import productCatalogs from './modules/productCatalogs';
+import faqCategories from './modules/faqCategories';
+import faqItems from './modules/faqItems';
+import kbResources from './modules/kbResources';
+import bulkProcessingRequests from './modules/bulkProcessingRequests';
 import cannedResponse from './modules/cannedResponse';
 import categories from './modules/helpCenterCategories';
 import contactConversations from './modules/contactConversations';
@@ -38,16 +47,19 @@ import inboxMembers from './modules/inboxMembers';
 import integrations from './modules/integrations';
 import labels from './modules/labels';
 import macros from './modules/macros';
+import metaCampaigns from './modules/metaCampaigns';
 import notifications from './modules/notifications';
 import portals from './modules/helpCenterPortals';
 import reports from './modules/reports';
 import sla from './modules/sla';
 import slaReports from './modules/SLAReports';
 import summaryReports from './modules/summaryReports';
+import surveys from './modules/surveys';
 import teamMembers from './modules/teamMembers';
 import teams from './modules/teams';
 import userNotificationSettings from './modules/userNotificationSettings';
 import webhooks from './modules/webhooks';
+import crmFlows from './modules/crmFlows';
 import captainAssistants from './captain/assistant';
 import captainDocuments from './captain/document';
 import captainResponses from './captain/response';
@@ -67,6 +79,9 @@ export default createStore({
     agentBots,
     agentCapacityPolicies,
     agents,
+    appointments,
+    locations,
+    pipelineStatuses,
     assignmentPolicies,
     articles,
     attributes,
@@ -75,6 +90,12 @@ export default createStore({
     automations,
     bulkActions,
     campaigns,
+    marketingCampaigns,
+    productCatalogs,
+    faqCategories,
+    faqItems,
+    kbResources,
+    bulkProcessingRequests,
     cannedResponse,
     categories,
     contactConversations,
@@ -101,16 +122,19 @@ export default createStore({
     integrations,
     labels,
     macros,
+    metaCampaigns,
     notifications,
     portals,
     reports,
     sla,
     slaReports,
     summaryReports,
+    surveys,
     teamMembers,
     teams,
     userNotificationSettings,
     webhooks,
+    crmFlows,
     captainAssistants,
     captainDocuments,
     captainResponses,

@@ -14,8 +14,10 @@ import NextButton from 'dashboard/components-next/button/Button.vue';
 import AccountId from './components/AccountId.vue';
 import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
-import AutoResolve from './components/AutoResolve.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
+import AccountAddress from './components/AccountAddress.vue';
+import AccountBusinessHours from './components/AccountBusinessHours.vue';
+import AppointmentTypes from './components/AppointmentTypes.vue';
 import SectionLayout from './components/SectionLayout.vue';
 
 export default {
@@ -25,8 +27,10 @@ export default {
     AccountId,
     BuildInfo,
     AccountDelete,
-    AutoResolve,
     AudioTranscription,
+    AccountAddress,
+    AccountBusinessHours,
+    AppointmentTypes,
     SectionLayout,
     WithLabel,
     NextInput,
@@ -63,7 +67,11 @@ export default {
       uiFlags: 'accounts/getUIFlags',
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       isOnChatwootCloud: 'globalConfig/isOnChatwootCloud',
+      getCurrentRole: 'getCurrentRole',
     }),
+    isAdministrator() {
+      return this.getCurrentRole === 'administrator';
+    },
     showAutoResolutionConfig() {
       return this.isFeatureEnabledonAccount(
         this.accountId,
@@ -239,8 +247,10 @@ export default {
 
       <woot-loading-state v-if="uiFlags.isFetchingItem" />
     </div>
-    <AutoResolve v-if="showAutoResolutionConfig" />
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
+    <AccountAddress v-if="isAdministrator" />
+    <AccountBusinessHours v-if="isAdministrator" />
+    <AppointmentTypes v-if="isAdministrator" />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">
       <AccountDelete />

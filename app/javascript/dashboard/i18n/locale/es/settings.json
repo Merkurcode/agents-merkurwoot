@@ -37,7 +37,7 @@
       },
       "INTERFACE_SECTION": {
         "TITLE": "Interface",
-        "NOTE": "Customize the look and feel of your Chatwoot dashboard.",
+        "NOTE": "Customize the look and feel of your Nauto Console dashboard.",
         "FONT_SIZE": {
           "TITLE": "Font size",
           "NOTE": "Adjust the text size across the dashboard based on your preference.",
@@ -84,6 +84,13 @@
         "TITLE": "Security",
         "NOTE": "Manage additional security features for your account.",
         "MFA_BUTTON": "Manage Two-Factor Authentication"
+      },
+      "WORKING_HOURS_SECTION": {
+        "TITLE": "Horario laboral",
+        "NOTE": "Configura tu horario laboral para que tu equipo y tus clientes sepan cuándo estás disponible.",
+        "UPDATE_SUCCESS": "Tu horario laboral se ha actualizado correctamente",
+        "UPDATE_ERROR": "Hubo un error al actualizar el horario laboral, por favor inténtalo de nuevo",
+        "UPDATE_WORKING_HOURS": "Actualizar horario laboral"
       },
       "ACCESS_TOKEN": {
         "TITLE": "Token de acceso",
@@ -151,6 +158,7 @@
         "TYPE_TITLE": "Tipo de notificación",
         "EMAIL": "E-mail",
         "PUSH": "Notificación push",
+        "WHATSAPP": "WhatsApp",
         "TYPES": {
           "CONVERSATION_CREATED": "Se ha creado una nueva conversación",
           "CONVERSATION_ASSIGNED": "Se te ha asignado una conversación",
@@ -181,6 +189,18 @@
         "SLA_MISSED_NEXT_RESPONSE": "Send push notifications when a conversation misses next response SLA",
         "SLA_MISSED_RESOLUTION": "Send push notifications when a conversation misses resolution SLA"
       },
+      "WHATSAPP_NOTIFICATIONS_SECTION": {
+        "TITLE": "Notificaciones de WhatsApp",
+        "NOTE": "Actualiza tus preferencias de notificaciones de WhatsApp aquí",
+        "CONVERSATION_ASSIGNMENT": "Enviar notificaciones de WhatsApp cuando se me ha asignado una conversación",
+        "CONVERSATION_CREATION": "Enviar notificaciones de WhatsApp cuando se crea una nueva conversación",
+        "CONVERSATION_MENTION": "Enviar notificaciones de WhatsApp cuando sea mencionado en una conversación",
+        "ASSIGNED_CONVERSATION_NEW_MESSAGE": "Enviar notificaciones de WhatsApp cuando un nuevo mensaje es creado en una conversación asignada",
+        "PARTICIPATING_CONVERSATION_NEW_MESSAGE": "Enviar notificaciones de WhatsApp cuando se crea un nuevo mensaje en una conversación participante",
+        "SLA_MISSED_FIRST_RESPONSE": "Enviar notificaciones de WhatsApp cuando una conversación pierde el SLA de primera respuesta",
+        "SLA_MISSED_NEXT_RESPONSE": "Enviar notificaciones de WhatsApp cuando una conversación pierde el SLA de siguiente respuesta",
+        "SLA_MISSED_RESOLUTION": "Enviar notificaciones de WhatsApp cuando una conversación pierde el SLA de resolución"
+      },
       "PROFILE_IMAGE": {
         "LABEL": "Imagen de perfil"
       },
@@ -210,6 +230,10 @@
         "ERROR": "Por favor, introduzca una dirección de correo válida",
         "PLACEHOLDER": "Por favor, introduzca su dirección de correo electrónico, esto se mostrará en las conversaciones"
       },
+      "PHONE_NUMBER": {
+        "LABEL": "Número de teléfono",
+        "PLACEHOLDER": "Por favor, introduzca su número de teléfono (ej. +1234567890)"
+      },
       "CURRENT_PASSWORD": {
         "LABEL": "Contraseña actual",
         "ERROR": "Por favor, introduzca su contraseña actual",
@@ -234,6 +258,7 @@
     "CONTACT_SUPPORT": "Contactar a soporte",
     "SELECTOR_SUBTITLE": "Seleccione una cuenta de la siguiente lista",
     "PROFILE_SETTINGS": "Ajustes del perfil",
+    "YEAR_IN_REVIEW": "Resumen del año",
     "KEYBOARD_SHORTCUTS": "Atajos de teclado",
     "APPEARANCE": "Cambiar apariencia",
     "SUPER_ADMIN_CONSOLE": "Consola SuperAdmin",
@@ -306,6 +331,10 @@
     "SETTINGS": "Ajustes",
     "CONTACTS": "Contactos",
     "ACTIVE": "Activo",
+    "COMPANIES": "Empresas",
+    "ALL_COMPANIES": "Todas las Empresas",
+    "APPOINTMENTS": "Citas",
+    "LOCATIONS": "Ubicaciones",
     "CAPTAIN": "Capitán",
     "CAPTAIN_ASSISTANTS": "Asistentes",
     "CAPTAIN_DOCUMENTS": "Documentos",
@@ -317,7 +346,8 @@
     "CAPTAIN_SETTINGS": "Ajustes",
     "HOME": "Inicio",
     "AGENTS": "Agentes",
-    "AGENT_BOTS": "Bots",
+    "AGENT_BOTS": "Agentes IA",
+    "SURVEYS": "Encuestas",
     "AUDIT_LOGS": "Auditoría de registros",
     "INBOXES": "Entradas",
     "NOTIFICATIONS": "Notificaciones",
@@ -330,6 +360,7 @@
     "CUSTOM_ATTRIBUTES": "Atributos personalizados",
     "AUTOMATION": "Automatización",
     "MACROS": "Macros",
+    "LEAD_RETARGETING": "Copilots",
     "TEAMS": "Equipos",
     "BILLING": "Facturación",
     "CUSTOM_VIEWS_FOLDER": "Carpetas",
@@ -348,16 +379,18 @@
     "ONGOING": "En Curso",
     "ONE_OFF": "One Off",
     "REPORTS_SLA": "SLA",
-    "REPORTS_BOT": "Bot",
+    "REPORTS_BOT": "Agente IA",
     "REPORTS_AGENT": "Agentes",
     "REPORTS_LABEL": "Etiquetas",
     "REPORTS_INBOX": "Bandeja de entrada",
     "REPORTS_TEAM": "Equipo",
-    "AGENT_ASSIGNMENT": "Agent Assignment",
+    "META_CAMPAIGNS": "Campañas de Meta",
+    "AGENT_ASSIGNMENT": "Asignación de agentes",
     "SET_AVAILABILITY_TITLE": "Ponte como",
     "SET_YOUR_AVAILABILITY": "Establecer su disponibilidad",
     "SLA": "SLA",
     "CUSTOM_ROLES": "Roles personalizados",
+    "CONVERSATION_WORKFLOW": "Flujos de conversación",
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Resumen",
     "REAUTHORIZE": "Su sesión ha expirado, por favor, vuelva a conectarse para continuar recibiendo y enviando mensajes",
@@ -368,6 +401,13 @@
       "LOCALES": "Idiomas",
       "SETTINGS": "Ajustes"
     },
+    "KNOWLEDGE_BASE": {
+      "TITLE": "Base de Conocimientos",
+      "PRODUCT_CATALOG": "Catálogo de Productos",
+      "UPLOAD_HISTORY": "Historial de Cargas",
+      "FAQS": "Preguntas Frecuentes",
+      "RESOURCES": "Recursos"
+    },
     "CHANNELS": "Canales",
     "SET_AUTO_OFFLINE": {
       "TEXT": "Marcar como desconectado automáticamente",
@@ -375,7 +415,8 @@
       "INFO_SHORT": "Marcar automáticamente sin conexión cuando no está usando la aplicación."
     },
     "DOCS": "Leer documentos",
-    "SECURITY": "Security"
+    "SECURITY": "Security",
+    "CRM_LIST": "Embudos"
   },
   "BILLING_SETTINGS": {
     "TITLE": "Facturación",
@@ -398,19 +439,44 @@
       "BUTTON_TXT": "Comprar más créditos",
       "DOCUMENTS": "Documentos",
       "RESPONSES": "Respuestas",
-      "UPGRADE": "Captain no está disponible en el plan gratuito, actualice su suscripción ahora para tener acceso a asistentes, copilot y más."
+      "UPGRADE": "Captain no está disponible en el plan gratuito, actualice su suscripción ahora para tener acceso a asistentes, copilot y más.",
+      "REFRESH_CREDITS": "Actualizar"
     },
     "CHAT_WITH_US": {
       "TITLE": "¿Necesitas ayuda?",
       "DESCRIPTION": "¿Tienes a algún problema en la facturación? Estamos aquí para ayudarte.",
       "BUTTON_TXT": "Chatea con nosotros"
     },
-    "NO_BILLING_USER": "Tu cuenta de facturación está siendo configurada. Por favor, actualiza la página e inténtalo de nuevo."
+    "NO_BILLING_USER": "Tu cuenta de facturación está siendo configurada. Por favor, actualiza la página e inténtalo de nuevo.",
+    "TOPUP": {
+      "BUY_CREDITS": "Comprar más créditos",
+      "MODAL_TITLE": "Buy AI Credits",
+      "MODAL_DESCRIPTION": "Purchase additional credits for Captain AI.",
+      "CREDITS": "CREDITS",
+      "ONE_TIME": "one-time",
+      "POPULAR": "Most Popular",
+      "NOTE_TITLE": "Nota:",
+      "NOTE_DESCRIPTION": "Credits are added immediately and expire in 6 months. An active subscription is required to use credits. Purchased credits are consumed after your monthly plan credits.",
+      "CANCEL": "Cancelar",
+      "PURCHASE": "Purchase Credits",
+      "LOADING": "Loading options...",
+      "FETCH_ERROR": "Failed to load credit options. Please try again.",
+      "PURCHASE_ERROR": "Failed to process purchase. Please try again.",
+      "PURCHASE_SUCCESS": "Successfully added {credits} credits to your account",
+      "CONFIRM": {
+        "TITLE": "Confirm Purchase",
+        "DESCRIPTION": "You are about to purchase {credits} credits for {amount}.",
+        "INSTANT_DEDUCTION_NOTE": "Your saved card will be charged immediately upon confirmation.",
+        "GO_BACK": "Volver",
+        "CONFIRM_PURCHASE": "Confirm Purchase"
+      }
+    }
   },
   "SECURITY_SETTINGS": {
     "TITLE": "Security",
     "DESCRIPTION": "Manage your account security settings.",
     "LINK_TEXT": "Learn more about SAML SSO",
+    "SAML_DISABLED_MESSAGE": "SAML SSO is currently disabled. Please contact your administrator to enable this feature.",
     "SAML": {
       "TITLE": "SAML SSO",
       "NOTE": "Configure SAML single sign-on for your account. Users will authenticate through your identity provider instead of using email/password.",
@@ -436,7 +502,7 @@
       "SP_ENTITY_ID": {
         "LABEL": "SP Entity ID",
         "HELP": "Unique identifier for this application as a service provider (auto-generated).",
-        "TOOLTIP": "Unique identifier for Chatwoot as the Service Provider - Configure this in your IdP settings"
+        "TOOLTIP": "Unique identifier for Nauto Console as the Service Provider - Configure this in your IdP settings"
       },
       "IDP_ENTITY_ID": {
         "LABEL": "Identity Provider Entity ID",
@@ -478,8 +544,60 @@
       }
     }
   },
+  "CONVERSATION_WORKFLOW": {
+    "INDEX": {
+      "HEADER": {
+        "TITLE": "Flujos de conversación",
+        "DESCRIPTION": "Configure reglas y campos obligatorios para la resolución de conversaciones."
+      }
+    },
+    "REQUIRED_ATTRIBUTES": {
+      "TITLE": "Atributos obligatorios al resolver",
+      "DESCRIPTION": "Al resolver una conversación, se pedirá a los agentes que completen estos atributos si aún no lo han hecho.",
+      "NO_ATTRIBUTES": "Aún no se han añadido atributos",
+      "ADD": {
+        "TITLE": "Añadir atributos",
+        "SEARCH_PLACEHOLDER": "Buscar atributos"
+      },
+      "SAVE": {
+        "SUCCESS": "Atributos obligatorios actualizados",
+        "ERROR": "No se pudieron actualizar los atributos obligatorios, inténtelo de nuevo"
+      },
+      "MODAL": {
+        "TITLE": "Resolver conversación",
+        "DESCRIPTION": "Por favor, complete los siguientes atributos personalizados antes de resolver esta conversación",
+        "ACTIONS": {
+          "RESOLVE": "Resolver conversación",
+          "CANCEL": "Cancelar"
+        },
+        "PLACEHOLDERS": {
+          "TEXT": "Escribe una nota...",
+          "NUMBER": "Introduce un número",
+          "LINK": "Añade un enlace",
+          "DATE": "Selecciona una fecha",
+          "LIST": "Selecciona una opción"
+        },
+        "CHECKBOX": {
+          "YES": "Sí",
+          "NO": "No"
+        }
+      },
+      "PAYWALL": {
+        "TITLE": "Sube de nivel para usar atributos obligatorios",
+        "AVAILABLE_ON": "La función de atributos de conversación obligatorios está disponible en los planes Business y Enterprise.",
+        "UPGRADE_PROMPT": "Mejore su plan para solicitar a los agentes que completen los atributos obligatorios antes de resolver la conversación.",
+        "UPGRADE_NOW": "Actualizar ahora",
+        "CANCEL_ANYTIME": "Puede cambiar o cancelar su plan en cualquier momento"
+      },
+      "ENTERPRISE_PAYWALL": {
+        "AVAILABLE_ON": "La función de atributos de conversación obligatorios está disponible en los planes de pago.",
+        "UPGRADE_PROMPT": "Mejore a un plan de pago para exigir atributos obligatorios antes de resolver la conversación.",
+        "ASK_ADMIN": "Por favor, comuníquese con su administrador para la actualización."
+      }
+    }
+  },
   "CREATE_ACCOUNT": {
-    "NO_ACCOUNT_WARNING": "¡Oh oh! No hemos podido encontrar ninguna cuenta de \"Chatwoot\". Por favor, crea una nueva cuenta para continuar.",
+    "NO_ACCOUNT_WARNING": "¡Oh oh! No hemos podido encontrar ninguna cuenta de \"Nauto Console\". Por favor, crea una nueva cuenta para continuar.",
     "NEW_ACCOUNT": "Nueva cuenta",
     "SELECTOR_SUBTITLE": "Crear nueva cuenta",
     "API": {
@@ -518,251 +636,568 @@
   "ASSIGNMENT_POLICY": {
     "INDEX": {
       "HEADER": {
-        "TITLE": "Agent assignment",
-        "DESCRIPTION": "Define policies to effectively manage workload and route conversations based on the needs of inboxes and agents. Learn more here"
+        "TITLE": "Asignación de agentes",
+        "DESCRIPTION": "Defina políticas para gestionar eficazmente la carga de trabajo y enrutar las conversaciones según las necesidades de las bandejas de entrada y los agentes. Más información aquí"
       },
       "ASSIGNMENT_POLICY": {
-        "TITLE": "Assignment policy",
-        "DESCRIPTION": "Manage how conversations get assigned in inboxes.",
+        "TITLE": "Política de asignación",
+        "DESCRIPTION": "Gestione cómo se asignan las conversaciones en las bandejas de entrada.",
         "FEATURES": [
-          "Assign by conversations evenly or by available capacity",
-          "Add fair distribution rules to avoid overloading any agent",
-          "Add inboxes to a policy - one policy per inbox"
+          "Asignar conversaciones equitativamente o por capacidad disponible",
+          "Añadir reglas de distribución justa para evitar sobrecargar a ningún agente",
+          "Añadir bandejas de entrada a una política - una política por bandeja de entrada"
         ]
       },
       "AGENT_CAPACITY_POLICY": {
-        "TITLE": "Agent capacity policy",
-        "DESCRIPTION": "Manage workload for agents.",
+        "TITLE": "Política de capacidad de agentes",
+        "DESCRIPTION": "Gestione la carga de trabajo de los agentes.",
         "FEATURES": [
-          "Define maximum conversations per inbox",
-          "Create exceptions based on labels and time",
-          "Add agents to a policy - one policy per agent"
+          "Definir el máximo de conversaciones por bandeja de entrada",
+          "Crear excepciones basadas en etiquetas y tiempo",
+          "Añadir agentes a una política - una política por agente"
         ]
       }
     },
     "AGENT_ASSIGNMENT_POLICY": {
       "INDEX": {
         "HEADER": {
-          "TITLE": "Assignment policy",
-          "CREATE_POLICY": "New policy"
+          "TITLE": "Política de asignación",
+          "CREATE_POLICY": "Nueva política"
         },
         "CARD": {
-          "ORDER": "Order",
+          "ORDER": "Orden",
           "PRIORITY": "Prioridad",
           "ACTIVE": "Activo",
-          "INACTIVE": "Inactive",
-          "POPOVER": "Added inboxes",
+          "INACTIVE": "Inactivo",
+          "POPOVER": "Bandejas de entrada añadidas",
           "EDIT": "Editar"
         },
-        "NO_RECORDS_FOUND": "No assignment policies found"
+        "NO_RECORDS_FOUND": "No se encontraron políticas de asignación"
       },
       "CREATE": {
         "HEADER": {
-          "TITLE": "Create assignment policy"
+          "TITLE": "Crear política de asignación"
         },
-        "CREATE_BUTTON": "Create policy",
+        "CREATE_BUTTON": "Crear política",
         "API": {
-          "SUCCESS_MESSAGE": "Assignment policy created successfully",
-          "ERROR_MESSAGE": "Failed to create assignment policy"
+          "SUCCESS_MESSAGE": "Política de asignación creada con éxito",
+          "ERROR_MESSAGE": "Error al crear la política de asignación"
         }
       },
       "EDIT": {
         "HEADER": {
-          "TITLE": "Edit assignment policy"
+          "TITLE": "Editar política de asignación"
         },
-        "EDIT_BUTTON": "Update policy",
+        "EDIT_BUTTON": "Actualizar política",
         "CONFIRM_ADD_INBOX_DIALOG": {
-          "TITLE": "Add inbox",
-          "DESCRIPTION": "{inboxName} inbox is already linked to another policy. Are you sure you want to link it to this policy? It will be unlinked from the other policy.",
-          "CONFIRM_BUTTON_LABEL": "Continue",
+          "TITLE": "Añadir bandeja de entrada",
+          "DESCRIPTION": "La bandeja de entrada {inboxName} ya está vinculada a otra política. ¿Está seguro de que desea vincularla a esta política? Se desvinculará de la otra política.",
+          "CONFIRM_BUTTON_LABEL": "Continuar",
           "CANCEL_BUTTON_LABEL": "Cancelar"
         },
         "API": {
-          "SUCCESS_MESSAGE": "Assignment policy updated successfully",
-          "ERROR_MESSAGE": "Failed to update assignment policy"
+          "SUCCESS_MESSAGE": "Política de asignación actualizada con éxito",
+          "ERROR_MESSAGE": "Error al actualizar la política de asignación"
         },
         "INBOX_API": {
           "ADD": {
-            "SUCCESS_MESSAGE": "Inbox added to policy successfully",
-            "ERROR_MESSAGE": "Failed to add inbox to policy"
+            "SUCCESS_MESSAGE": "Bandeja de entrada añadida a la política con éxito",
+            "ERROR_MESSAGE": "Error al añadir la bandeja de entrada a la política"
           },
           "REMOVE": {
-            "SUCCESS_MESSAGE": "Inbox removed from policy successfully",
-            "ERROR_MESSAGE": "Failed to remove inbox from policy"
+            "SUCCESS_MESSAGE": "Bandeja de entrada eliminada de la política con éxito",
+            "ERROR_MESSAGE": "Error al eliminar la bandeja de entrada de la política"
           }
         }
       },
       "FORM": {
         "NAME": {
-          "LABEL": "Policy name:",
-          "PLACEHOLDER": "Enter policy name"
+          "LABEL": "Nombre de la política:",
+          "PLACEHOLDER": "Ingrese el nombre de la política"
         },
         "DESCRIPTION": {
           "LABEL": "Descripción:",
-          "PLACEHOLDER": "Introducir descripción"
+          "PLACEHOLDER": "Ingrese una descripción"
         },
         "STATUS": {
           "LABEL": "Estado:",
           "PLACEHOLDER": "Seleccionar estado",
-          "ACTIVE": "Policy is active",
-          "INACTIVE": "Policy is inactive"
+          "ACTIVE": "La política está activa",
+          "INACTIVE": "La política está inactiva"
         },
         "ASSIGNMENT_ORDER": {
-          "LABEL": "Assignment order",
+          "LABEL": "Orden de asignación",
           "ROUND_ROBIN": {
             "LABEL": "Round robin",
-            "DESCRIPTION": "Assign conversations evenly among agents."
+            "DESCRIPTION": "Asignar conversaciones equitativamente entre los agentes."
           },
           "BALANCED": {
-            "LABEL": "Balanced",
-            "DESCRIPTION": "Assign conversations based on available capacity."
+            "LABEL": "Equilibrado",
+            "DESCRIPTION": "Asignar conversaciones según la capacidad disponible."
           }
         },
         "ASSIGNMENT_PRIORITY": {
-          "LABEL": "Assignment priority",
+          "LABEL": "Prioridad de asignación",
           "EARLIEST_CREATED": {
-            "LABEL": "Earliest created",
-            "DESCRIPTION": "The conversation that was created first gets assigned first."
+            "LABEL": "Creada más temprano",
+            "DESCRIPTION": "La conversación que se creó primero se asigna primero."
           },
           "LONGEST_WAITING": {
-            "LABEL": "Longest waiting",
-            "DESCRIPTION": "The conversation waiting the longest gets assigned first."
+            "LABEL": "Más tiempo esperando",
+            "DESCRIPTION": "La conversación que ha estado esperando más tiempo se asigna primero."
           }
         },
         "FAIR_DISTRIBUTION": {
-          "LABEL": "Fair distribution policy",
-          "DESCRIPTION": "Set the maximum number of conversations that can be assigned per agent within a time window to avoid overloading any one agent. This required field defaults to 100 conversations per hour.",
-          "INPUT_MAX": "Assign max",
-          "DURATION": "Conversations per agent in every"
+          "LABEL": "Política de distribución justa",
+          "DESCRIPTION": "Establezca el número máximo de conversaciones que se pueden asignar por agente dentro de una ventana de tiempo para evitar sobrecargar a un solo agente. Este campo obligatorio tiene un valor predeterminado de 100 conversaciones por hora.",
+          "INPUT_MAX": "Asignar máx.",
+          "DURATION": "Conversaciones por agente cada"
         },
         "INBOXES": {
-          "LABEL": "Added inboxes",
-          "DESCRIPTION": "Add inboxes for which this policy will be applicable.",
-          "ADD_BUTTON": "Add inbox",
+          "LABEL": "Bandejas de entrada añadidas",
+          "DESCRIPTION": "Añada las bandejas de entrada para las que se aplicará esta política.",
+          "ADD_BUTTON": "Añadir bandeja de entrada",
           "DROPDOWN": {
-            "SEARCH_PLACEHOLDER": "Search and select inboxes to add",
+            "SEARCH_PLACEHOLDER": "Buscar y seleccionar bandejas de entrada para añadir",
             "ADD_BUTTON": "Añadir"
           },
-          "EMPTY_STATE": "No inboxes added to this policy, add an inbox to get started",
+          "EMPTY_STATE": "No hay bandejas de entrada añadidas a esta política, añada una bandeja de entrada para comenzar",
           "API": {
-            "SUCCESS_MESSAGE": "Inbox successfully added to policy",
-            "ERROR_MESSAGE": "Failed to add inbox to policy"
+            "SUCCESS_MESSAGE": "Bandeja de entrada añadida a la política con éxito",
+            "ERROR_MESSAGE": "Error al añadir la bandeja de entrada a la política"
           }
         }
       },
       "DELETE_POLICY": {
-        "SUCCESS_MESSAGE": "Assignment policy deleted successfully",
-        "ERROR_MESSAGE": "Failed to delete assignment policy"
+        "SUCCESS_MESSAGE": "Política de asignación eliminada con éxito",
+        "ERROR_MESSAGE": "Error al eliminar la política de asignación"
       }
     },
     "AGENT_CAPACITY_POLICY": {
       "INDEX": {
         "HEADER": {
-          "TITLE": "Agent capacity",
-          "CREATE_POLICY": "New policy"
+          "TITLE": "Capacidad de agentes",
+          "CREATE_POLICY": "Nueva política"
         },
         "CARD": {
-          "POPOVER": "Added agents",
+          "POPOVER": "Agentes añadidos",
           "EDIT": "Editar"
         },
-        "NO_RECORDS_FOUND": "No agent capacity policies found"
+        "NO_RECORDS_FOUND": "No se encontraron políticas de capacidad de agentes"
       },
       "CREATE": {
         "HEADER": {
-          "TITLE": "Create agent capacity policy"
+          "TITLE": "Crear política de capacidad de agentes"
         },
-        "CREATE_BUTTON": "Create policy",
+        "CREATE_BUTTON": "Crear política",
         "API": {
-          "SUCCESS_MESSAGE": "Agent capacity policy created successfully",
-          "ERROR_MESSAGE": "Failed to create agent capacity policy"
+          "SUCCESS_MESSAGE": "Política de capacidad de agentes creada con éxito",
+          "ERROR_MESSAGE": "Error al crear la política de capacidad de agentes"
         }
       },
       "EDIT": {
         "HEADER": {
-          "TITLE": "Edit agent capacity policy"
+          "TITLE": "Editar política de capacidad de agentes"
         },
-        "EDIT_BUTTON": "Update policy",
+        "EDIT_BUTTON": "Actualizar política",
         "CONFIRM_ADD_AGENT_DIALOG": {
-          "TITLE": "Add agent",
-          "DESCRIPTION": "{agentName} is already linked to another policy. Are you sure you want to link it to this policy? It will be unlinked from the other policy.",
-          "CONFIRM_BUTTON_LABEL": "Continue",
+          "TITLE": "Añadir agente",
+          "DESCRIPTION": "{agentName} ya está vinculado a otra política. ¿Está seguro de que desea vincularlo a esta política? Se desvinculará de la otra política.",
+          "CONFIRM_BUTTON_LABEL": "Continuar",
           "CANCEL_BUTTON_LABEL": "Cancelar"
         },
         "API": {
-          "SUCCESS_MESSAGE": "Agent capacity policy updated successfully",
-          "ERROR_MESSAGE": "Failed to update agent capacity policy"
+          "SUCCESS_MESSAGE": "Política de capacidad de agentes actualizada con éxito",
+          "ERROR_MESSAGE": "Error al actualizar la política de capacidad de agentes"
         },
         "AGENT_API": {
           "ADD": {
-            "SUCCESS_MESSAGE": "Agent added to policy successfully",
-            "ERROR_MESSAGE": "Failed to add agent to policy"
+            "SUCCESS_MESSAGE": "Agente añadido a la política con éxito",
+            "ERROR_MESSAGE": "Error al añadir agente a la política"
           },
           "REMOVE": {
-            "SUCCESS_MESSAGE": "Agent removed from policy successfully",
-            "ERROR_MESSAGE": "Failed to remove agent from policy"
+            "SUCCESS_MESSAGE": "Agente eliminado de la política con éxito",
+            "ERROR_MESSAGE": "Error al eliminar agente de la política"
           }
         }
       },
       "FORM": {
         "NAME": {
-          "LABEL": "Policy name:",
-          "PLACEHOLDER": "Enter policy name"
+          "LABEL": "Nombre de la política:",
+          "PLACEHOLDER": "Ingrese el nombre de la política"
         },
         "DESCRIPTION": {
           "LABEL": "Descripción:",
-          "PLACEHOLDER": "Introducir descripción"
+          "PLACEHOLDER": "Ingrese una descripción"
         },
         "INBOX_CAPACITY_LIMIT": {
-          "LABEL": "Inbox capacity limits",
-          "ADD_BUTTON": "Add inbox",
+          "LABEL": "Límites de capacidad de bandeja de entrada",
+          "ADD_BUTTON": "Añadir bandeja de entrada",
           "FIELD": {
-            "SELECT_INBOX": "Select inbox",
-            "MAX_CONVERSATIONS": "Max conversations",
-            "SET_LIMIT": "Set limit"
+            "SELECT_INBOX": "Seleccionar bandeja de entrada",
+            "MAX_CONVERSATIONS": "Conversaciones máximas",
+            "SET_LIMIT": "Establecer límite"
           },
-          "EMPTY_STATE": "No inbox limit set"
+          "EMPTY_STATE": "Sin límite de bandeja de entrada establecido"
         },
         "EXCLUSION_RULES": {
-          "LABEL": "Exclusion rules",
-          "DESCRIPTION": "Conversations that satisfy the following conditions would not count towards agent capacity",
+          "LABEL": "Reglas de exclusión",
+          "DESCRIPTION": "Las conversaciones que cumplan las siguientes condiciones no contarán para la capacidad del agente",
           "TAGS": {
-            "LABEL": "Exclude conversations tagged with specific labels",
-            "ADD_TAG": "add tag",
+            "LABEL": "Excluir conversaciones etiquetadas con etiquetas específicas",
+            "ADD_TAG": "añadir etiqueta",
             "DROPDOWN": {
-              "SEARCH_PLACEHOLDER": "Search and select tags to add"
+              "SEARCH_PLACEHOLDER": "Buscar y seleccionar etiquetas para añadir"
             },
-            "EMPTY_STATE": "No tags added to this policy."
+            "EMPTY_STATE": "No hay etiquetas añadidas a esta política."
           },
           "DURATION": {
-            "LABEL": "Exclude conversations older than a specified duration",
-            "PLACEHOLDER": "Set time"
+            "LABEL": "Excluir conversaciones más antiguas que una duración específica",
+            "PLACEHOLDER": "Establecer tiempo"
           }
         },
         "USERS": {
-          "LABEL": "Assigned agents",
-          "DESCRIPTION": "Add agents for which this policy will be applicable.",
-          "ADD_BUTTON": "Add agent",
+          "LABEL": "Agentes asignados",
+          "DESCRIPTION": "Añada los agentes para los que se aplicará esta política.",
+          "ADD_BUTTON": "Añadir agente",
           "DROPDOWN": {
-            "SEARCH_PLACEHOLDER": "Search and select agents to add",
+            "SEARCH_PLACEHOLDER": "Buscar y seleccionar agentes para añadir",
             "ADD_BUTTON": "Añadir"
           },
-          "EMPTY_STATE": "No agents added",
+          "EMPTY_STATE": "No hay agentes añadidos",
           "API": {
-            "SUCCESS_MESSAGE": "Agent successfully added to policy",
-            "ERROR_MESSAGE": "Failed to add agent to policy"
+            "SUCCESS_MESSAGE": "Agente añadido a la política con éxito",
+            "ERROR_MESSAGE": "Error al añadir agente a la política"
           }
         }
       },
       "DELETE_POLICY": {
-        "SUCCESS_MESSAGE": "Agent capacity policy deleted successfully",
-        "ERROR_MESSAGE": "Failed to delete agent capacity policy"
+        "SUCCESS_MESSAGE": "Política de capacidad de agentes eliminada con éxito",
+        "ERROR_MESSAGE": "Error al eliminar la política de capacidad de agentes"
       }
     },
     "DELETE_POLICY": {
-      "TITLE": "Delete policy",
-      "DESCRIPTION": "Are you sure you want to delete this policy? This action cannot be undone.",
+      "TITLE": "Eliminar política",
+      "DESCRIPTION": "¿Está seguro de que desea eliminar esta política? Esta acción no se puede deshacer.",
       "CONFIRM_BUTTON_LABEL": "Eliminar",
       "CANCEL_BUTTON_LABEL": "Cancelar"
+    }
+  },
+  "LEAD_RETARGETING": {
+    "HEADER": "Copilots",
+    "DESCRIPTION": "No más leads perdidos. Entrena a tus propios copilotos/agentes autónomos de IA para que tomen el control de tus operaciones",
+    "LEARN_MORE": "Leer más",
+    "HEADER_BTN_TXT": "Añadir Copilot",
+    "BREADCRUMB": {
+      "BACK": "Atrás"
+    },
+    "LIST": {
+      "404": "No hay copilots creados aún",
+      "STEPS": "Pasos",
+      "ENROLLED": "inscritos",
+      "EDIT": "Editar",
+      "ACTIVATE": "Activar",
+      "DEACTIVATE": "Desactivar",
+      "DELETE": "Eliminar",
+      "TABLE_HEADER": {
+        "NAME": "Nombre",
+        "STATUS": "Estado",
+        "SOURCE": "Origen",
+        "STEPS": "Pasos"
+      },
+      "API": {
+        "ERROR_MESSAGE": "Error al cargar los copilots"
+      }
+    },
+    "STATUS": {
+      "ACTIVE": "Activa",
+      "INACTIVE": "Inactiva"
+    },
+    "TOGGLE": {
+      "ACTIVATED": "Copilot activado exitosamente",
+      "DEACTIVATED": "Copilot desactivado exitosamente",
+      "ERROR": "Error al cambiar el estado del copilot"
+    },
+    "DELETE": {
+      "CONFIRM_MESSAGE": "¿Estás seguro de que deseas eliminar {name}?",
+      "SUCCESS_MESSAGE": "Copilot eliminado exitosamente",
+      "ERROR_MESSAGE": "Error al eliminar el copilot",
+      "CONFIRM": {
+        "TITLE": "Eliminar Copilot",
+        "MESSAGE": "¿Estás seguro de que deseas eliminar '{name}'? Esta acción no se puede deshacer.",
+        "YES": "Sí, eliminar",
+        "NO": "Cancelar"
+      }
+    },
+    "FORM": {
+      "NEW_TITLE": "Nuevo Copilot",
+      "EDIT_TITLE": "Editar Copilot",
+      "CANCEL": "Cancelar",
+      "SAVE": "Guardar",
+      "BASIC_INFO": "Información Básica",
+      "BASIC_INFO_SUBTITLE": "Configura los detalles básicos de tu copilot",
+      "NAME": "Nombre",
+      "NAME_PLACEHOLDER": "ej., Seguimiento de Campaña Meta",
+      "NAME_REQUIRED": "El nombre del copilot es requerido",
+      "DESCRIPTION": "Descripción",
+      "DESCRIPTION_PLACEHOLDER": "Describe cuándo debería ejecutarse esta secuencia",
+      "INBOX": "Bandeja de WhatsApp",
+      "INBOX_REQUIRED": "La bandeja de WhatsApp es requerida",
+      "SELECT_INBOX": "Seleccionar bandeja...",
+      "SETTINGS": "Configuración",
+      "SETTINGS_SUBTITLE": "Controla cuándo y cómo debe ejecutarse el copilot",
+      "STOP_ON_REPLY": "Detener copilot cuando el contacto responda",
+      "STOP_ON_RESOLVED": "Detener copilot cuando la conversación se resuelva",
+      "STOP_ON_AGENT_ASSIGNED": "Detener copilot cuando se asigne un asesor",
+      "STOP_ON_AGENT_REPLY": "Detener copilot cuando un asesor responda",
+      "ACTIVATE": "Activar copilot",
+      "STEPS": "Pasos del Copilot",
+      "STEPS_SUBTITLE": "Define las acciones que se ejecutarán en orden",
+      "NO_STEPS": "No hay pasos añadidos aún. Añade períodos de espera y mensajes de plantilla para crear tu copilot.",
+      "STEP_NAME": "Nombre del paso",
+      "DELETE_STEP": "Eliminar paso",
+      "LOAD_ERROR": "Error al cargar el copilot",
+      "CREATE_SUCCESS": "Copilot creado exitosamente",
+      "CREATE_ERROR": "Error al crear el copilot",
+      "UPDATE_SUCCESS": "Copilot actualizado exitosamente",
+      "UPDATE_ERROR": "Error al actualizar el copilot",
+      "REACTIVATION_FILTERS": "Filtros de Reactivación",
+      "REACTIVATION_FILTERS_SUBTITLE": "Controla qué conversaciones se reactivan cuando el copilot se completa",
+      "ENABLE_DATE_FILTER": "Habilitar Filtro de Fecha",
+      "DATE_FILTER_TYPE": "Filtrar Basado En",
+      "DATE_FILTER_CONVERSATION_CREATED": "Fecha de Creación de Conversación",
+      "DATE_FILTER_LAST_MESSAGE": "Fecha del Último Mensaje",
+      "DATE_FILTER_INACTIVE_DAYS": "Días Sin Actividad",
+      "DATE_OPERATOR": "Condición de Fecha",
+      "DATE_OPERATOR_OLDER_THAN": "Más antiguo que X días",
+      "DATE_OPERATOR_NEWER_THAN": "Más reciente que X días",
+      "DATE_OPERATOR_BETWEEN": "Entre fechas",
+      "DAYS": "días",
+      "FROM_DATE": "Desde Fecha",
+      "TO_DATE": "Hasta Fecha",
+      "DATE_FILTER_HELP": "Solo reactivar conversaciones que cumplan este criterio de fecha",
+      "ENABLE_LABEL_FILTER": "Habilitar Filtro de Etiquetas",
+      "SELECT_LABELS": "Seleccionar Etiquetas",
+      "SEARCH_LABELS": "Buscar etiquetas...",
+      "NO_LABELS_FOUND": "No se encontraron etiquetas",
+      "LABEL_FILTER_HELP": "Solo reactivar conversaciones que tengan al menos una de estas etiquetas",
+      "ENABLE_STATUS_FILTER": "Habilitar Filtro de Estado",
+      "SELECT_STATUSES": "Seleccionar Estados",
+      "SEARCH_STATUSES": "Buscar estados...",
+      "NO_STATUSES_FOUND": "No se encontraron estados",
+      "STATUS_FILTER_HELP": "Solo reactivar conversaciones que tengan uno de estos estados",
+      "STATUSES_REQUIRED": "Por favor selecciona al menos un estado",
+      "ENABLE_PIPELINE_STATUS_FILTER": "Habilitar Filtro de Estado del Embudo",
+      "SELECT_PIPELINE_STATUSES": "Seleccionar Estados del Embudo",
+      "SEARCH_PIPELINE_STATUSES": "Buscar estados del embudo...",
+      "NO_PIPELINE_STATUSES_FOUND": "No se encontraron estados del embudo",
+      "PIPELINE_STATUS_FILTER_HELP": "Solo reactivar conversaciones que tengan uno de estos estados del embudo",
+      "PIPELINE_STATUSES_REQUIRED": "Por favor selecciona al menos un estado del embudo",
+      "INCLUDE_COMPLETED_COPILOTS": "Re-enrolar conversaciones con copilotos completados",
+      "INCLUDE_COMPLETED_COPILOTS_HELP": "Cuando está habilitado, las conversaciones que previamente completaron una secuencia de copiloto serán elegibles para enrolamiento nuevamente. Solo se permite un copiloto activo por inbox.",
+      "DATE_RANGE_REQUIRED": "Por favor selecciona ambas fechas: desde y hasta",
+      "DATE_VALUE_REQUIRED": "Por favor ingresa un número de días válido",
+      "LABELS_REQUIRED": "Por favor selecciona al menos una etiqueta"
+    },
+    "SHOW": {
+      "HEADER": "Detalle de Copilot",
+      "BACK_TO_LIST": "Volver a la lista",
+      "AUTO_DEACTIVATED_DESC": "Auto-desactivado: Todas las conversaciones completadas",
+      "AUTO_DEACTIVATED_AT": "Auto-desactivado el {date}",
+      "EDIT": "Editar",
+      "TOTAL_STATS": "Total",
+      "ENROLLED_CONVERSATIONS": "Conversaciones Enrolladas",
+      "STATUS": {
+        "active": "Activo",
+        "paused": "Pausado",
+        "completed": "Completado",
+        "cancelled": "Cancelado",
+        "failed": "Fallido"
+      },
+      "NEXT_ACTION": {
+        "NOT_SCHEDULED": "No programado",
+        "PENDING": "Pendiente",
+        "IN_MINS": "En {count}min",
+        "IN_HOURS": "En {count}h",
+        "IN_DAYS": "En {count}d"
+      },
+      "STOP_REASONS": {
+        "CONTACT_REPLIED": "Contacto respondió",
+        "CONVERSATION_RESOLVED": "Conversación resuelta",
+        "ALL_STEPS_COMPLETED": "Todos los pasos completados",
+        "CONDITION_MET": "Condición cumplida",
+        "COPILOT_DEACTIVATED": "Copilot desactivado",
+        "MANUALLY_CANCELLED": "Cancelado manualmente",
+        "MANUALLY_STOPPED": "Detenido manualmente",
+        "AGENT_ASSIGNED": "Asesor asignado: {name}",
+        "AGENT_REPLIED": "Asesor respondió: {name}"
+      },
+      "ENROLLMENT": {
+        "NO_PHONE": "Sin número",
+        "FIRST_TIME": "Primera vez",
+        "LAST_COMPLETION": "Última completación: {date}"
+      },
+      "ENROLLED_TABLE": {
+        "CONTACT": "Contacto",
+        "CONV_ID": "Conv. ID",
+        "STATUS": "Estado",
+        "STEP": "Paso",
+        "NEXT_ACTION": "Próxima Acción",
+        "STOP_REASON": "Razón de Detención",
+        "RE_ENROLLMENTS": "Re-enrolamientos",
+        "ENROLLED": "Enrolado",
+        "SELECTED_COUNT": "{count} seleccionado(s)",
+        "CANCEL_SELECTED": "Cancelar Seleccionados",
+        "CLEAR_FILTER": "Limpiar filtro",
+        "NO_CONVERSATIONS_FOUND": "No hay conversaciones con este estado",
+        "NO_CONVERSATIONS_ENROLLED": "No hay conversaciones enrolladas"
+      }
+    },
+    "STEPS": {
+      "WAIT": {
+        "ADD": "Esperar",
+        "DEFAULT_NAME": "Período de espera",
+        "LABEL": "Esperar",
+        "MINUTES": "minutos",
+        "HOURS": "horas",
+        "DAYS": "días"
+      },
+      "SEND_TEMPLATE": {
+        "ADD": "Enviar Plantilla",
+        "DEFAULT_NAME": "Enviar plantilla de WhatsApp",
+        "SELECT": "Seleccionar plantilla..."
+      },
+      "SEND_MESSAGE": {
+        "ADD": "Enviar Mensaje IA",
+        "DEFAULT_NAME": "Enviar mensaje con IA",
+        "AI_CONFIG": {
+          "TITLE": "Configuración IA (Ventana Abierta <24h)",
+          "AGENT_BOT": "Agente de IA",
+          "SELECT_AGENT": "Selecciona un agente de IA...",
+          "CONTEXT": "Contexto",
+          "OPTIONAL": "opcional",
+          "CONTEXT_PLACEHOLDER": "Proporciona contexto para el agente de IA (ej: 'Hacer seguimiento sobre demo del producto')...",
+          "CONTEXT_HELP": "Si se deja vacío, el agente de IA retomará la conversación autónomamente basándose en el historial."
+        },
+        "CLOSED_WINDOW": {
+          "TITLE": "Acción Ventana Cerrada (>24h)",
+          "SEND_TEMPLATE": "Enviar Plantilla WhatsApp",
+          "SEND_SMS": "Enviar SMS vía IA"
+        },
+        "SMS_CONFIG": {
+          "AGENT_BOT": "Agente de IA para SMS",
+          "SELECT_AGENT": "Selecciona un agente de IA para SMS...",
+          "CONTEXT": "Contexto SMS",
+          "OPTIONAL": "opcional",
+          "CONTEXT_PLACEHOLDER": "Proporciona contexto para generación de SMS (ej: 'Enviar recordatorio de cita')...",
+          "CONTEXT_HELP": "Si se deja vacío, el agente de IA generará el SMS autónomamente basándose en el historial de conversación."
+        }
+      },
+      "ADD_LABEL": {
+        "ADD": "Añadir Etiqueta",
+        "DEFAULT_NAME": "Añadir etiqueta a la conversación",
+        "SELECT_LABEL": "Seleccionar Etiqueta",
+        "PLACEHOLDER": "Selecciona una etiqueta..."
+      },
+      "REMOVE_LABEL": {
+        "ADD": "Eliminar Etiqueta",
+        "DEFAULT_NAME": "Eliminar etiqueta de la conversación",
+        "SELECT_LABEL": "Seleccionar Etiqueta",
+        "PLACEHOLDER": "Selecciona una etiqueta a eliminar..."
+      },
+      "ASSIGN_AGENT": {
+        "ADD": "Asignar Agente",
+        "DEFAULT_NAME": "Asignar agente a la conversación",
+        "TYPE": "Tipo de Asignación",
+        "ROUND_ROBIN": "Round Robin",
+        "SPECIFIC": "Agente Específico",
+        "SELECT_AGENT": "Seleccionar Agente",
+        "SELECT_PLACEHOLDER": "Selecciona un agente..."
+      },
+      "ASSIGN_TEAM": {
+        "ADD": "Asignar Equipo",
+        "DEFAULT_NAME": "Asignar equipo a la conversación",
+        "SELECT_TEAM": "Seleccionar Equipo",
+        "SELECT_PLACEHOLDER": "Selecciona un equipo..."
+      },
+      "CHANGE_PRIORITY": {
+        "ADD": "Cambiar Prioridad",
+        "DEFAULT_NAME": "Cambiar prioridad de la conversación",
+        "SELECT_PRIORITY": "Prioridad",
+        "LOW": "Baja",
+        "MEDIUM": "Media",
+        "HIGH": "Alta",
+        "URGENT": "Urgente"
+      },
+      "UPDATE_PIPELINE_STATUS": {
+        "ADD": "Actualizar Estado del Embudo",
+        "DEFAULT_NAME": "Actualizar estado del embudo de la conversación",
+        "SELECT_STATUS": "Estado del Embudo",
+        "SELECT_PLACEHOLDER": "Selecciona un estado del embudo..."
+      },
+      "WEBHOOK": {
+        "ADD": "Webhook",
+        "DEFAULT_NAME": "Llamar webhook",
+        "URL": "URL del Webhook",
+        "URL_PLACEHOLDER": "https://ejemplo.com/webhook",
+        "METHOD": "Método HTTP",
+        "VARIABLES_HINT": "Puedes usar variables como {'{{'}contact.name{'}}'}, {'{{'}conversation.id{'}}'}, etc."
+      },
+      "FIRST_CONTACT": {
+        "ADD": "Primer Contacto",
+        "DEFAULT_NAME": "Mensaje de bienvenida (Notion)",
+        "CHANNEL": "Canal de Comunicación",
+        "INBOX": "Bandeja de Entrada",
+        "SELECT_INBOX": "Selecciona una bandeja...",
+        "TEMPLATE": "Plantilla de WhatsApp",
+        "SELECT_TEMPLATE": "Selecciona una plantilla...",
+        "PARAMS": "Parámetros de la Plantilla",
+        "SMS_CONTEXT": "Contexto para el SMS",
+        "SMS_CONTEXT_HELP": "El IA generará un mensaje SMS basado en este contexto y los datos del contacto.",
+        "PREVIEW": "Vista previa del mensaje"
+      },
+      "CONDITION": {
+        "ADD": "Condición",
+        "DEFAULT_NAME": "Condición de rama"
+      },
+      "SEND_EMAIL": {
+        "ADD": "Enviar Email",
+        "DEFAULT_NAME": "Enviar correo electrónico",
+        "SENDER_EMAIL": "Email del emisor (opcional)",
+        "SENDER_EMAIL_PLACEHOLDER": "Ej: soporte{'@'}tuempresa.com",
+        "SUBJECT": "Asunto del correo (opcional)",
+        "SUBJECT_PLACEHOLDER": "Si se deja en blanco, la IA generará el asunto...",
+        "CONTENT": "Contenido del correo (opcional)",
+        "CONTENT_PLACEHOLDER": "Si se deja en blanco, la IA generará el contenido...",
+        "VARIABLES_HINT": "Puedes usar variables como {'{{'}contact.name{'}}'}, {'{{'}contact.email{'}}'}, {'{{'}conversation.id{'}}'}, etc."
+      }
+    },
+    "TIMELINE": {
+      "LOADING": "Cargando eventos...",
+      "EMPTY_STATE": "No hay eventos de copilots para esta conversación",
+      "JUST_NOW": "Hace un momento",
+      "AGO": "Hace"
+    },
+    "EVENTS": {
+      "enrolled": "Inscrito en el copilot",
+      "step_executed": "Paso ejecutado: {name}",
+      "step_failed": "El paso falló",
+      "message_sent": "Mensaje enviado vía {channel}",
+      "template_sent": "Plantilla '{name}' enviada",
+      "ai_response_received": "Respuesta de IA recibida",
+      "sms_sent": "SMS enviado",
+      "label_added": "Etiquetas añadidas: {labels}",
+      "label_removed": "Etiquetas eliminadas: {labels}",
+      "agent_assigned": "Agente asignado: {name}",
+      "team_assigned": "Equipo asignado: {name}",
+      "pipeline_status_updated": "Estado del embudo actualizado a: {name}",
+      "webhook_called": "Webhook llamado",
+      "completed": "Copilot completado",
+      "cancelled": "Copilot cancelado",
+      "failed": "Copilot fallido",
+      "re_enrolled": "Re-inscrito en el copilot",
+      "paused": "Copilot pausado",
+      "resumed": "Copilot reanudado"
     }
   }
 }

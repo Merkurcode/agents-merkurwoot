@@ -13,7 +13,7 @@
     "CREATE_FLOW": {
       "CHANNEL": {
         "TITLE": "Choose Channel",
-        "BODY": "Choose the provider you want to integrate with Chatwoot."
+        "BODY": "Choose the provider you want to integrate with Nauto Console."
       },
       "INBOX": {
         "TITLE": "Create Inbox",
@@ -39,7 +39,7 @@
         "PLACEHOLDER": "Enter your website name (eg: Acme Inc)"
       },
       "FB": {
-        "HELP": "PS: By signing in, we only get access to your Page's messages. Your private messages can never be accessed by Chatwoot.",
+        "HELP": "PS: By signing in, we only get access to your Page's messages. Your private messages can never be accessed by Nauto Console.",
         "CHOOSE_PAGE": "Choose Page",
         "CHOOSE_PLACEHOLDER": "Select a page from the list",
         "INBOX_NAME": "Inbox Name",
@@ -56,6 +56,13 @@
         "ERROR_AUTH": "There was an error connecting to Instagram, please try again",
         "NEW_INBOX_SUGGESTION": "This Instagram account was previously linked to a different inbox and has now been migrated here. All new messages will appear here. The old inbox will no longer be able to send or receive messages for this account.",
         "DUPLICATE_INBOX_BANNER": "This Instagram account was migrated to the new Instagram channel inbox. You won’t be able to send/receive Instagram messages from this inbox anymore."
+      },
+      "TIKTOK": {
+        "CONTINUE_WITH_TIKTOK": "Continue with TikTok",
+        "CONNECT_YOUR_TIKTOK_PROFILE": "Connect your TikTok Profile",
+        "HELP": "To add your TikTok profile as a channel, you need to authenticate your TikTok Profile by clicking on 'Continue with TikTok' ",
+        "ERROR_MESSAGE": "There was an error connecting to TikTok, please try again",
+        "ERROR_AUTH": "There was an error connecting to TikTok, please try again"
       },
       "TWITTER": {
         "HELP": "To add your Twitter profile as a channel, you need to authenticate your Twitter Profile by clicking on 'Sign in with Twitter' ",
@@ -97,6 +104,18 @@
           "HELP_TEXT": "Auto-send greeting messages when customers start a conversation and send their first message.",
           "ENABLED": "Enabled",
           "DISABLED": "Disabled"
+        },
+        "AUTO_GENERATE_LANDING_PAGE": {
+          "SECTION_TITLE": "Auto Generate Landing Page",
+          "LABEL": "Auto generate landing page",
+          "DESCRIPTION_LABEL": "Landing Page Description",
+          "DESCRIPTION_PLACEHOLDER": "Describe your landing page. Include details about your business, services, and what you want to highlight to your customers."
+        },
+        "LANDING_PAGE_URL": {
+          "LABEL": "Landing Page URL",
+          "OPEN_LINK": "Open Landing Page",
+          "HELP_TEXT": "This is your auto-generated landing page. Share this URL with your customers to showcase your business and services.",
+          "ERROR_MESSAGE": "Unable to generate landing page URL. Please try refreshing the page or contact support if the problem persists."
         },
         "REPLY_TIME": {
           "TITLE": "Set Reply time",
@@ -228,6 +247,8 @@
           "TWILIO": "Twilio",
           "WHATSAPP_CLOUD": "WhatsApp Cloud",
           "WHATSAPP_CLOUD_DESC": "Quick setup through Meta",
+          "WHATSAPP_LIGHT": "WhatsApp Light",
+          "WHATSAPP_LIGHT_DESC": "Simple setup with QR code - No templates support",
           "TWILIO_DESC": "Connect via Twilio credentials",
           "360_DIALOG": "360Dialog"
         },
@@ -303,6 +324,34 @@
         },
         "API": {
           "ERROR_MESSAGE": "We were not able to save the WhatsApp channel"
+        }
+      },
+      "WHATSAPP_LIGHT": {
+        "TITLE": "WhatsApp Light",
+        "DESC": "Simple WhatsApp integration with QR code authentication.",
+        "INBOX_NAME": {
+          "LABEL": "Inbox Name",
+          "PLACEHOLDER": "Enter an inbox name",
+          "ERROR": "This field is required"
+        },
+        "PHONE_NUMBER": {
+          "LABEL": "Phone Number",
+          "PLACEHOLDER": "Enter phone number (e.g. +1234567890)",
+          "ERROR": "Please provide a valid phone number that starts with a + sign and does not contain any spaces."
+        },
+        "SUBMIT_BUTTON": "Create WhatsApp Light Channel",
+        "QR_TITLE": "Scan QR Code",
+        "QR_DESC": "Scan this QR code with your WhatsApp to connect your account",
+        "WAITING": "Waiting for channel to be provisioned...",
+        "WAITING_AUTH": "Waiting for authentication...",
+        "EXPIRES_IN": "QR code expires in {seconds} seconds",
+        "QR_EXPIRED": "QR code has expired",
+        "GENERATE_NEW_QR": "Generate New QR Code",
+        "SUCCESS": "WhatsApp connected successfully!",
+        "REDIRECTING": "Redirecting to agent assignment...",
+        "SETUP_ERROR": "Failed to complete setup. Please try again.",
+        "API": {
+          "ERROR_MESSAGE": "We were not able to create the WhatsApp Light channel"
         }
       },
       "VOICE": {
@@ -420,9 +469,9 @@
         "TITLE": "Telegram Channel",
         "DESC": "Integrate with Telegram channel and start supporting your customers.",
         "BOT_TOKEN": {
-          "LABEL": "Bot Token",
-          "SUBTITLE": "Configure the bot token you have obtained from Telegram BotFather.",
-          "PLACEHOLDER": "Bot Token"
+          "LABEL": "AI agent Token",
+          "SUBTITLE": "Configure the AI agent token you have obtained from Telegram BotFather.",
+          "PLACEHOLDER": "AI agent Token"
         },
         "SUBMIT_BUTTON": "Create Telegram Channel",
         "API": {
@@ -431,7 +480,7 @@
       },
       "AUTH": {
         "TITLE": "Choose a channel",
-        "DESC": "Chatwoot supports live-chat widgets, Facebook Messenger, WhatsApp, Emails, etc., as channels. If you want to build a custom channel, you can create it using the API channel. To get started, choose one of the channels below.",
+        "DESC": "Nauto Console supports live-chat widgets, Facebook Messenger, WhatsApp, Emails, etc., as channels. If you want to build a custom channel, you can create it using the API channel. To get started, choose one of the channels below.",
         "TITLE_NEXT": "Complete the setup",
         "TITLE_FINISH": "Voilà!",
         "CHANNEL": {
@@ -461,7 +510,7 @@
           },
           "TELEGRAM": {
             "TITLE": "Telegram",
-            "DESCRIPTION": "Configure Telegram channel using Bot token"
+            "DESCRIPTION": "Configure Telegram channel using AI agent token"
           },
           "LINE": {
             "TITLE": "Line",
@@ -470,6 +519,10 @@
           "INSTAGRAM": {
             "TITLE": "Instagram",
             "DESCRIPTION": "Connect your instagram account"
+          },
+          "TIKTOK": {
+            "TITLE": "TikTok",
+            "DESCRIPTION": "Connect your TikTok account"
           },
           "VOICE": {
             "TITLE": "Voice",
@@ -485,11 +538,11 @@
       },
       "DETAILS": {
         "TITLE": "Inbox Details",
-        "DESC": "From the dropdown below, select the Facebook Page you want to connect to Chatwoot. You can also give a custom name to your inbox for better identification."
+        "DESC": "From the dropdown below, select the Facebook Page you want to connect to Nauto Console. You can also give a custom name to your inbox for better identification."
       },
       "FINISH": {
         "TITLE": "Nailed It!",
-        "DESC": "You have successfully finished integrating your Facebook Page with Chatwoot. Next time a customer messages your Page, the conversation will automatically appear on your inbox.<br>We are also providing you with a widget script that you can easily add to your website. Once this is live on your website, customers can message you right from your website without the help of any external tool and the conversation will appear right here, on Chatwoot.<br>Cool, huh? Well, we sure try to be :)"
+        "DESC": "You have successfully finished integrating your Facebook Page with Nauto Console. Next time a customer messages your Page, the conversation will automatically appear on your inbox.<br>We are also providing you with a widget script that you can easily add to your website. Once this is live on your website, customers can message you right from your website without the help of any external tool and the conversation will appear right here, on Nauto Console.<br>Cool, huh? Well, we sure try to be :)"
       },
       "EMAIL_PROVIDER": {
         "TITLE": "Select your email provider",
@@ -610,7 +663,7 @@
       "PRE_CHAT_FORM": "Pre Chat Form",
       "BUSINESS_HOURS": "Business Hours",
       "WIDGET_BUILDER": "Widget Builder",
-      "BOT_CONFIGURATION": "Bot Configuration",
+      "BOT_CONFIGURATION": "AI agent Configuration",
       "ACCOUNT_HEALTH": "Account Health",
       "CSAT": "CSAT"
     },
@@ -675,15 +728,15 @@
       "DISPLAY_FILE_PICKER": "Display file picker on the widget",
       "DISPLAY_EMOJI_PICKER": "Display emoji picker on the widget",
       "ALLOW_END_CONVERSATION": "Allow users to end conversation from the widget",
-      "USE_INBOX_AVATAR_FOR_BOT": "Use inbox name and avatar for the bot"
+      "USE_INBOX_AVATAR_FOR_BOT": "Use inbox name and avatar for the AI agent"
     },
     "SETTINGS_POPUP": {
       "MESSENGER_HEADING": "Messenger Script",
       "MESSENGER_SUB_HEAD": "Place this button inside your body tag",
       "ALLOWED_DOMAINS": {
         "TITLE": "Allowed Domains",
-        "SUBTITLE": "Add wildcard or regular domains separated by commas (leave blank to allow all), e.g. *.chatwoot.dev, chatwoot.com.",
-        "PLACEHOLDER": "Enter domains separated by commas (eg: *.chatwoot.dev, chatwoot.com)"
+        "SUBTITLE": "Add wildcard or regular domains separated by commas (leave blank to allow all), e.g. *.nauto_console.dev, nauto_console.com.",
+        "PLACEHOLDER": "Enter domains separated by commas (eg: *.nauto_console.dev, nauto_console.com)"
       },
       "INBOX_AGENTS": "Agents",
       "INBOX_AGENTS_SUB_TEXT": "Add or remove agents from this inbox",
@@ -755,6 +808,12 @@
       "MAX_ASSIGNMENT_LIMIT_RANGE_ERROR": "Please enter a value greater than 0",
       "MAX_ASSIGNMENT_LIMIT_SUB_TEXT": "Limit the maximum number of conversations from this inbox that can be auto assigned to an agent"
     },
+    "ASSIGNMENT_TYPE": {
+      "LABEL": "Assignment Type",
+      "SUB_TEXT": "Choose how conversations should be assigned to agents",
+      "INDIVIDUAL": "Individual",
+      "GROUP": "Group"
+    },
     "FACEBOOK_REAUTHORIZE": {
       "TITLE": "Reauthorize",
       "SUBTITLE": "Your Facebook connection has expired, please reconnect your Facebook page to continue services",
@@ -797,6 +856,35 @@
         "LABEL": "Message",
         "PLACEHOLDER": "Please enter a message to show users with the form"
       },
+      "BUTTON_TEXT": {
+        "LABEL": "Button text",
+        "PLACEHOLDER": "Please rate us"
+      },
+      "LANGUAGE": {
+        "LABEL": "Language",
+        "PLACEHOLDER": "Select template language"
+      },
+      "MESSAGE_PREVIEW": {
+        "LABEL": "Message preview",
+        "TOOLTIP": "This may vary slightly when rendered on WhatsApp's platform."
+      },
+      "TEMPLATE_STATUS": {
+        "APPROVED": "Approved by WhatsApp",
+        "PENDING": "Pending WhatsApp approval",
+        "REJECTED": "Meta rejected the template",
+        "DEFAULT": "Needs WhatsApp approval",
+        "NOT_FOUND": "The template does not exist in the Meta platform."
+      },
+      "TEMPLATE_CREATION": {
+        "SUCCESS_MESSAGE": "WhatsApp template created successfully and sent for approval",
+        "ERROR_MESSAGE": "Failed to create WhatsApp template"
+      },
+      "TEMPLATE_UPDATE_DIALOG": {
+        "TITLE": "Edit survey details",
+        "DESCRIPTION": "We will delete the previous template and make a new one which will be sent again for WhatsApp approval",
+        "CONFIRM": "Create new template",
+        "CANCEL": "Go back"
+      },
       "SURVEY_RULE": {
         "LABEL": "Survey rule",
         "DESCRIPTION_PREFIX": "Send the survey if the conversation",
@@ -808,6 +896,7 @@
         "SELECT_PLACEHOLDER": "select labels"
       },
       "NOTE": "Note: CSAT surveys are sent only once per conversation",
+      "WHATSAPP_NOTE": "Note: We will create a template and send it for WhatsApp approval. After being approved, surveys will be sent only once per conversation as per the survey rule.",
       "API": {
         "SUCCESS_MESSAGE": "CSAT settings updated successfully",
         "ERROR_MESSAGE": "We couldn't update CSAT settings. Please try again later."
@@ -980,8 +1069,8 @@
         "USER_MESSAGE": "Hi",
         "AGENT_MESSAGE": "Hello"
       },
-      "BRANDING_TEXT": "Powered by Chatwoot",
-      "SCRIPT_SETTINGS": "\n      window.chatwootSettings = {options};"
+      "BRANDING_TEXT": "Powered by Nauto Console",
+      "SCRIPT_SETTINGS": "\n      window.nautoConsoleSettings = {options};"
     },
     "EMAIL_PROVIDERS": {
       "MICROSOFT": {
@@ -1009,7 +1098,28 @@
       "LINE": "Line",
       "API": "API Channel",
       "INSTAGRAM": "Instagram",
+      "TIKTOK": "TikTok",
       "VOICE": "Voice"
+    },
+    "WHATSAPP_GROUPS": {
+      "SUB_TITLE": "Special inbox for WhatsApp group conversations",
+      "NOTE": "<strong>Note:</strong> This is a system-managed inbox used exclusively for WhatsApp group conversations. It is automatically created and cannot be modified or deleted.",
+      "TYPE_LABEL": "Type:",
+      "TYPE_VALUE": "WhatsApp Groups",
+      "STATUS_LABEL": "Status:",
+      "STATUS_VALUE": "Active",
+      "AUTO_ASSIGNMENT_LABEL": "Auto Assignment:",
+      "AUTO_ASSIGNMENT_VALUE": "Disabled"
+    },
+    "FAQ_CONFIGURATION": {
+      "TITLE": "FAQ Categories",
+      "DESC": "Select FAQ categories that the AI agent can use to answer common questions.",
+      "NO_CATEGORIES": "No FAQ categories available. Create categories in Knowledge Base > FAQs first.",
+      "SELECTED_COUNT": "{count} categories selected",
+      "SAVE": "Save Configuration",
+      "SUCCESS_MESSAGE": "FAQ configuration saved successfully",
+      "ERROR_MESSAGE": "Failed to save FAQ configuration",
+      "FETCH_ERROR": "Failed to load FAQ categories"
     }
   }
 }

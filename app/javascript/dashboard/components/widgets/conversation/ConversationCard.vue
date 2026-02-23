@@ -14,6 +14,7 @@ import PriorityMark from './PriorityMark.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import ContextMenu from 'dashboard/components/ui/ContextMenu.vue';
 import VoiceCallStatus from './VoiceCallStatus.vue';
+import { CONVERSATION_TYPES } from 'dashboard/helper/inbox';
 
 const props = defineProps({
   activeLabel: { type: String, default: '' },
@@ -21,6 +22,7 @@ const props = defineProps({
   hideInboxName: { type: Boolean, default: false },
   hideThumbnail: { type: Boolean, default: false },
   teamId: { type: [String, Number], default: 0 },
+  locationId: { type: [String, Number], default: 0 },
   foldersId: { type: [String, Number], default: 0 },
   showAssignee: { type: Boolean, default: false },
   conversationType: { type: String, default: '' },
@@ -69,6 +71,22 @@ const currentContact = computed(() => {
   return senderId.value
     ? store.getters['contacts/getContact'](senderId.value)
     : {};
+});
+
+const isGroupConversation = computed(() => {
+  return props.chat.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP;
+});
+
+const displayName = computed(() => {
+  if (isGroupConversation.value) {
+    // For group conversations, use the group name from additional_attributes
+    return (
+      props.chat.additional_attributes?.whatsappGroupName ||
+      props.chat.additional_attributes?.whatsapp_group_name ||
+      'WhatsApp Group'
+    );
+  }
+  return currentContact.value.name;
 });
 
 const isActiveChat = computed(() => {
@@ -132,6 +150,7 @@ const conversationPath = computed(() => {
       id: props.chat.id,
       label: props.activeLabel,
       teamId: props.teamId,
+      locationId: props.locationId,
       conversationType: props.conversationType,
       foldersId: props.foldersId,
     })
@@ -252,7 +271,7 @@ const deleteConversation = () => {
     >
       <Avatar
         v-if="!hideThumbnail"
-        :name="currentContact.name"
+        :name="displayName"
         :src="currentContact.thumbnail"
         :size="32"
         :status="currentContact.availability_status"
@@ -310,7 +329,7 @@ const deleteConversation = () => {
         class="conversation--user text-sm my-0 mx-2 capitalize pt-0.5 text-ellipsis overflow-hidden whitespace-nowrap flex-1 min-w-0 ltr:pr-16 rtl:pl-16 text-n-slate-12"
         :class="hasUnread ? 'font-semibold' : 'font-medium'"
       >
-        {{ currentContact.name }}
+        {{ displayName }}
       </h4>
       <VoiceCallStatus
         v-if="voiceCallData.status"

@@ -7,6 +7,7 @@
 #  auto_offline             :boolean          default(TRUE), not null
 #  availability             :integer          default("online"), not null
 #  role                     :integer          default("agent")
+#  timezone                 :string           default("UTC")
 #  created_at               :datetime         not null
 #  updated_at               :datetime         not null
 #  account_id               :bigint
@@ -26,21 +27,28 @@
 
 class AccountUser < ApplicationRecord
   include AvailabilityStatusable
+  include OutOfOffisable
 
   belongs_to :account
   belongs_to :user
   belongs_to :inviter, class_name: 'User', optional: true
+  belongs_to :location, optional: true
+  belongs_to :responsible, class_name: 'AccountUser', optional: true, inverse_of: :subordinates
 
-  enum role: { agent: 0, administrator: 1 }
+  has_many :subordinates, class_name: 'AccountUser', foreign_key: 'responsible_id', dependent: :nullify, inverse_of: :responsible
+
+  enum role: { agent: 0, administrator: 1, supervisor: 2 }
   enum availability: { online: 0, offline: 1, busy: 2 }
 
   accepts_nested_attributes_for :account
 
-  after_create_commit :notify_creation, :create_notification_setting
+  after_create_commit :notify_creation, :create_notification_setting, :enqueue_crm_sync
   after_destroy :notify_deletion, :remove_user_from_account
   after_save :update_presence_in_redis, if: :saved_change_to_availability?
 
   validates :user_id, uniqueness: { scope: :account_id }
+  validate :responsible_cannot_be_self
+  validate :responsible_must_be_from_same_account
 
   def create_notification_setting
     setting = user.notification_settings.new(account_id: account.id)
@@ -54,7 +62,25 @@ class AccountUser < ApplicationRecord
   end
 
   def permissions
-    administrator? ? ['administrator'] : ['agent']
+    return ['administrator'] if administrator?
+    return ['supervisor'] if supervisor?
+
+    ['agent']
+  end
+
+  def subordinate_user_ids
+    subordinates.pluck(:user_id)
+  end
+
+  def all_subordinate_user_ids(visited = Set.new)
+    return [] if visited.include?(id)
+
+    visited.add(id)
+    ids = subordinate_user_ids
+    subordinates.includes(:subordinates).each do |sub|
+      ids += sub.all_subordinate_user_ids(visited) if sub.supervisor?
+    end
+    ids.uniq
   end
 
   def push_event_data
@@ -69,7 +95,7 @@ class AccountUser < ApplicationRecord
   private
 
   def notify_creation
-    Rails.configuration.dispatcher.dispatch(AGENT_ADDED, Time.zone.now, account: account)
+    Rails.configuration.dispatcher.dispatch(AGENT_ADDED, Time.zone.now, account: account, user: user)
   end
 
   def notify_deletion
@@ -78,6 +104,51 @@ class AccountUser < ApplicationRecord
 
   def update_presence_in_redis
     OnlineStatusTracker.set_status(account.id, user.id, availability)
+  end
+
+  def responsible_cannot_be_self
+    return unless responsible_id.present? && responsible_id == id
+
+    errors.add(:responsible_id, 'cannot be yourself')
+  end
+
+  def responsible_must_be_from_same_account
+    return unless responsible_id.present? && responsible.present?
+    return if responsible.account_id == account_id
+
+    errors.add(:responsible_id, 'must be from the same account')
+  end
+
+  # Enqueue CRM sync job after creating account user
+  def enqueue_crm_sync
+    return unless account.hooks.crm_hooks.enabled.exists?
+
+    Crm::SyncAgentJob.perform_later(id)
+  end
+
+  # CRM sync methods
+  public
+
+  # Check if the account user is synced with CRM
+  #
+  # @return [Boolean] True if synced with CRM
+  def crm_synced?
+    crm_external_id.present?
+  end
+
+  # Check if the account user needs CRM sync (hasn't been synced recently)
+  #
+  # @param threshold [ActiveSupport::Duration] Time threshold for considering sync stale
+  # @return [Boolean] True if needs sync
+  def needs_crm_sync?(threshold: 6.hours)
+    crm_synced_at.nil? || crm_synced_at < threshold.ago
+  end
+
+  # Get CRM hook for this account user's account
+  #
+  # @return [Integrations::Hook, nil] Active CRM hook or nil
+  def crm_hook
+    account.hooks.crm_hooks.enabled.first
   end
 end
 

@@ -15,7 +15,8 @@
       "LINK": "Enlace",
       "DATE": "Fecha",
       "LIST": "Lista",
-      "CHECKBOX": "Casilla"
+      "CHECKBOX": "Casilla",
+      "DATETIME": "Fecha y Hora"
     },
     "ADD": {
       "TITLE": "Añadir atributo personalizado",
@@ -129,6 +130,10 @@
       "ENABLE_REGEX": {
         "LABEL": "Habilitar validación regex"
       }
+    },
+    "BADGES": {
+      "PRE_CHAT": "Pre-chat",
+      "RESOLUTION": "Resolución"
     }
   }
 }

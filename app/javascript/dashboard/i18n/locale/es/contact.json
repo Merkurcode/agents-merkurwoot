@@ -18,7 +18,8 @@
     "CREATED_AT_LABEL": "Creado",
     "NEW_MESSAGE": "Nuevo mensaje",
     "CALL": "Llamar",
-    "CALL_UNDER_DEVELOPMENT": "Llamar está bajo desarrollo",
+    "CALL_INITIATED": "Llamando al contacto…",
+    "CALL_FAILED": "No se puede iniciar la llamada. Por favor, inténtelo de nuevo.",
     "VOICE_INBOX_PICKER": {
       "TITLE": "Seleccionar un buzón de entrada"
     },
@@ -124,6 +125,9 @@
       "CITY": {
         "PLACEHOLDER": "Introduzca el nombre de la ciudad",
         "LABEL": "Nombre de ciudad"
+      },
+      "CUSTOM_ATTRIBUTES": {
+        "LABEL": "Atributos Personalizados"
       },
       "SOCIAL_PROFILES": {
         "FACEBOOK": {
@@ -456,6 +460,9 @@
           "INSTAGRAM": {
             "PLACEHOLDER": "Agregar Instagram"
           },
+          "TIKTOK": {
+            "PLACEHOLDER": "Añadir TikTok"
+          },
           "LINKEDIN": {
             "PLACEHOLDER": "Agregar LinkedIn"
           },
@@ -499,6 +506,7 @@
         "ATTRIBUTES": "Atributos",
         "HISTORY": "Historial",
         "NOTES": "Notas",
+        "SURVEYS": "Encuestas",
         "MERGE": "Combinar"
       },
       "HISTORY": {
@@ -560,6 +568,9 @@
         "NO_NOTES": "No hay notas, puede agregar notas desde la página de detalles de contacto.",
         "EMPTY_STATE": "No hay notas asociadas a este contacto. Puede añadir una nota escribiendo en el recuadro superior.",
         "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one."
+      },
+      "SURVEY_ANSWERS": {
+        "EMPTY_STATE": "Este contacto no ha respondido a ninguna encuesta todavía."
       }
     },
     "EMPTY_STATE": {

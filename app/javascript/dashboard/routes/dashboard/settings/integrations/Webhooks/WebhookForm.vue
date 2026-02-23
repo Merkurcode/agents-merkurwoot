@@ -18,6 +18,11 @@ const SUPPORTED_WEBHOOK_EVENTS = [
   'contact_updated',
   'conversation_typing_on',
   'conversation_typing_off',
+  'agent_added',
+  // Catalog bulk events
+  'faq_catalog_updated',
+  'product_catalog_updated',
+  'kb_resource_updated',
 ];
 
 export default {

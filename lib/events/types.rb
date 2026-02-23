@@ -42,7 +42,19 @@ module Events::Types
   CONTACT_MERGED = 'contact.merged'
   CONTACT_DELETED = 'contact.deleted'
 
-  # contact events
+  # soft delete events
+  CONTACT_DISCARDED = 'contact.discarded'
+  CONVERSATION_DISCARDED = 'conversation.discarded'
+
+  # appointment events
+  APPOINTMENT_CREATED = 'appointment.created'
+  APPOINTMENT_UPDATED = 'appointment.updated'
+  APPOINTMENT_STARTED = 'appointment.started'
+  APPOINTMENT_COMPLETED = 'appointment.completed'
+  APPOINTMENT_CANCELLED = 'appointment.cancelled'
+  APPOINTMENT_DISCARDED = 'appointment.discarded'
+
+  # inbox events
   INBOX_CREATED = 'inbox.created'
   INBOX_UPDATED = 'inbox.updated'
 
@@ -57,4 +69,13 @@ module Events::Types
 
   # copilot events
   COPILOT_MESSAGE_CREATED = 'copilot.message.created'
+
+  # FAQ Catalog events (bulk)
+  FAQ_CATALOG_UPDATED = 'faq_catalog.updated'
+
+  # Product Catalog events (bulk)
+  PRODUCT_CATALOG_UPDATED = 'product_catalog.updated'
+
+  # KB Resource events
+  KB_RESOURCE_UPDATED = 'kb_resource.updated'
 end

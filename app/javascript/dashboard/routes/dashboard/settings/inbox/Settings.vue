@@ -9,6 +9,7 @@ import SettingsSection from '../../../../components/SettingsSection.vue';
 import inboxMixin from 'shared/mixins/inboxMixin';
 import FacebookReauthorize from './facebook/Reauthorize.vue';
 import InstagramReauthorize from './channels/instagram/Reauthorize.vue';
+import TiktokReauthorize from './channels/tiktok/Reauthorize.vue';
 import DuplicateInboxBanner from './channels/instagram/DuplicateInboxBanner.vue';
 import MicrosoftReauthorize from './channels/microsoft/Reauthorize.vue';
 import GoogleReauthorize from './channels/google/Reauthorize.vue';
@@ -48,6 +49,7 @@ export default {
     GoogleReauthorize,
     NextButton,
     InstagramReauthorize,
+    TiktokReauthorize,
     WhatsappReauthorize,
     DuplicateInboxBanner,
     Editor,
@@ -111,6 +113,16 @@ export default {
       return '';
     },
     tabs() {
+      // WhatsApp Groups inbox only shows basic settings tab
+      if (this.inbox?.is_whatsapp_groups_inbox) {
+        return [
+          {
+            key: 'inbox-settings',
+            name: this.$t('INBOX_MGMT.TABS.SETTINGS'),
+          },
+        ];
+      }
+
       let visibleToAllChannelTabs = [
         {
           key: 'inbox-settings',
@@ -247,6 +259,9 @@ export default {
     },
     instagramUnauthorized() {
       return this.isAnInstagramChannel && this.inbox.reauthorization_required;
+    },
+    tiktokUnauthorized() {
+      return this.isATiktokChannel && this.inbox.reauthorization_required;
     },
     // Check if a instagram inbox exists with the same instagram_id
     hasDuplicateInstagramInbox() {
@@ -524,6 +539,7 @@ export default {
       <FacebookReauthorize v-if="facebookUnauthorized" :inbox="inbox" />
       <GoogleReauthorize v-if="googleUnauthorized" :inbox="inbox" />
       <InstagramReauthorize v-if="instagramUnauthorized" :inbox="inbox" />
+      <TiktokReauthorize v-if="tiktokUnauthorized" :inbox="inbox" />
       <WhatsappReauthorize
         v-if="whatsappUnauthorized"
         :whatsapp-registration-incomplete="whatsappRegistrationIncomplete"
@@ -535,7 +551,50 @@ export default {
         class="mx-8 mt-5"
       />
       <div v-if="selectedTabKey === 'inbox-settings'" class="mx-8">
+        <!-- WhatsApp Groups Inbox: Read-only information -->
         <SettingsSection
+          v-if="inbox.is_whatsapp_groups_inbox"
+          :title="inbox.name"
+          :sub-title="$t('INBOX_MGMT.WHATSAPP_GROUPS.SUB_TITLE')"
+          :show-border="false"
+        >
+          <div class="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p
+              class="text-sm text-blue-800"
+              v-html="$t('INBOX_MGMT.WHATSAPP_GROUPS.NOTE')"
+            />
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="font-medium text-n-slate-11">
+                {{ $t('INBOX_MGMT.WHATSAPP_GROUPS.TYPE_LABEL') }}
+              </span>
+              <span class="text-n-slate-12">
+                {{ $t('INBOX_MGMT.WHATSAPP_GROUPS.TYPE_VALUE') }}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <span class="font-medium text-n-slate-11">
+                {{ $t('INBOX_MGMT.WHATSAPP_GROUPS.STATUS_LABEL') }}
+              </span>
+              <span class="text-n-slate-12">
+                {{ $t('INBOX_MGMT.WHATSAPP_GROUPS.STATUS_VALUE') }}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <span class="font-medium text-n-slate-11">
+                {{ $t('INBOX_MGMT.WHATSAPP_GROUPS.AUTO_ASSIGNMENT_LABEL') }}
+              </span>
+              <span class="text-n-slate-12">
+                {{ $t('INBOX_MGMT.WHATSAPP_GROUPS.AUTO_ASSIGNMENT_VALUE') }}
+              </span>
+            </div>
+          </div>
+        </SettingsSection>
+
+        <!-- Regular Inbox Settings -->
+        <SettingsSection
+          v-else
           :title="$t('INBOX_MGMT.SETTINGS_POPUP.INBOX_UPDATE_TITLE')"
           :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.INBOX_UPDATE_SUB_TEXT')"
           :show-border="false"

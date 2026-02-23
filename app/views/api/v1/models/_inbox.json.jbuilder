@@ -19,6 +19,14 @@ json.allow_messages_after_resolved resource.allow_messages_after_resolved
 json.lock_to_single_conversation resource.lock_to_single_conversation
 json.sender_name_type resource.sender_name_type
 json.business_name resource.business_name
+json.survey_id resource.try(:survey_id)
+json.is_whatsapp_groups_inbox resource.whatsapp_groups_inbox?
+# Add survey data if it exists
+if resource.survey.present?
+  json.survey do
+    json.partial! 'api/v1/models/survey', formats: [:json], resource: resource.survey
+  end
+end
 
 if resource.portal.present?
   json.help_center do
@@ -43,6 +51,9 @@ json.web_widget_script resource.channel.try(:web_widget_script)
 json.website_token resource.channel.try(:website_token)
 json.selected_feature_flags resource.channel.try(:selected_feature_flags)
 json.reply_time resource.channel.try(:reply_time)
+json.auto_generate_landing_page resource.channel.try(:auto_generate_landing_page)
+json.landing_page_url resource.channel.try(:landing_page_url)
+
 if resource.web_widget?
   json.hmac_token resource.channel.try(:hmac_token) if Current.account_user&.administrator?
   json.pre_chat_form_enabled resource.channel.try(:pre_chat_form_enabled)
@@ -59,6 +70,9 @@ end
 ## Instagram Attributes
 json.reauthorization_required resource.channel.try(:reauthorization_required?) if resource.instagram?
 json.instagram_id resource.channel.try(:instagram_id) if resource.instagram?
+
+## Tiktok Attributes
+json.reauthorization_required resource.channel.try(:reauthorization_required?) if resource.tiktok?
 
 ## Twilio Attributes
 json.messaging_service_sid resource.channel.try(:messaging_service_sid)

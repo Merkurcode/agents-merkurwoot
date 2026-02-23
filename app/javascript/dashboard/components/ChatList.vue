@@ -32,6 +32,8 @@ import ConversationBulkActions from './widgets/conversation/conversationBulkActi
 import IntersectionObserver from './IntersectionObserver.vue';
 import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirection.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
+import Board from '../routes/dashboard/conversation/StatusBoard/Board.vue';
+import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
@@ -46,6 +48,7 @@ import {
 } from 'dashboard/composables/useTransformKeys';
 import { useEmitter } from 'dashboard/composables/emitter';
 import { useEventListener } from '@vueuse/core';
+import { useConversationRequiredAttributes } from 'dashboard/composables/useConversationRequiredAttributes';
 
 import { emitter } from 'shared/helpers/mitt';
 
@@ -73,11 +76,13 @@ import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 const props = defineProps({
   conversationInbox: { type: [String, Number], default: 0 },
   teamId: { type: [String, Number], default: 0 },
+  locationId: { type: [String, Number], default: 0 },
   label: { type: String, default: '' },
   conversationType: { type: String, default: '' },
   foldersId: { type: [String, Number], default: 0 },
   showConversationList: { default: true, type: Boolean },
   isOnExpandedLayout: { default: false, type: Boolean },
+  isOnBoardSection: { default: false, type: Boolean },
 });
 
 const emit = defineEmits(['conversationLoad']);
@@ -87,13 +92,14 @@ const router = useRouter();
 const route = useRoute();
 const store = useStore();
 
+const resolveAttributesModalRef = ref(null);
 const conversationListRef = ref(null);
 const conversationDynamicScroller = ref(null);
 
 provide('contextMenuElementTarget', conversationDynamicScroller);
 
 const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ME);
-const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
+const activeStatus = ref(wootConstants.STATUS_TYPE.ALL);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
 const showAdvancedFilters = ref(false);
 // chatsOnView is to store the chats that are currently visible on the screen,
@@ -129,6 +135,8 @@ const labels = useMapGetter('labels/getLabels');
 const currentAccountId = useMapGetter('getCurrentAccountId');
 // We can't useFunctionGetter here since it needs to be called on setup?
 const getTeamFn = useMapGetter('teams/getTeam');
+const getLocationFn = useMapGetter('locations/getLocation');
+const getConversationById = useMapGetter('getConversationById');
 
 useChatListKeyboardEvents(conversationListRef);
 const {
@@ -153,6 +161,8 @@ const {
   attributeModel: 'conversation_attribute',
 });
 
+const { checkMissingAttributes } = useConversationRequiredAttributes();
+
 // computed
 const intersectionObserverOptions = computed(() => {
   return {
@@ -174,6 +184,10 @@ const activeFolder = computed(() => {
     return firstValue;
   }
   return undefined;
+});
+
+const isOnBoard = computed(() => {
+  return activeFolder.value?.is_board || props.isOnBoardSection;
 });
 
 const activeFolderName = computed(() => {
@@ -277,6 +291,7 @@ const conversationFilters = computed(() => {
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
+    locationId: props.locationId || undefined,
     conversationType: props.conversationType || undefined,
   };
 });
@@ -288,7 +303,17 @@ const activeTeam = computed(() => {
   return {};
 });
 
+const activeLocation = computed(() => {
+  if (props.locationId) {
+    return getLocationFn.value(props.locationId);
+  }
+  return {};
+});
+
 const pageTitle = computed(() => {
+  if (isOnBoard.value) {
+    return t('CHAT_LIST.BOARD');
+  }
   if (hasAppliedFilters.value) {
     return t('CHAT_LIST.TAB_HEADING');
   }
@@ -297,6 +322,9 @@ const pageTitle = computed(() => {
   }
   if (activeTeam.value.name) {
     return activeTeam.value.name;
+  }
+  if (activeLocation.value.name) {
+    return activeLocation.value.name;
   }
   if (props.label) {
     return `#${props.label}`;
@@ -367,7 +395,7 @@ const uniqueInboxes = computed(() => {
 function setFiltersFromUISettings() {
   const { conversations_filter_by: filterBy = {} } = uiSettings.value;
   const { status, order_by: orderBy } = filterBy;
-  activeStatus.value = status || wootConstants.STATUS_TYPE.OPEN;
+  activeStatus.value = status || wootConstants.STATUS_TYPE.ALL;
   activeSortBy.value = Object.values(wootConstants.SORT_BY_TYPE).includes(
     orderBy
   )
@@ -480,6 +508,10 @@ function setParamsForEditFolderModal() {
       { id: 'medium', name: t('CONVERSATION.PRIORITY.OPTIONS.MEDIUM') },
       { id: 'high', name: t('CONVERSATION.PRIORITY.OPTIONS.HIGH') },
       { id: 'urgent', name: t('CONVERSATION.PRIORITY.OPTIONS.URGENT') },
+    ],
+    conversationType: [
+      { id: 'default', name: t('CONVERSATION.TYPE.DEFAULT') },
+      { id: 'whatsapp_group', name: t('CONVERSATION.TYPE.WHATSAPP_GROUP') },
     ],
     filterTypes: advancedFilterTypes.value,
     allCustomAttributes: conversationCustomAttributes.value,
@@ -602,6 +634,11 @@ function loadMoreConversations() {
 
 // Add a method to handle scroll events
 function handleScroll() {
+  // Don't trigger scroll loading on board view
+  if (isOnBoard.value) {
+    return;
+  }
+
   const scroller = conversationDynamicScroller.value;
   if (scroller && scroller.hasScrollbar) {
     const { scrollTop, scrollHeight, clientHeight } = scroller.$el;
@@ -651,7 +688,7 @@ function openLastItemAfterDeleteInFolder() {
 
 function redirectToConversationList() {
   const {
-    params: { accountId, inbox_id: inboxId, label, teamId },
+    params: { accountId, inbox_id: inboxId, label, teamId, locationId },
     name,
   } = route;
 
@@ -669,6 +706,7 @@ function redirectToConversationList() {
       inboxId,
       label,
       teamId,
+      locationId,
     })
   );
 }
@@ -729,22 +767,76 @@ async function onAssignTeam(team, conversationId = null) {
   }
 }
 
-function toggleConversationStatus(conversationId, status, snoozedUntil) {
-  store
-    .dispatch('toggleStatus', {
-      conversationId,
-      status,
+function toggleConversationStatus(
+  conversationId,
+  status,
+  snoozedUntil,
+  customAttributes = null
+) {
+  const payload = {
+    conversationId,
+    status,
+    snoozedUntil,
+  };
+
+  if (customAttributes) {
+    payload.customAttributes = customAttributes;
+  }
+
+  store.dispatch('toggleStatus', payload).then(() => {
+    useAlert(t('CONVERSATION.CHANGE_STATUS'));
+  });
+}
+
+function handleResolveConversation(conversationId, status, snoozedUntil) {
+  if (status !== wootConstants.STATUS_TYPE.RESOLVED) {
+    toggleConversationStatus(conversationId, status, snoozedUntil);
+    return;
+  }
+
+  // Check for required attributes before resolving
+  const conversation = getConversationById.value(conversationId);
+  const currentCustomAttributes = conversation?.custom_attributes || {};
+  const { hasMissing, missing } = checkMissingAttributes(
+    currentCustomAttributes
+  );
+
+  if (hasMissing) {
+    // Pass conversation context through the modal's API
+    const conversationContext = {
+      id: conversationId,
       snoozedUntil,
-    })
-    .then(() => {
-      useAlert(t('CONVERSATION.CHANGE_STATUS'));
-    });
+    };
+    resolveAttributesModalRef.value?.open(
+      missing,
+      currentCustomAttributes,
+      conversationContext
+    );
+  } else {
+    toggleConversationStatus(conversationId, status, snoozedUntil);
+  }
+}
+
+function handleResolveWithAttributes({ attributes, context }) {
+  if (context) {
+    const existingConversation = getConversationById.value(context.id);
+    const currentCustomAttributes =
+      existingConversation?.custom_attributes || {};
+    const mergedAttributes = { ...currentCustomAttributes, ...attributes };
+
+    toggleConversationStatus(
+      context.id,
+      wootConstants.STATUS_TYPE.RESOLVED,
+      context.snoozedUntil,
+      mergedAttributes
+    );
+  }
 }
 
 function allSelectedConversationsStatus(status) {
   if (!selectedConversations.value.length) return false;
   return selectedConversations.value.every(item => {
-    return store.getters.getConversationById(item)?.status === status;
+    return getConversationById.value(item)?.status === status;
   });
 }
 
@@ -799,7 +891,7 @@ provide('deSelectConversation', deSelectConversation);
 provide('assignAgent', onAssignAgent);
 provide('assignTeam', onAssignTeam);
 provide('assignLabels', onAssignLabels);
-provide('updateConversationStatus', toggleConversationStatus);
+provide('updateConversationStatus', handleResolveConversation);
 provide('toggleContextMenu', onContextMenuToggle);
 provide('markAsUnread', markAsUnread);
 provide('markAsRead', markAsRead);
@@ -808,6 +900,7 @@ provide('isConversationSelected', isConversationSelected);
 provide('deleteConversation', handleDelete);
 
 watch(activeTeam, () => resetAndFetchData());
+watch(activeLocation, () => resetAndFetchData());
 
 watch(
   computed(() => props.conversationInbox),
@@ -838,6 +931,23 @@ watch(conversationFilters, (newVal, oldVal) => {
     store.dispatch('updateChatListFilters', newVal);
   }
 });
+
+watch(conversationList, newConversations => {
+  if (isOnBoard.value) {
+    store.dispatch('pipelineStatuses/organizeConversations', {
+      conversations: newConversations,
+    });
+  }
+});
+
+watch(
+  () => conversationStats.value.missingPages,
+  async newMissingPages => {
+    if (isOnBoard.value && !!newMissingPages) {
+      await loadMoreConversations();
+    }
+  }
+);
 </script>
 
 <template>
@@ -857,6 +967,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       :is-on-expanded-layout="isOnExpandedLayout"
       :conversation-stats="conversationStats"
       :is-list-loading="chatListLoading && !conversationList.length"
+      :is-on-board="isOnBoard"
       @add-folders="onClickOpenAddFoldersModal"
       @delete-folders="onClickOpenDeleteFoldersModal"
       @filters-modal="onToggleAdvanceFiltersModal"
@@ -871,6 +982,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       <SaveCustomView
         v-model="appliedFilter"
         :custom-views-query="foldersQuery"
+        :is-on-board="isOnBoard"
         :open-last-saved-item="openLastSavedItemInFolder"
         @close="onCloseAddFoldersModal"
       />
@@ -895,7 +1007,7 @@ watch(conversationFilters, (newVal, oldVal) => {
 
     <p
       v-if="!chatListLoading && !conversationList.length"
-      class="flex items-center justify-center p-4 overflow-auto"
+      class="flex overflow-auto justify-center items-center p-4"
     >
       {{ $t('CHAT_LIST.LIST.404') }}
     </p>
@@ -913,16 +1025,18 @@ watch(conversationFilters, (newVal, oldVal) => {
       @assign-labels="onAssignLabels"
       @assign-team="onAssignTeamsForBulk"
     />
+
     <div
+      v-if="!isOnBoard"
       ref="conversationListRef"
-      class="flex-1 overflow-hidden conversations-list hover:overflow-y-auto"
+      class="overflow-hidden flex-1 conversations-list hover:overflow-y-auto"
       :class="{ 'overflow-hidden': isContextMenuOpen }"
     >
       <DynamicScroller
         ref="conversationDynamicScroller"
         :items="conversationList"
         :min-item-size="24"
-        class="w-full h-full overflow-auto"
+        class="overflow-auto w-full h-full"
       >
         <template #default="{ item, index, active }">
           <!--
@@ -945,6 +1059,7 @@ watch(conversationFilters, (newVal, oldVal) => {
               :source="item"
               :label="label"
               :team-id="teamId"
+              :location-id="locationId"
               :folders-id="foldersId"
               :conversation-type="conversationType"
               :show-assignee="showAssigneeInConversationCard"
@@ -971,6 +1086,17 @@ watch(conversationFilters, (newVal, oldVal) => {
         </template>
       </DynamicScroller>
     </div>
+
+    <div
+      v-if="isOnBoard"
+      class="flex p-4 max-w-screen overflow-x-scroll relative h-screen"
+    >
+      <Board
+        class="absolute"
+        :by-pipeline-status="conversationStats.byPipelineStatus"
+      />
+    </div>
+
     <Dialog
       ref="deleteConversationDialogRef"
       type="alert"
@@ -997,5 +1123,9 @@ watch(conversationFilters, (newVal, oldVal) => {
         @close="closeAdvanceFiltersModal"
       />
     </TeleportWithDirection>
+    <ConversationResolveAttributesModal
+      ref="resolveAttributesModalRef"
+      @submit="handleResolveWithAttributes"
+    />
   </div>
 </template>

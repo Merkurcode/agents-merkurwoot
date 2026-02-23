@@ -3424,6 +3424,251 @@
         }
       }
     },
+    "/api/v1/accounts/{account_id}/contacts/{id}/survey_answers": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/account_id"
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "number"
+          },
+          "description": "ID of the contact"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Contacts"
+        ],
+        "operationId": "getContactSurveyAnswers",
+        "summary": "Get Contact Survey Answers",
+        "security": [
+          {
+            "userApiKey": []
+          }
+        ],
+        "description": "Get all survey answers for a contact, grouped by survey",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/contact_survey_answer"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/contacts/{id}/survey_completions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/account_id"
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "number"
+          },
+          "description": "ID of the contact"
+        },
+        {
+          "name": "survey_id",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "number"
+          },
+          "description": "Optional survey ID to get completion status for a specific survey"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Contacts"
+        ],
+        "operationId": "getContactSurveyCompletions",
+        "summary": "Get Contact Survey Completions",
+        "security": [
+          {
+            "userApiKey": []
+          }
+        ],
+        "description": "Get survey completion information for a contact.\n- If survey_id is provided, returns detailed completion status for that survey\n- If survey_id is not provided, returns a list of all completed surveys\n",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "description": "List of completed surveys (when survey_id is not provided)",
+                      "items": {
+                        "$ref": "#/components/schemas/survey_completion"
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/survey_completion_status"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact or survey not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/survey_answers": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/account_id"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Survey Answers"
+        ],
+        "operationId": "createSurveyAnswer",
+        "summary": "Create Survey Answer",
+        "security": [
+          {
+            "userApiKey": []
+          }
+        ],
+        "description": "Create or update a survey answer for a contact",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/survey_answer_create_payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Survey answer created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Survey answer ID"
+                    },
+                    "contact_id": {
+                      "type": "integer",
+                      "description": "Contact ID"
+                    },
+                    "survey_question_id": {
+                      "type": "integer",
+                      "description": "Survey question ID"
+                    },
+                    "answer_text": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Text answer"
+                    },
+                    "survey_question_option_id": {
+                      "type": "integer",
+                      "nullable": true,
+                      "description": "Selected option ID"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "object",
+                      "description": "Validation errors"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/accounts/{account_id}/automation_rules": {
       "parameters": [
         {
@@ -7782,6 +8027,82 @@
         }
       }
     },
+    "/api/v2/accounts/{account_id}/summary_reports/channel": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/account_id"
+        },
+        {
+          "in": "query",
+          "name": "since",
+          "schema": {
+            "type": "string"
+          },
+          "description": "The timestamp from where report should start (Unix timestamp)."
+        },
+        {
+          "in": "query",
+          "name": "until",
+          "schema": {
+            "type": "string"
+          },
+          "description": "The timestamp from where report should stop (Unix timestamp)."
+        },
+        {
+          "in": "query",
+          "name": "business_hours",
+          "schema": {
+            "type": "boolean"
+          },
+          "description": "Whether to filter by business hours."
+        }
+      ],
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "operationId": "get-channel-summary-report",
+        "summary": "Get conversation statistics grouped by channel type",
+        "security": [
+          {
+            "userApiKey": []
+          }
+        ],
+        "description": "Get conversation counts grouped by channel type and status for a given date range.\nReturns statistics for each channel type including open, resolved, pending, snoozed, and total conversation counts.\n\n**Note:** This API endpoint is available only in Chatwoot version 4.10.0 and above. The date range is limited to a maximum of 6 months.\n",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/channel_summary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Date range exceeds 6 months limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/accounts/{account_id}/conversations/{conversation_id}/messages": {
       "parameters": [
         {
@@ -9522,6 +9843,140 @@
           }
         }
       },
+      "survey_answer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Survey answer ID"
+          },
+          "question_text": {
+            "type": "string",
+            "description": "The text of the survey question"
+          },
+          "question_type": {
+            "type": "string",
+            "description": "The type of question (text, single_select, multi_select)",
+            "enum": [
+              "text",
+              "single_select",
+              "multi_select"
+            ]
+          },
+          "answer_text": {
+            "type": "string",
+            "nullable": true,
+            "description": "The text answer (for text questions)"
+          },
+          "selected_option": {
+            "type": "object",
+            "nullable": true,
+            "description": "The selected option (for single_select/multi_select questions)",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "Option ID"
+              },
+              "option_text": {
+                "type": "string",
+                "description": "Option text"
+              }
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the answer was created"
+          }
+        }
+      },
+      "contact_survey_answer": {
+        "type": "object",
+        "properties": {
+          "survey_id": {
+            "type": "integer",
+            "description": "Survey ID"
+          },
+          "survey_name": {
+            "type": "string",
+            "description": "Survey name"
+          },
+          "survey_description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Survey description"
+          },
+          "answers": {
+            "type": "array",
+            "description": "Array of answers for this survey",
+            "items": {
+              "$ref": "#/components/schemas/survey_answer"
+            }
+          }
+        }
+      },
+      "survey_completion": {
+        "type": "object",
+        "properties": {
+          "survey_id": {
+            "type": "integer",
+            "description": "Survey ID"
+          },
+          "survey_name": {
+            "type": "string",
+            "description": "Survey name"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the survey was completed"
+          }
+        }
+      },
+      "survey_completion_status": {
+        "type": "object",
+        "properties": {
+          "survey_id": {
+            "type": "integer",
+            "description": "Survey ID"
+          },
+          "survey_name": {
+            "type": "string",
+            "description": "Survey name"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "description": "Whether the survey is completed"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the survey was completed"
+          },
+          "total_questions": {
+            "type": "integer",
+            "description": "Total number of questions in the survey"
+          },
+          "answered_questions": {
+            "type": "integer",
+            "description": "Number of answered questions"
+          },
+          "required_questions": {
+            "type": "integer",
+            "description": "Number of required questions"
+          },
+          "required_answered": {
+            "type": "integer",
+            "description": "Number of required questions answered"
+          },
+          "progress_percentage": {
+            "type": "number",
+            "format": "float",
+            "description": "Progress percentage (0-100)"
+          }
+        }
+      },
       "public_contact": {
         "type": "object",
         "properties": {
@@ -11002,6 +11457,31 @@
           }
         }
       },
+      "survey_answer_create_payload": {
+        "type": "object",
+        "required": [
+          "contact_id",
+          "survey_question_id"
+        ],
+        "properties": {
+          "contact_id": {
+            "type": "integer",
+            "description": "ID of the contact answering the survey"
+          },
+          "survey_question_id": {
+            "type": "integer",
+            "description": "ID of the survey question being answered"
+          },
+          "answer_text": {
+            "type": "string",
+            "description": "Text answer (required for text questions)"
+          },
+          "survey_question_option_id": {
+            "type": "integer",
+            "description": "ID of the selected option (required for single_select/multi_select questions)"
+          }
+        }
+      },
       "public_contact_create_update_payload": {
         "type": "object",
         "properties": {
@@ -11568,6 +12048,52 @@
                 "type": "number"
               }
             }
+          }
+        }
+      },
+      "channel_summary": {
+        "type": "object",
+        "description": "Channel summary report containing conversation counts grouped by channel type and status. Available in version 4.10.0+.",
+        "additionalProperties": {
+          "type": "object",
+          "description": "Conversation statistics for a specific channel type (e.g., Channel::WebWidget, Channel::Api)",
+          "properties": {
+            "open": {
+              "type": "number",
+              "description": "Number of open conversations"
+            },
+            "resolved": {
+              "type": "number",
+              "description": "Number of resolved conversations"
+            },
+            "pending": {
+              "type": "number",
+              "description": "Number of pending conversations"
+            },
+            "snoozed": {
+              "type": "number",
+              "description": "Number of snoozed conversations"
+            },
+            "total": {
+              "type": "number",
+              "description": "Total number of conversations"
+            }
+          }
+        },
+        "example": {
+          "Channel::WebWidget": {
+            "open": 10,
+            "resolved": 20,
+            "pending": 5,
+            "snoozed": 2,
+            "total": 37
+          },
+          "Channel::Api": {
+            "open": 5,
+            "resolved": 15,
+            "pending": 3,
+            "snoozed": 1,
+            "total": 24
           }
         }
       },
@@ -12566,6 +13092,10 @@
       "description": "Pre-defined responses for common queries"
     },
     {
+      "name": "Surveys",
+      "description": "Survey management and responses"
+    },
+    {
       "name": "Contacts",
       "description": "Contact management APIs"
     },
@@ -12644,6 +13174,10 @@
     {
       "name": "CSAT Survey Page",
       "description": "Customer satisfaction survey"
+    },
+    {
+      "name": "Survey Answers",
+      "description": "Survey answer management APIs"
     }
   ],
   "x-tagGroups": [
@@ -12679,7 +13213,8 @@
         "Teams",
         "Webhooks",
         "Automation Rule",
-        "Help Center"
+        "Help Center",
+        "Survey Answers"
       ]
     },
     {

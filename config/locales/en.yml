@@ -62,6 +62,8 @@ en:
       failed: Signup failed
     assignment_policy:
       not_found: Assignment policy not found
+    attachments:
+      invalid: Invalid attachment
     saml:
       feature_not_enabled: SAML feature not enabled for this account
       sso_not_enabled: SAML SSO is not enabled for this installation
@@ -82,6 +84,9 @@ en:
         invalid: must be a valid domain name
       search:
         query_missing: Specify search string with parameter q
+    messages:
+      search:
+        time_range_limit_exceeded: 'Search is limited to the last %{days} days'
     categories:
       locale:
         unique: should be unique in the category and portal
@@ -129,6 +134,8 @@ en:
       plan_not_eligible: Top-ups are only available for paid plans. Please upgrade your plan first.
       stripe_customer_not_configured: Stripe customer not configured
       no_payment_method: No payment methods found. Please add a payment method before making a purchase.
+    reports:
+      date_range_too_long: Date range cannot exceed 6 months
   profile:
     mfa:
       enabled: MFA enabled successfully
@@ -165,6 +172,14 @@ en:
       avg_resolution_time: Avg resolution time
       resolution_count: Resolution Count
       avg_customer_waiting_time: Avg customer waiting time
+    conversation_csv:
+      conversations_count: Conversations
+      incoming_messages_count: Messages received
+      outgoing_messages_count: Messages sent
+      avg_first_response_time: Avg first response time
+      avg_resolution_time: Avg resolution time
+      resolution_count: Resolution count
+      avg_customer_waiting_time: Avg customer waiting time
     conversation_traffic_csv:
       timezone: Timezone
     sla_csv:
@@ -187,6 +202,7 @@ en:
         rating: Rating
         feedback: Feedback Comment
         recorded_at: Recorded date
+        review_notes: Review Notes
   notifications:
     notification_title:
       conversation_creation: 'A conversation (#%{display_id}) has been created in %{inbox_name}'
@@ -245,6 +261,9 @@ en:
       sla:
         added: '%{user_name} added SLA policy %{sla_name}'
         removed: '%{user_name} removed SLA policy %{sla_name}'
+      pipeline_status:
+        updated: '%{user_name} updated the pipeline status to %{status_name}'
+        unknown: 'Unknown'
       linear:
         issue_created: 'Linear issue %{issue_id} was created by %{user_name}'
         issue_linked: 'Linear issue %{issue_id} was linked by %{user_name}'
@@ -325,10 +344,33 @@ en:
       name: 'LeadSquared'
       short_description: 'Sync your contacts and conversations with LeadSquared CRM.'
       description: 'Sync your contacts and conversations with LeadSquared CRM. This integration automatically creates leads in LeadSquared when new contacts are added, and logs conversation activity to provide your sales team with complete context.'
+    zoho:
+      name: 'Zoho CRM'
+      short_description: 'Sync your contacts, leads, and activities with Zoho CRM automatically.'
+      description: 'Connect Zoho CRM to automatically sync contacts as leads, create tasks and events, add tags and notes. This integration provides your sales team with complete context and streamlines your CRM workflow.'
+    test:
+      name: 'test'
+      short_description: 'test'
+      description: 'test'
+    salesforce:
+      name: 'Salesforce'
+      short_description: 'Sync your contacts, leads, and opportunities with Salesforce CRM.'
+      description: 'Connect Salesforce to automatically sync contacts as leads, create opportunities and tasks, and manage your sales pipeline. This integration provides your sales team with complete visibility into customer interactions.'
+    hubspot:
+      name: 'HubSpot'
+      short_description: 'Sync your contacts, deals, and activities with HubSpot CRM.'
+      description: 'Connect HubSpot CRM to automatically sync contacts, create deals and tasks, schedule meetings, and add notes. This integration provides your sales team with complete context and streamlines your CRM workflow.'
+    crm_flows:
+      name: 'CRM Flows'
+      short_description: 'Configure automated action sequences triggered by your AI agent.'
+      description: 'CRM Flows let you define what happens when your AI agent fires an event. Configure triggers, chain CRM and Chatwoot actions, set required fields, and enable idempotency — all without code.'
   captain:
     copilot_message_required: Message is required
     copilot_error: 'Please connect an assistant to this inbox to use Copilot'
     copilot_limit: 'You are out of Copilot credits. You can buy more credits from the billing section.'
+    upgrade: 'Upgrade your plan to enable Captain AI'
+    disabled: 'Captain AI is disabled for this account.'
+    api_key_missing: 'Captain AI API key is not configured.'
     copilot:
       using_tool: 'Using tool %{function_name}'
       completed_tool_call: 'Completed %{function_name} tool call'
@@ -447,3 +489,14 @@ en:
       subject: 'Finish setting up %{custom_domain}'
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
+  pipeline_status:
+    default_statuses:
+      new: new
+      contacted: contacted
+      proposal_sent: proposal sent
+      closed: closed
+  appointments:
+    types:
+      physical_visit: Physical Visit
+      digital_meeting: Digital Meeting
+      phone_call: Phone Call

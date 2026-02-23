@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { useRoute } from 'vue-router';
 import ChatList from '../../../components/ChatList.vue';
 import ConversationBox from '../../../components/widgets/conversation/ConversationBox.vue';
 import wootConstants from 'dashboard/constants/globals';
@@ -10,6 +11,7 @@ import CmdBarConversationSnooze from 'dashboard/routes/dashboard/commands/CmdBar
 import { emitter } from 'shared/helpers/mitt';
 import SidepanelSwitch from 'dashboard/components-next/Conversation/SidepanelSwitch.vue';
 import ConversationSidebar from 'dashboard/components/widgets/conversation/ConversationSidebar.vue';
+import { isOnBoardView } from 'dashboard/store/modules/conversations/helpers/actionHelpers';
 
 export default {
   components: {
@@ -44,6 +46,10 @@ export default {
       type: String,
       default: '',
     },
+    locationId: {
+      type: [String, Number],
+      default: 0,
+    },
     conversationType: {
       type: String,
       default: '',
@@ -56,11 +62,13 @@ export default {
   setup() {
     const { uiSettings, updateUISettings } = useUISettings();
     const { accountId } = useAccount();
+    const route = useRoute();
 
     return {
       uiSettings,
       updateUISettings,
       accountId,
+      route,
     };
   },
   data() {
@@ -86,6 +94,10 @@ export default {
       const { conversation_display_type: conversationDisplayType = CONDENSED } =
         this.uiSettings;
       return conversationDisplayType !== CONDENSED;
+    },
+
+    isOnBoard() {
+      return isOnBoardView({ route: this.route });
     },
 
     shouldShowSidebar() {
@@ -195,15 +207,20 @@ export default {
 </script>
 
 <template>
-  <section class="flex w-full h-full min-w-0">
+  <section
+    class="flex w-full h-full min-w-0"
+    :class="[isOnBoard ? 'overflow-x-scroll' : '']"
+  >
     <ChatList
       :show-conversation-list="showConversationList"
       :conversation-inbox="inboxId"
       :label="label"
       :team-id="teamId"
+      :location-id="locationId"
       :conversation-type="conversationType"
       :folders-id="foldersId"
       :is-on-expanded-layout="isOnExpandedLayout"
+      :is-on-board-section="isOnBoard"
       @conversation-load="onConversationLoad"
     />
     <ConversationBox

@@ -10,6 +10,7 @@
     "TAB_HEADING": "Conversaciones",
     "MENTION_HEADING": "Menciones",
     "UNATTENDED_HEADING": "Desatendido",
+    "BOARD": "Embudos",
     "SEARCH": {
       "INPUT": "Búsqueda de Personas, Chats, Respuestas Salvadas .."
     },
@@ -21,13 +22,13 @@
     },
     "CHAT_STATUS_FILTER_ITEMS": {
       "open": {
-        "TEXT": "Abiertas"
+        "TEXT": "Human in the Loop"
       },
       "resolved": {
         "TEXT": "Resueltas"
       },
       "pending": {
-        "TEXT": "Pendientes"
+        "TEXT": "Agente IA"
       },
       "snoozed": {
         "TEXT": "Postpuestas"
@@ -102,6 +103,9 @@
       },
       "contact": {
         "CONTENT": "Contacto compartido"
+      },
+      "embed": {
+        "CONTENT": "Contenido incrustado"
       }
     },
     "CHAT_SORT_BY_FILTER": {

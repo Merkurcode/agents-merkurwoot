@@ -32,6 +32,7 @@
     "LOADING_CONVERSATIONS": "Cargando conversaciones",
     "CANNOT_REPLY": "No puede responder debido a",
     "24_HOURS_WINDOW": "Restricción de la ventana de mensajes de 24 horas",
+    "48_HOURS_WINDOW": "Restricción de la ventana de mensajes de 48 horas",
     "API_HOURS_WINDOW": "Solo puedes responder a esta conversación dentro de {hours} horas",
     "NOT_ASSIGNED_TO_YOU": "Esta conversación no te está asignada. ¿Quieres asignarla a ti mismo?",
     "ASSIGN_TO_ME": "Asignar a mi",
@@ -138,6 +139,10 @@
         "FAILED": "No se pudo cambiar la prioridad. Por favor, inténtelo de nuevo."
       }
     },
+    "TYPE": {
+      "DEFAULT": "Predeterminado",
+      "WHATSAPP_GROUP": "Grupo WhatsApp"
+    },
     "DELETE_CONVERSATION": {
       "TITLE": "Eliminar conversación #{conversationId}",
       "DESCRIPTION": "¿Está seguro que desea eliminar esta conversación?",
@@ -196,7 +201,6 @@
       "INSERT_READ_MORE": "Leer más",
       "DISMISS_REPLY": "Descartar respuesta",
       "REPLYING_TO": "Respondiendo a:",
-      "TIP_FORMAT_ICON": "Mostrar editor de textos",
       "TIP_EMOJI_ICON": "Mostrar selector de emoji",
       "TIP_ATTACH_ICON": "Adjuntar archivos",
       "TIP_AUDIORECORDER_ICON": "Grabar audio",
@@ -249,7 +253,7 @@
     "FILE_SIZE_LIMIT": "El archivo supera el límite de archivos adjuntos de {MAXIMUM_SUPPORTED_FILE_UPLOAD_SIZE} MB",
     "MESSAGE_ERROR": "No se puede enviar este mensaje, por favor inténtalo de nuevo más tarde",
     "SENT_BY": "Enviado por:",
-    "BOT": "Bot",
+    "BOT": "Agente IA",
     "SEND_FAILED": "¡No se pudo enviar el mensaje! Inténtalo de nuevo",
     "TRY_AGAIN": "reintentar",
     "ASSIGNMENT": {
@@ -272,9 +276,34 @@
         "CANCEL": "Cancelar"
       }
     },
+    "SURVEY_CALL": {
+      "BUTTON_LABEL": "Realizar Encuesta",
+      "TITLE": "Encuesta Telefónica",
+      "NO_VALID_PHONE": "Este contacto no tiene un número de teléfono válido. Se requiere un número de teléfono en formato E.164 (+123456789) para realizar una llamada de encuesta.",
+      "CONTACT_INFO": "Contacto a llamar",
+      "SELECT_SURVEY": "Selecciona una encuesta para realizar",
+      "LOADING": "Cargando encuestas...",
+      "NO_SURVEYS": "No hay encuestas activas disponibles",
+      "QUESTIONS_COUNT": "{count} preguntas",
+      "CANCEL": "Cancelar",
+      "MAKE_CALL": "Realizar Llamada",
+      "SUCCESS": "Llamada de encuesta iniciada exitosamente",
+      "ERROR": "No se pudo iniciar la llamada de encuesta. Por favor, inténtalo de nuevo",
+      "LOAD_ERROR": "No se pudieron cargar las encuestas. Por favor, inténtalo de nuevo"
+    },
     "SIDEBAR": {
       "CONTACT": "Contacto",
       "COPILOT": "Copilot"
+    },
+    "VOICE_WIDGET": {
+      "INCOMING_CALL": "Incoming call",
+      "OUTGOING_CALL": "Outgoing call",
+      "CALL_IN_PROGRESS": "Call in progress",
+      "NOT_ANSWERED_YET": "Not answered yet",
+      "HANDLED_IN_ANOTHER_TAB": "Atendido en otra pestaña",
+      "REJECT_CALL": "Rechazar",
+      "JOIN_CALL": "Unirse a la llamada",
+      "END_CALL": "Terminar llamada"
     }
   },
   "EMAIL_TRANSCRIPT": {
@@ -329,9 +358,13 @@
     "SELECT": {
       "PLACEHOLDER": "Ninguna"
     },
+    "RESUME": {
+      "TITLE": "Resumen de conversación"
+    },
     "ACCORDION": {
       "CONTACT_DETAILS": "Detalles de contacto",
       "CONVERSATION_ACTIONS": "Acciones de conversación",
+      "COPILOT_TIMELINE": "Línea de tiempo del Copilot",
       "CONVERSATION_LABELS": "Etiquetas de conversación",
       "CONVERSATION_INFO": "Información de la conversación",
       "CONTACT_NOTES": "Notas de contacto",
@@ -339,7 +372,9 @@
       "PREVIOUS_CONVERSATION": "Conversaciones anteriores",
       "MACROS": "Macros",
       "LINEAR_ISSUES": "Problemas lineales vinculados",
-      "SHOPIFY_ORDERS": "Shopify Orders"
+      "SHOPIFY_ORDERS": "Shopify Orders",
+      "SURVEY_RESPONSES": "Respuestas de Encuesta",
+      "CRM_SYNC": "Sincronización CRM"
     },
     "SHOPIFY": {
       "ORDER_ID": "Order #{id}",
@@ -425,5 +460,16 @@
   },
   "GALLERY_VIEW": {
     "ERROR_DOWNLOADING": "No se pudo descargar el archivo adjunto. Por favor, inténtelo de nuevo"
+  },
+  "PIPELINE_STATUS": {
+    "DELETE_CONFIRMATION": {
+      "TITLE": "Eliminar columna de estado",
+      "MESSAGE": "¿Estás seguro de que quieres eliminar esta columna de estado? Esta acción no se puede deshacer.",
+      "DELETE": "Eliminar",
+      "CANCEL": "Cancelar"
+    },
+    "DELETE_WITH_CONVERSATIONS": "Por favor, cambia el estado de las conversaciones asignadas antes de eliminar esta columna.",
+    "DELETE_SUCCESS": "Columna de estado eliminada correctamente",
+    "DELETE_FAILED": "No se pudo eliminar la columna de estado. Por favor, inténtalo de nuevo."
   }
 }

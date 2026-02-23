@@ -14,7 +14,7 @@ RSpec.describe User do
   context 'with associations' do
     it { is_expected.to have_many(:accounts).through(:account_users) }
     it { is_expected.to have_many(:account_users) }
-    it { is_expected.to have_many(:assigned_conversations).class_name('Conversation').dependent(:nullify) }
+    it { is_expected.to have_many(:assigned_conversations).dependent(:nullify) }
     it { is_expected.to have_many(:inbox_members).dependent(:destroy_async) }
     it { is_expected.to have_many(:notification_settings).dependent(:destroy_async) }
     it { is_expected.to have_many(:messages) }
@@ -252,6 +252,17 @@ RSpec.describe User do
       it 'still prioritizes accounts with timestamps' do
         expect(user.active_account_user.account_id).to eq(account2.id)
       end
+    end
+  end
+
+  context 'get weebhook data' do
+    it 'returns the required fields' do
+      webhook_data = user.webhook_create_data
+      expect(webhook_data[:name]).to eq(user.name)
+      expect(webhook_data[:email]).to eq(user.email)
+      expect(webhook_data[:role]).to eq(user.current_account_user&.role)
+      expect(webhook_data[:account_name]).to eq(user.current_account_user&.account&.name)
+      expect(webhook_data[:created_at]).to eq(user.created_at)
     end
   end
 end

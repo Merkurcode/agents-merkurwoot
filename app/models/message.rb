@@ -131,6 +131,7 @@ class Message < ApplicationRecord
   has_many :attachments, dependent: :destroy, autosave: true, before_add: :validate_attachments_limit
   has_one :csat_survey_response, dependent: :destroy_async
   has_many :notifications, as: :primary_actor, dependent: :destroy_async
+  has_one :meta_campaign_interaction, dependent: :destroy_async
 
   after_create_commit :execute_after_create_commit_callbacks
 
@@ -158,7 +159,7 @@ class Message < ApplicationRecord
       assignee_id: conversation.assignee_id,
       unread_count: conversation.unread_incoming_messages.count,
       last_activity_at: conversation.last_activity_at.to_i,
-      contact_inbox: { source_id: conversation.contact_inbox.source_id }
+      contact_inbox: { source_id: conversation.contact_inbox&.source_id }
     }
   end
 
@@ -254,6 +255,21 @@ class Message < ApplicationRecord
     Messages::SearchDataPresenter.new(self).search_data
   end
 
+  # Returns message content suitable for LLM consumption
+  # Falls back to audio transcription or attachment placeholder when content is nil
+  def content_for_llm
+    return content if content.present?
+
+    audio_transcription = attachments
+                          .where(file_type: :audio)
+                          .filter_map { |att| att.meta&.dig('transcribed_text') }
+                          .join(' ')
+                          .presence
+    return "[Voice Message] #{audio_transcription}" if audio_transcription.present?
+
+    '[Attachment]' if attachments.any?
+  end
+
   private
 
   def prevent_message_flooding
@@ -307,12 +323,21 @@ class Message < ApplicationRecord
   end
 
   def update_waiting_since
-    if human_response? && !private && conversation.waiting_since.present?
-      Rails.configuration.dispatcher.dispatch(
-        REPLY_CREATED, Time.zone.now, waiting_since: conversation.waiting_since, message: self
-      )
-      conversation.update(waiting_since: nil)
+    waiting_present = conversation.waiting_since.present?
+
+    if waiting_present && !private
+      if human_response?
+        Rails.configuration.dispatcher.dispatch(
+          REPLY_CREATED, Time.zone.now, waiting_since: conversation.waiting_since, message: self
+        )
+        conversation.update(waiting_since: nil)
+      elsif bot_response?
+        # Bot responses also clear waiting_since (simpler than checking on next customer message)
+        conversation.update(waiting_since: nil)
+      end
     end
+
+    # Set waiting_since when customer sends a message (if currently blank)
     conversation.update(waiting_since: created_at) if incoming? && conversation.waiting_since.blank?
   end
 
@@ -324,6 +349,11 @@ class Message < ApplicationRecord
       content_attributes['automation_rule_id'].blank? &&
       additional_attributes['campaign_id'].blank? &&
       sender.is_a?(User)
+  end
+
+  def bot_response?
+    # Check if this is a response from AgentBot or Captain::Assistant
+    outgoing? && sender_type.in?(['AgentBot', 'Captain::Assistant'])
   end
 
   def dispatch_create_events
@@ -386,7 +416,13 @@ class Message < ApplicationRecord
 
   def set_conversation_activity
     # rubocop:disable Rails/SkipsModelValidations
-    conversation.update_columns(last_activity_at: created_at)
+    update_attrs = { last_activity_at: created_at }
+
+    unless activity?
+      update_attrs[:last_chat_message_at] = created_at
+    end
+
+    conversation.update_columns(update_attrs)
     # rubocop:enable Rails/SkipsModelValidations
   end
 

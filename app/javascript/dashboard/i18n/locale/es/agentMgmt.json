@@ -19,7 +19,11 @@
       "ACTIONS": "Acciones",
       "VERIFIED": "Verificado",
       "VERIFICATION_PENDING": "Verificación pendiente",
-      "AVAILABLE_CUSTOM_ROLE": "Permisos personalizados de rol disponibles"
+      "AVAILABLE_CUSTOM_ROLE": "Permisos personalizados de rol disponibles",
+      "RESPONSIBLE": "Persona a cargo:",
+      "RESPONSIBLE_404": "Nadie asignado",
+      "LOCATION": "Ubicación:",
+      "LOCATION_404": "Sin ubicación asignada"
     },
     "ADD": {
       "TITLE": "Añadir agente a tu equipo",
@@ -38,6 +42,22 @@
         "EMAIL": {
           "LABEL": "Dirección de correo",
           "PLACEHOLDER": "Por favor, introduzca una dirección de correo electrónico del agente"
+        },
+        "PHONE_NUMBER": {
+          "LABEL": "Número de teléfono",
+          "PLACEHOLDER": "Por favor, introduzca un número de teléfono (ej. +1234567890)"
+        },
+        "RESPONSIBLE": {
+          "LABEL": "Responsable",
+          "PLACEHOLDER": "Seleccione un responsable",
+          "SEARCH_PLACEHOLDER": "Buscar responsable",
+          "EMPTY_STATE": "No hay agentes disponibles"
+        },
+        "LOCATION": {
+          "LABEL": "Ubicación",
+          "PLACEHOLDER": "Seleccione una ubicación",
+          "SEARCH_PLACEHOLDER": "Buscar ubicación",
+          "EMPTY_STATE": "No hay ubicaciones disponibles"
         },
         "SUBMIT": "Añadir agente"
       },
@@ -80,6 +100,18 @@
           "LABEL": "Disponibilidad",
           "PLACEHOLDER": "Por favor, seleccione un estado de disponibilidad",
           "ERROR": "La disponibilidad es necesaria"
+        },
+        "RESPONSIBLE": {
+          "LABEL": "Responsable",
+          "PLACEHOLDER": "Seleccione un responsable",
+          "SEARCH_PLACEHOLDER": "Buscar responsable",
+          "EMPTY_STATE": "No hay agentes disponibles"
+        },
+        "LOCATION": {
+          "LABEL": "Ubicación",
+          "PLACEHOLDER": "Seleccione una ubicación",
+          "SEARCH_PLACEHOLDER": "Buscar ubicación",
+          "EMPTY_STATE": "No hay ubicaciones disponibles"
         },
         "SUBMIT": "Editar agente"
       },

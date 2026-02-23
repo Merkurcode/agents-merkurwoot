@@ -27,16 +27,19 @@
 #  account_id                    :integer          not null
 #  channel_id                    :integer          not null
 #  portal_id                     :bigint
+#  survey_id                     :bigint
 #
 # Indexes
 #
 #  index_inboxes_on_account_id                   (account_id)
 #  index_inboxes_on_channel_id_and_channel_type  (channel_id,channel_type)
 #  index_inboxes_on_portal_id                    (portal_id)
+#  index_inboxes_on_survey_id                    (survey_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (portal_id => portals.id)
+#  fk_rails_...  (survey_id => surveys.id)
 #
 
 class Inbox < ApplicationRecord
@@ -56,6 +59,7 @@ class Inbox < ApplicationRecord
 
   belongs_to :account
   belongs_to :portal, optional: true
+  belongs_to :survey, optional: true
 
   belongs_to :channel, polymorphic: true, dependent: :destroy
 
@@ -74,9 +78,12 @@ class Inbox < ApplicationRecord
   has_one :agent_bot, through: :agent_bot_inbox
   has_many :webhooks, dependent: :destroy_async
   has_many :hooks, dependent: :destroy_async, class_name: 'Integrations::Hook'
+  has_many :inbox_faq_categories, dependent: :destroy_async
+  has_many :faq_categories, through: :inbox_faq_categories
 
   enum sender_name_type: { friendly: 0, professional: 1 }
 
+  before_destroy :prevent_whatsapp_groups_inbox_deletion
   after_destroy :delete_round_robin_agents
 
   after_create_commit :dispatch_create_event
@@ -126,6 +133,10 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Instagram'
   end
 
+  def tiktok?
+    channel_type == 'Channel::Tiktok'
+  end
+
   def web_widget?
     channel_type == 'Channel::WebWidget'
   end
@@ -154,8 +165,22 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Whatsapp'
   end
 
+  def twilio_whatsapp?
+    channel_type == 'Channel::TwilioSms' && channel.medium == 'whatsapp'
+  end
+
   def assignable_agents
-    (account.users.where(id: members.select(:user_id)) + account.administrators).uniq
+    member_ids = members.pluck(:user_id)
+    inbox_members = account.users.where(id: member_ids)
+    supervisors = supervisors_for_inbox(member_ids)
+    (inbox_members + account.administrators + supervisors).uniq
+  end
+
+  # Only include supervisors whose subordinates are members of this inbox
+  def supervisors_for_inbox(member_ids)
+    account.account_users.supervisor.includes(:user).select do |account_user|
+      (account_user.subordinate_user_ids & member_ids).any?
+    end.map(&:user)
   end
 
   def active_bot?
@@ -170,7 +195,10 @@ class Inbox < ApplicationRecord
   def webhook_data
     {
       id: id,
-      name: name
+      name: name,
+      survey_id: survey_id,
+      enable_auto_assignment: enable_auto_assignment,
+      auto_assignment_config: auto_assignment_config
     }
   end
 
@@ -193,6 +221,10 @@ class Inbox < ApplicationRecord
 
   def auto_assignment_v2_enabled?
     account.feature_enabled?('assignment_v2')
+  end
+
+  def whatsapp_groups_inbox?
+    auto_assignment_config&.dig('is_whatsapp_groups_inbox') == true
   end
 
   private
@@ -235,6 +267,13 @@ class Inbox < ApplicationRecord
 
   def check_channel_type?
     ['Channel::Email', 'Channel::Api', 'Channel::WebWidget'].include?(channel_type)
+  end
+
+  def prevent_whatsapp_groups_inbox_deletion
+    return unless whatsapp_groups_inbox?
+
+    errors.add(:base, 'WhatsApp Groups inbox cannot be deleted')
+    throw(:abort)
   end
 end
 

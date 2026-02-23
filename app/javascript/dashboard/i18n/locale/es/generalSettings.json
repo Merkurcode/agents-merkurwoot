@@ -121,13 +121,82 @@
       "FEATURES": {
         "INBOUND_EMAIL_ENABLED": "Continuidad de la conversación con emails está habilitada para su cuenta.",
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "Ahora puede recibir emails en su dominio personalizado."
+      },
+      "BUSINESS_HOURS": {
+        "TITLE": "Horario de atención",
+        "NOTE": "Configura el horario de atención de tu negocio. Esta información ayuda a los agentes de IA a proporcionar información precisa sobre disponibilidad a los clientes.",
+        "ENABLE": "Habilitar horario de atención",
+        "TIMEZONE": "Zona horaria",
+        "WEEKLY_SCHEDULE": "Horario semanal",
+        "DAYS": {
+          "SUNDAY": "Domingo",
+          "MONDAY": "Lunes",
+          "TUESDAY": "Martes",
+          "WEDNESDAY": "Miércoles",
+          "THURSDAY": "Jueves",
+          "FRIDAY": "Viernes",
+          "SATURDAY": "Sábado"
+        },
+        "UPDATE_BUTTON": "Guardar horario",
+        "ERROR": "Por favor corrige los errores en el horario antes de guardar",
+        "API": {
+          "SUCCESS": "Horario de atención actualizado correctamente",
+          "ERROR": "Error al actualizar el horario de atención"
+        }
+      },
+      "ACCOUNT_ADDRESS": {
+        "TITLE": "Dirección de la empresa",
+        "NOTE": "Configura la información de dirección física de tu empresa. Esta información puede usarse en plantillas y comunicaciones.",
+        "STREET": "Calle",
+        "STREET_PLACEHOLDER": "Ingresa el nombre de la calle",
+        "EXTERIOR_NUMBER": "Número exterior",
+        "EXTERIOR_NUMBER_PLACEHOLDER": "Núm. ext.",
+        "INTERIOR_NUMBER": "Número interior",
+        "INTERIOR_NUMBER_PLACEHOLDER": "Núm. int.",
+        "NEIGHBORHOOD": "Colonia",
+        "NEIGHBORHOOD_PLACEHOLDER": "Ingresa la colonia",
+        "POSTAL_CODE": "Código postal",
+        "POSTAL_CODE_PLACEHOLDER": "Ingresa el código postal",
+        "CITY": "Ciudad",
+        "CITY_PLACEHOLDER": "Ingresa la ciudad",
+        "STATE": "Estado",
+        "STATE_PLACEHOLDER": "Ingresa el estado",
+        "EMAIL": "Correo electrónico",
+        "EMAIL_PLACEHOLDER": "Ingresa el correo electrónico",
+        "PHONE": "Teléfono",
+        "PHONE_PLACEHOLDER": "Ingresa el número de teléfono",
+        "WEBPAGE": "Página web",
+        "WEBPAGE_PLACEHOLDER": "https://ejemplo.com",
+        "ESTABLISHMENT_SUMMARY": "Resumen del establecimiento",
+        "ESTABLISHMENT_SUMMARY_PLACEHOLDER": "Breve descripción del establecimiento",
+        "UPDATE_BUTTON": "Guardar dirección",
+        "ERROR": "Por favor completa todos los campos requeridos",
+        "API": {
+          "SUCCESS": "Dirección de la cuenta actualizada correctamente",
+          "ERROR": "Error al actualizar la dirección de la cuenta"
+        }
+      },
+      "APPOINTMENT_TYPES": {
+        "TITLE": "Tipos de citas",
+        "NOTE": "Configura qué tipos de citas están disponibles para tu establecimiento. Los agentes de IA solo ofrecerán los tipos que habilites aquí.",
+        "PHYSICAL_VISIT": "Visita física",
+        "PHYSICAL_VISIT_DESCRIPTION": "Citas presenciales en tu ubicación",
+        "DIGITAL_MEETING": "Reunión digital",
+        "DIGITAL_MEETING_DESCRIPTION": "Citas virtuales por videollamada",
+        "PHONE_CALL": "Llamada telefónica",
+        "PHONE_CALL_DESCRIPTION": "Citas por llamada telefónica",
+        "UPDATE_BUTTON": "Guardar tipos de citas",
+        "API": {
+          "SUCCESS": "Tipos de citas actualizados correctamente",
+          "ERROR": "Error al actualizar los tipos de citas"
+        }
       }
     },
-    "UPDATE_CHATWOOT": "Hay una actualización {latestChatwootVersion} para Chatwoot disponible. Por favor, actualiza tu instancia.",
+    "UPDATE_CHATWOOT": "Hay una actualización {latestChatwootVersion} para Nauto Console disponible. Por favor, actualiza tu instancia.",
     "LEARN_MORE": "Más información",
-    "PAYMENT_PENDING": "Tu pago está pendiente. Por favor actualiza tu información de pago para seguir usando Chatwoot",
-    "UPGRADE": "Upgrade to continue using Chatwoot",
-    "LIMITS_UPGRADE": "Su cuenta ha excedido los límites de uso, por favor actualice su plan para seguir usando Chatwoot",
+    "PAYMENT_PENDING": "Tu pago está pendiente. Por favor actualiza tu información de pago para seguir usando Nauto Console",
+    "UPGRADE": "Upgrade to continue using Nauto Console",
+    "LIMITS_UPGRADE": "Su cuenta ha excedido los límites de uso, por favor actualice su plan para seguir usando Nauto Console",
     "OPEN_BILLING": "Abrir facturación"
   },
   "FORMS": {

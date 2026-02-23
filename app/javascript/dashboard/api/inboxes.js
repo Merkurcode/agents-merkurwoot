@@ -29,8 +29,32 @@ class Inboxes extends CacheEnabledApiClient {
     });
   }
 
+  setSurvey(inboxId, surveyId) {
+    return axios.post(`${this.url}/${inboxId}/set_survey`, {
+      survey_id: surveyId,
+    });
+  }
+
   syncTemplates(inboxId) {
     return axios.post(`${this.url}/${inboxId}/sync_templates`);
+  }
+
+  getInbox(inboxId) {
+    return axios.get(`${this.url}/${inboxId}`);
+  }
+
+  createCSATTemplate(inboxId, template) {
+    return axios.post(`${this.url}/${inboxId}/csat_template`, {
+      template,
+    });
+  }
+
+  getCSATTemplateStatus(inboxId) {
+    return axios.get(`${this.url}/${inboxId}/csat_template`);
+  }
+
+  getInbox(inboxId) {
+    return axios.get(`${this.url}/${inboxId}`);
   }
 }
 

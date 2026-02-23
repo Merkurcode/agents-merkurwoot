@@ -46,6 +46,13 @@ gem 'gmail_xoauth'
 gem 'net-smtp',  '~> 0.3.4'
 # Prevent CSV injection
 gem 'csv-safe'
+# QR code generation
+gem 'rqrcode'
+# Excel file processing
+gem 'creek', '~> 2.6.3'  # Streaming Excel parser for large files
+gem 'roo', '~> 2.10.0'  # Fallback for smaller files
+gem 'rubyzip', '~> 2.3.0'
+gem 'write_xlsx', '~> 1.11.0'
 
 ##-- for active storage --##
 gem 'aws-sdk-s3', require: false
@@ -175,6 +182,9 @@ gem 'lograge', '~> 0.14.0', require: false
 gem 'omniauth-oauth2'
 
 gem 'audited', '~> 5.4', '>= 5.4.1'
+
+# Soft delete support
+gem 'discard', '~> 1.3'
 
 # need for google auth
 gem 'omniauth', '>= 2.1.2'

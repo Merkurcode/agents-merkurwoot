@@ -19,8 +19,9 @@
 #  message_signature      :text
 #  name                   :string           not null
 #  otp_backup_codes       :text
-#  otp_required_for_login :boolean          default(FALSE)
+#  otp_required_for_login :boolean          default(FALSE), not null
 #  otp_secret             :string
+#  phone_number           :string
 #  provider               :string           default("email"), not null
 #  pubsub_token           :string
 #  remember_created_at    :datetime
@@ -76,6 +77,9 @@ class User < ApplicationRecord
   # validates_uniqueness_of :email, scope: :account_id
 
   validates :email, presence: true
+  validates :phone_number,
+            allow_blank: true,
+            format: { with: /\+[1-9]\d{1,14}\z/, message: I18n.t('errors.contacts.phone_number.invalid') }
 
   serialize :otp_backup_codes, type: Array
 
@@ -90,6 +94,8 @@ class User < ApplicationRecord
   has_many :assigned_conversations, foreign_key: 'assignee_id', class_name: 'Conversation', dependent: :nullify, inverse_of: :assignee
   alias_attribute :conversations, :assigned_conversations
   has_many :csat_survey_responses, foreign_key: 'assigned_agent_id', dependent: :nullify, inverse_of: :assigned_agent
+  has_many :reviewed_csat_survey_responses, foreign_key: 'review_notes_updated_by_id', class_name: 'CsatSurveyResponse',
+                                            dependent: :nullify, inverse_of: :review_notes_updated_by
   has_many :conversation_participants, dependent: :destroy_async
   has_many :participating_conversations, through: :conversation_participants, source: :conversation
 
@@ -114,7 +120,9 @@ class User < ApplicationRecord
   # rubocop:enable Rails/HasManyOrHasOneDependent
 
   before_validation :set_password_and_uid, on: :create
+  before_validation :phone_number_format
   after_destroy :remove_macros
+  after_update :enqueue_crm_sync_if_email_changed, if: :saved_change_to_email?
 
   scope :order_by_full_name, -> { order('lower(name) ASC') }
 
@@ -190,10 +198,35 @@ class User < ApplicationRecord
     Chatwoot.mfa_enabled?
   end
 
+  def webhook_create_data
+    {
+      name: name,
+      email: email,
+      role: current_account_user&.role,
+      account_name: current_account_user&.account&.name,
+      created_at: created_at
+    }
+  end
+
   private
+
+  def phone_number_format
+    return if phone_number.blank?
+
+    self.phone_number = phone_number_was unless phone_number.match?(/\+[1-9]\d{1,14}\z/)
+  end
 
   def remove_macros
     macros.personal.destroy_all
+  end
+
+  # Enqueue CRM sync for all account_users when email changes
+  def enqueue_crm_sync_if_email_changed
+    account_users.each do |account_user|
+      next unless account_user.account.hooks.crm_hooks.enabled.exists?
+
+      Crm::SyncAgentJob.perform_later(account_user.id)
+    end
   end
 end
 

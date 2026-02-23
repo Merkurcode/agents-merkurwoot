@@ -19,10 +19,13 @@ Rails.application.routes.draw do
     get '/app/accounts/:account_id/settings/inboxes/new/twitter', to: 'dashboard#index', as: 'app_new_twitter_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/microsoft', to: 'dashboard#index', as: 'app_new_microsoft_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/instagram', to: 'dashboard#index', as: 'app_new_instagram_inbox'
+    get '/app/accounts/:account_id/settings/inboxes/new/tiktok', to: 'dashboard#index', as: 'app_new_tiktok_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_twitter_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_email_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_instagram_inbox_agents'
+    get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_tiktok_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_instagram_inbox_settings'
+    get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_tiktok_inbox_settings'
     get '/app/accounts/:account_id/settings/inboxes/:inbox_id', to: 'dashboard#index', as: 'app_email_inbox_settings'
 
     resource :widget, only: [:show]
@@ -32,6 +35,7 @@ Rails.application.routes.draw do
     resource :slack_uploads, only: [:show]
   end
 
+  get '/health', to: 'health#show'
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do
@@ -52,6 +56,7 @@ Rails.application.routes.draw do
             post :bulk_create, on: :collection
           end
           namespace :captain do
+            resource :preferences, only: [:show, :update]
             resources :assistants do
               member do
                 post :playground
@@ -69,12 +74,24 @@ Rails.application.routes.draw do
             end
             resources :custom_tools
             resources :documents, only: [:index, :show, :create, :destroy]
+            resource :tasks, only: [], controller: 'tasks' do
+              post :rewrite
+              post :summarize
+              post :reply_suggestion
+              post :label_suggestion
+              post :follow_up
+            end
           end
           resource :saml_settings, only: [:show, :create, :update, :destroy]
           resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
             delete :avatar, on: :member
             post :reset_access_token, on: :member
           end
+          resources :surveys, only: [:index, :create, :show, :update, :destroy] do
+            resources :survey_questions, only: [:index, :create, :show, :update, :destroy]
+          end
+          resources :survey_answers, only: [:create]
+          resources :survey_calls, only: [:create]
           resources :contact_inboxes, only: [] do
             collection do
               post :filter
@@ -94,6 +111,19 @@ Rails.application.routes.draw do
           resources :automation_rules, only: [:index, :create, :show, :update, :destroy] do
             post :clone
           end
+          resources :copilot_sequences, only: [:index, :create, :show, :update, :destroy], controller: 'lead_follow_up_sequences' do
+            member do
+              post :activate
+              post :deactivate
+              get :enrolled_conversations
+              post :cancel_follow_ups
+              get 'enrollments/:enrollment_id/timeline', action: :enrollment_timeline, as: :enrollment_timeline
+            end
+            collection do
+              get :available_templates
+              post :preview_eligible
+            end
+          end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do
             post :execute, on: :member
           end
@@ -106,10 +136,99 @@ Rails.application.routes.draw do
             end
           end
           resources :campaigns, only: [:index, :create, :show, :update, :destroy]
+          resources :product_catalogs, only: [:index, :create, :show, :update, :destroy] do
+            member do
+              post :toggle_visibility
+            end
+
+            collection do
+              post :bulk_upload
+              post :bulk_delete
+              post :export
+              post :export_all
+              get :download_template
+              get 'download_export/:id', action: :download_export, as: :download_export
+            end
+
+            resources :product_media, only: [] do
+              member do
+                post :set_primary
+              end
+            end
+          end
+          resources :bulk_processing_requests, only: [:index, :show] do
+            member do
+              get :download_errors
+              post :cancel
+              post :dismiss
+            end
+          end
+          resources :faq_categories do
+            collection do
+              get :tree
+            end
+            member do
+              post :toggle_visibility
+              post :move
+            end
+          end
+          resources :faq_items do
+            member do
+              post :toggle_visibility
+              post :move
+            end
+            collection do
+              post :bulk_delete
+            end
+          end
+          resources :kb_resources, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              post :toggle_visibility
+              post :move
+            end
+            collection do
+              get :storage_info
+              get :tree
+              post :bulk_move
+              post :create_folder
+              delete :delete_folder
+            end
+          end
+          resources :appointments, only: [:index, :create, :show, :update, :destroy] do
+            collection do
+              get :search
+              post :filter
+              post :validate_appointment_token
+              get :available_types
+            end
+
+            member do
+              get :show_qr
+              post :start
+              post :complete
+              post :cancel
+              post :mark_no_show
+            end
+          end
+          resources :locations, only: [:index, :create, :show, :update, :destroy] do
+            collection do
+              get :user_locations
+            end
+          end
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           namespace :channels do
             resource :twilio_channel, only: [:create]
+            resources :whapi_channels, only: [:create] do
+              member do
+                get 'get_qr'
+                get 'qr_status'
+                post 'complete_setup'
+              end
+            end
           end
+
+          resources :pipeline_statuses, except: [:new, :edit, :show]
+
           resources :conversations, only: [:index, :create, :show, :update, :destroy] do
             collection do
               get :meta
@@ -140,6 +259,7 @@ Rails.application.routes.draw do
               post :unread
               post :custom_attributes
               get :attachments
+              get :copilot_events
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
             end
@@ -178,12 +298,17 @@ Rails.application.routes.draw do
               resources :labels, only: [:create, :index]
               resources :notes
               post :call, on: :member, to: 'calls#create' if ChatwootApp.enterprise?
+              resources :survey_answers, only: [:index]
+              resources :survey_completions, only: [:index]
             end
           end
           resources :csat_survey_responses, only: [:index] do
             collection do
               get :metrics
               get :download
+            end
+            member do
+              patch :update if ChatwootApp.enterprise?
             end
           end
           resources :applied_slas, only: [:index] do
@@ -200,10 +325,21 @@ Rails.application.routes.draw do
             get :campaigns, on: :member
             get :agent_bot, on: :member
             post :set_agent_bot, on: :member
+            post :set_survey, on: :member
             delete :avatar, on: :member
             post :sync_templates, on: :member
             get :health, on: :member
+            resources :faq_categories, only: [:index, :create], controller: 'inbox_faq_categories'
+            resources :bot_faqs, only: [:index], controller: 'inbox_bot_faqs'
+            if ChatwootApp.enterprise?
+              resource :conference, only: %i[create destroy], controller: 'conference' do
+                get :token, on: :member
+              end
+            end
+
+            resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates'
           end
+
           resources :inbox_members, only: [:create, :show], param: :inbox_id do
             collection do
               delete :destroy
@@ -259,8 +395,17 @@ Rails.application.routes.draw do
             resource :authorization, only: [:create]
           end
 
+          namespace :tiktok do
+            resource :authorization, only: [:create]
+          end
+
           namespace :notion do
             resource :authorization, only: [:create]
+            resources :databases, only: [:index, :show] do
+              member do
+                post :query
+              end
+            end
           end
 
           namespace :whatsapp do
@@ -268,11 +413,23 @@ Rails.application.routes.draw do
           end
 
           resources :webhooks, only: [:index, :create, :update, :destroy]
+          resources :crm_flows, only: [:index, :show, :create, :update, :destroy] do
+            collection do
+              post :trigger
+              get :trigger_schema
+              get :agent_schema
+              get :executions_by_conversation
+            end
+            member do
+              get :executions
+            end
+          end
           namespace :integrations do
             resources :apps, only: [:index, :show]
             resources :hooks, only: [:show, :create, :update, :destroy] do
               member do
                 post :process_event
+                post :test_crm_action
               end
             end
             resource :slack, only: [:create, :update, :destroy], controller: 'slack' do
@@ -326,6 +483,7 @@ Rails.application.routes.draw do
           end
 
           resources :upload, only: [:create]
+          resources :marketing_campaigns, except: [:new, :edit]
         end
       end
       # end of account scoped api routes
@@ -346,6 +504,7 @@ Rails.application.routes.draw do
           put :set_active_account
           post :resend_confirmation
           post :reset_access_token
+          put :update_working_hours
         end
 
         # MFA routes
@@ -402,6 +561,7 @@ Rails.application.routes.draw do
               get :team
               get :inbox
               get :label
+              get :channel
             end
           end
           resources :reports, only: [:index] do
@@ -413,14 +573,21 @@ Rails.application.routes.draw do
               get :labels
               get :teams
               get :conversations
+              get :conversations_summary
               get :conversation_traffic
               get :bot_metrics
             end
           end
+          resource :year_in_review, only: [:show]
           resources :live_reports, only: [] do
             collection do
               get :conversation_metrics
               get :grouped_conversation_metrics
+            end
+          end
+          resources :meta_campaign_reports, only: [:index, :show] do
+            collection do
+              get :summary
             end
           end
         end
@@ -528,8 +695,11 @@ Rails.application.routes.draw do
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'
+  post 'webhooks/whapi/:inbox_id/:event_type', to: 'webhooks/whapi#process_payload'
+  match 'webhooks/whapi_groups/:event_type', to: 'webhooks/whapi_groups#process_payload', via: [:post, :put, :delete]
   get 'webhooks/instagram', to: 'webhooks/instagram#verify'
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
+  post 'webhooks/tiktok', to: 'webhooks/tiktok#events'
 
   namespace :twitter do
     resource :callback, only: [:show]
@@ -548,19 +718,16 @@ Rails.application.routes.draw do
     resources :delivery_status, only: [:create]
 
     if ChatwootApp.enterprise?
-      resource :voice, only: [], controller: 'voice' do
-        collection do
-          post 'call/:phone', action: :call_twiml
-          post 'status/:phone', action: :status
-          post 'conference_status/:phone', action: :conference_status
-        end
-      end
+      post 'voice/call/:phone', to: 'voice#call_twiml', as: :voice_call
+      post 'voice/status/:phone', to: 'voice#status', as: :voice_status
+      post 'voice/conference_status/:phone', to: 'voice#conference_status', as: :voice_conference_status
     end
   end
 
   get 'microsoft/callback', to: 'microsoft/callbacks#show'
   get 'google/callback', to: 'google/callbacks#show'
   get 'instagram/callback', to: 'instagram/callbacks#show'
+  get 'tiktok/callback', to: 'tiktok/callbacks#show'
   get 'notion/callback', to: 'notion/callbacks#show'
   # ----------------------------------------------------------------------
   # Routes for external service verifications

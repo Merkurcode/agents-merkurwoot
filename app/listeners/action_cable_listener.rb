@@ -14,11 +14,19 @@ class ActionCableListener < BaseListener
   end
 
   def notification_deleted(event)
-    return if event.data[:notification].user.blank?
+    notification_data = event.data[:notification_data]
 
-    notification, account, unread_count, count = extract_notification_and_account(event)
-    tokens = [event.data[:notification].user.pubsub_token]
-    broadcast(account, tokens, NOTIFICATION_DELETED, { notification: { id: notification.id }, unread_count: unread_count, count: count })
+    user = User.find_by(id: notification_data[:user_id])
+    account = Account.find_by(id: notification_data[:account_id])
+    return if user.blank? || account.blank?
+
+    notification_finder = NotificationFinder.new(user, account)
+    tokens = [user.pubsub_token]
+    broadcast(account, tokens, NOTIFICATION_DELETED, {
+                notification: { id: notification_data[:id] },
+                unread_count: notification_finder.unread_count,
+                count: notification_finder.count
+              })
   end
 
   def account_cache_invalidated(event)
@@ -33,7 +41,7 @@ class ActionCableListener < BaseListener
   def message_created(event)
     message, account = extract_message_and_account(event)
     conversation = message.conversation
-    tokens = user_tokens(account, conversation.inbox.members) + contact_tokens(conversation.contact_inbox, message)
+    tokens = user_tokens(account, conversation.inbox.members, conversation) + contact_tokens(conversation.contact_inbox, message)
 
     broadcast(account, tokens, MESSAGE_CREATED, message.push_event_data)
   end
@@ -41,7 +49,7 @@ class ActionCableListener < BaseListener
   def message_updated(event)
     message, account = extract_message_and_account(event)
     conversation = message.conversation
-    tokens = user_tokens(account, conversation.inbox.members) + contact_tokens(conversation.contact_inbox, message)
+    tokens = user_tokens(account, conversation.inbox.members, conversation) + contact_tokens(conversation.contact_inbox, message)
 
     broadcast(account, tokens, MESSAGE_UPDATED, message.push_event_data.merge(previous_changes: event.data[:previous_changes]))
   end
@@ -49,35 +57,35 @@ class ActionCableListener < BaseListener
   def first_reply_created(event)
     message, account = extract_message_and_account(event)
     conversation = message.conversation
-    tokens = user_tokens(account, conversation.inbox.members)
+    tokens = user_tokens(account, conversation.inbox.members, conversation)
 
     broadcast(account, tokens, FIRST_REPLY_CREATED, message.push_event_data)
   end
 
   def conversation_created(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members) + contact_inbox_tokens(conversation.contact_inbox)
+    tokens = user_tokens(account, conversation.inbox.members, conversation) + contact_inbox_tokens(conversation.contact_inbox)
 
     broadcast(account, tokens, CONVERSATION_CREATED, conversation.push_event_data)
   end
 
   def conversation_read(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members)
+    tokens = user_tokens(account, conversation.inbox.members, conversation)
 
     broadcast(account, tokens, CONVERSATION_READ, conversation.push_event_data)
   end
 
   def conversation_status_changed(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members) + contact_inbox_tokens(conversation.contact_inbox)
+    tokens = user_tokens(account, conversation.inbox.members, conversation) + contact_inbox_tokens(conversation.contact_inbox)
 
     broadcast(account, tokens, CONVERSATION_STATUS_CHANGED, conversation.push_event_data)
   end
 
   def conversation_updated(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members) + contact_inbox_tokens(conversation.contact_inbox)
+    tokens = user_tokens(account, conversation.inbox.members, conversation) + contact_inbox_tokens(conversation.contact_inbox)
 
     broadcast(account, tokens, CONVERSATION_UPDATED, conversation.push_event_data)
   end
@@ -116,21 +124,21 @@ class ActionCableListener < BaseListener
 
   def assignee_changed(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members)
+    tokens = user_tokens(account, conversation.inbox.members, conversation)
 
     broadcast(account, tokens, ASSIGNEE_CHANGED, conversation.push_event_data)
   end
 
   def team_changed(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members)
+    tokens = user_tokens(account, conversation.inbox.members, conversation)
 
     broadcast(account, tokens, TEAM_CHANGED, conversation.push_event_data)
   end
 
   def conversation_contact_changed(event)
     conversation, account = extract_conversation_and_account(event)
-    tokens = user_tokens(account, conversation.inbox.members)
+    tokens = user_tokens(account, conversation.inbox.members, conversation)
 
     broadcast(account, tokens, CONVERSATION_CONTACT_CHANGED, conversation.push_event_data)
   end
@@ -151,8 +159,22 @@ class ActionCableListener < BaseListener
   end
 
   def contact_deleted(event)
+    contact_data = event.data[:contact_data]
+    account = Account.find_by(id: contact_data[:account_id])
+    return if account.blank?
+
+    broadcast(account, [account_token(account)], CONTACT_DELETED, contact_data)
+  end
+
+  def contact_discarded(event)
     contact, account = extract_contact_and_account(event)
-    broadcast(account, [account_token(account)], CONTACT_DELETED, contact.push_event_data)
+    broadcast(account, [account_token(account)], CONTACT_DISCARDED, contact.push_event_data)
+  end
+
+  def conversation_discarded(event)
+    conversation, account = extract_conversation_and_account(event)
+    tokens = user_tokens(account, conversation.inbox.members) + contact_inbox_tokens(conversation.contact_inbox)
+    broadcast(account, tokens, CONVERSATION_DISCARDED, conversation.push_event_data)
   end
 
   def conversation_mentioned(event)
@@ -170,13 +192,25 @@ class ActionCableListener < BaseListener
 
   def typing_event_listener_tokens(account, conversation, user)
     current_user_token = user.is_a?(Contact) ? conversation.contact_inbox.pubsub_token : user.pubsub_token
-    (user_tokens(account, conversation.inbox.members) + [conversation.contact_inbox.pubsub_token]) - [current_user_token]
+    (user_tokens(account, conversation.inbox.members, conversation) + [conversation.contact_inbox.pubsub_token]) - [current_user_token]
   end
 
-  def user_tokens(account, agents)
+  def user_tokens(account, agents, conversation = nil)
     agent_tokens = agents.pluck(:pubsub_token)
     admin_tokens = account.administrators.pluck(:pubsub_token)
-    (agent_tokens + admin_tokens).uniq
+    supervisor_tokens = supervisor_tokens_for_conversation(account, conversation)
+    (agent_tokens + admin_tokens + supervisor_tokens).uniq
+  end
+
+  # Only notify supervisors if the conversation is assigned to themselves or one of their subordinates
+  def supervisor_tokens_for_conversation(account, conversation)
+    return [] if conversation.nil? || conversation.assignee_id.nil?
+
+    account.account_users.supervisor.includes(:user).select do |account_user|
+      # Supervisor receives if assigned to them OR to their subordinates
+      conversation.assignee_id == account_user.user_id ||
+        account_user.all_subordinate_user_ids.include?(conversation.assignee_id)
+    end.map { |au| au.user.pubsub_token }
   end
 
   def contact_tokens(contact_inbox, message)
@@ -188,7 +222,10 @@ class ActionCableListener < BaseListener
   end
 
   def contact_inbox_tokens(contact_inbox)
+    return [] if contact_inbox.nil?
+
     contact = contact_inbox.contact
+    return [] if contact.nil?
 
     contact_inbox.hmac_verified? ? contact.contact_inboxes.where(hmac_verified: true).filter_map(&:pubsub_token) : [contact_inbox.pubsub_token]
   end

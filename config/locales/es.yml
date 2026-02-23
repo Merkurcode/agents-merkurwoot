@@ -48,8 +48,11 @@ es:
       failed: Registro fallido
     assignment_policy:
       not_found: Assignment policy not found
+    attachments:
+      invalid: Invalid attachment
     saml:
       feature_not_enabled: SAML feature not enabled for this account
+      sso_not_enabled: SAML SSO is not enabled for this installation
     data_import:
       data_type:
         invalid: Tipo de datos no válido
@@ -65,6 +68,11 @@ es:
     companies:
       domain:
         invalid: must be a valid domain name
+      search:
+        query_missing: Specify search string with parameter q
+    messages:
+      search:
+        time_range_limit_exceeded: 'Search is limited to the last %{days} days'
     categories:
       locale:
         unique: debe ser único en la categoría y el portal
@@ -105,6 +113,13 @@ es:
       invalid_token: Invalid or expired MFA token
       invalid_credentials: Invalid credentials or verification code
       feature_unavailable: MFA feature is not available. Please configure encryption keys.
+    topup:
+      credits_required: Credits amount is required
+      invalid_credits: Invalid credits amount
+      invalid_option: Invalid topup option
+      plan_not_eligible: Top-ups are only available for paid plans. Please upgrade your plan first.
+      stripe_customer_not_configured: Stripe customer not configured
+      no_payment_method: No payment methods found. Please add a payment method before making a purchase.
   profile:
     mfa:
       enabled: MFA enabled successfully
@@ -180,6 +195,8 @@ es:
     messages:
       instagram_story_content: '%{story_sender} te mencionó en la historia: '
       instagram_deleted_story_content: Esta historia ya no está disponible.
+      instagram_shared_story_content: 'Shared story'
+      instagram_shared_post_content: 'Shared post'
       deleted: Este mensaje se ha eliminado
       whatsapp:
         list_button_label: 'Choose an item'
@@ -219,6 +236,9 @@ es:
       sla:
         added: '%{user_name} agregó la política de SLA %{sla_name}'
         removed: '%{user_name} eliminó la política de SLA %{sla_name}'
+      pipeline_status:
+        updated: '%{user_name} cambió el estado del embudo a %{status_name}'
+        unknown: 'Desconocido'
       linear:
         issue_created: 'Linear issue %{issue_id} was created by %{user_name}'
         issue_linked: 'Linear issue %{issue_id} was linked by %{user_name}'
@@ -299,6 +319,22 @@ es:
       name: 'LeadSquared'
       short_description: 'Sync your contacts and conversations with LeadSquared CRM.'
       description: 'Sync your contacts and conversations with LeadSquared CRM. This integration automatically creates leads in LeadSquared when new contacts are added, and logs conversation activity to provide your sales team with complete context.'
+    zoho:
+      name: 'Zoho CRM'
+      short_description: 'Sincroniza tus contactos, leads y actividades con Zoho CRM automáticamente.'
+      description: 'Conecta Zoho CRM para sincronizar automáticamente contactos como leads, crear tareas y eventos, agregar etiquetas y notas. Esta integración proporciona a tu equipo de ventas el contexto completo y optimiza el flujo de trabajo de tu CRM.'
+    salesforce:
+      name: 'Salesforce'
+      short_description: 'Sincroniza tus contactos, leads y oportunidades con Salesforce CRM.'
+      description: 'Conecta Salesforce para sincronizar automáticamente contactos como leads, crear oportunidades y tareas, y gestionar tu pipeline de ventas. Esta integración proporciona a tu equipo de ventas visibilidad completa de las interacciones con clientes.'
+    hubspot:
+      name: 'HubSpot'
+      short_description: 'Sincroniza tus contactos, deals y actividades con HubSpot CRM.'
+      description: 'Conecta HubSpot CRM para sincronizar automáticamente contactos, crear deals y tareas, programar reuniones y agregar notas. Esta integración proporciona a tu equipo de ventas el contexto completo y optimiza el flujo de trabajo de tu CRM.'
+    crm_flows:
+      name: 'CRM Flows'
+      short_description: 'Configura secuencias de acciones automatizadas disparadas por tu agente de IA.'
+      description: 'CRM Flows te permite definir qué sucede cuando tu agente de IA lanza un evento. Configura disparadores, encadena acciones de CRM y Chatwoot, establece campos requeridos y habilita idempotencia — todo sin código.'
   captain:
     copilot_message_required: El mensaje es obligatorio
     copilot_error: 'Conecte un asistente a esta bandeja de entrada para utilizar Copilot'
@@ -389,7 +425,7 @@ es:
       one: '%{count} segundo'
       other: '%{count} segundos'
   automation:
-    system_name: 'Automation System'
+    system_name: 'Sistema de Automatización'
   crm:
     no_message: 'No messages in conversation'
     attachment: '[Attachment: %{type}]'
@@ -421,3 +457,14 @@ es:
       subject: 'Finish setting up %{custom_domain}'
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
+  pipeline_status:
+    default_statuses:
+      new: nuevo
+      contacted: contactado
+      proposal_sent: propuesta enviada
+      closed: cerrado
+  appointments:
+    types:
+      physical_visit: Visita Física
+      digital_meeting: Reunión Digital
+      phone_call: Llamada Telefónica

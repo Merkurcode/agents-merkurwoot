@@ -26,6 +26,13 @@ const CRM_ACTION_OPTIONS = [
   { value: 'add_note', label: 'CRM_FLOWS.ACTIONS_BUILDER.ADD_NOTE' },
 ];
 
+const DESK_ACTION_OPTIONS = [
+  {
+    value: 'create_ticket',
+    label: 'CRM_FLOWS.ACTIONS_BUILDER.CREATE_TICKET',
+  },
+];
+
 const CHATWOOT_ACTION_OPTIONS = [
   {
     value: 'assign_chatwoot_agent',
@@ -70,6 +77,13 @@ const connectedCrms = computed(() => {
     .map(i => i.id);
 });
 
+const isDeskConnected = computed(() => {
+  const integrations = getters['integrations/getAppIntegrations'].value || [];
+  const zoho = integrations.find(i => i.id === 'zoho' && i.enabled);
+  if (!zoho) return false;
+  return zoho.hooks?.some(h => h.settings?.desk_soid);
+});
+
 const actions = computed(() => props.modelValue);
 
 function update(newActions) {
@@ -96,6 +110,10 @@ function changeAction(index, newAction) {
   const updated = actions.value.map((a, i) => {
     if (i !== index) return a;
     const isCrm = CRM_ACTION_OPTIONS.some(o => o.value === newAction);
+    const isDesk = DESK_ACTION_OPTIONS.some(o => o.value === newAction);
+    let type = 'chatwoot';
+    if (isCrm) type = 'crm';
+    if (isDesk) type = 'desk';
     return {
       ...a,
       action: newAction,
@@ -116,6 +134,10 @@ function changeParam(index, key, value) {
 
 function isCrmAction(actionName) {
   return CRM_ACTION_OPTIONS.some(o => o.value === actionName);
+}
+
+function isDeskAction(actionName) {
+  return DESK_ACTION_OPTIONS.some(o => o.value === actionName);
 }
 
 function crmSupports(crm, actionName) {
@@ -149,6 +171,18 @@ const agents = computed(() => getters['agents/getAgents'].value || []);
           <optgroup :label="$t('CRM_FLOWS.ACTIONS_BUILDER.CRM_ACTIONS')">
             <option
               v-for="opt in CRM_ACTION_OPTIONS"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ $t(opt.label) }}
+            </option>
+          </optgroup>
+          <optgroup
+            v-if="isDeskConnected"
+            :label="$t('CRM_FLOWS.ACTIONS_BUILDER.DESK_ACTIONS')"
+          >
+            <option
+              v-for="opt in DESK_ACTION_OPTIONS"
               :key="opt.value"
               :value="opt.value"
             >

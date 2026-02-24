@@ -51,7 +51,8 @@ if ENV['DATADOG_LOGGING']
         service: "crm_rails",
         ddsource: "rails",
         level: level,
-        message: "#{event.payload[:method]} #{event.payload[:path]}",
+        method: event.payload[:method],
+        path: event.payload[:path],
         status: status,
         duration: event.duration,
         request_id: event.payload[:request_id],
@@ -64,8 +65,5 @@ if ENV['DATADOG_LOGGING']
       return true if event.payload[:channel_class] == 'RoomChannel'
       return true if event.payload[:controller] == 'ApplicationCable::Connection'
     end
-
-    config.logger = ActiveSupport::Logger.new($stdout)
-    config.log_level = :info
   end
 end

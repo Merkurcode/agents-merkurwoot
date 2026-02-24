@@ -25,9 +25,9 @@ class DatadogLogForwarder < Logger::Formatter
 
   def push_to_datadog(severity, message)
     payload = begin
-      # lograge already produces a valid Datadog JSON — send it as-is
-      parsed = JSON.parse(message)
-      JSON.generate(parsed)
+      # lograge already produces a complete Datadog JSON with all fields — send as-is
+      JSON.parse(message)
+      message
     rescue JSON::ParserError
       # plain text — wrap in standard Datadog format
       JSON.generate(

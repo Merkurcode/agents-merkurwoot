@@ -826,8 +826,13 @@ class LeadRetargeting::SendFollowUpService
         message_channel: message_channel,
 
         # Inbox al que el bot debe enviar la respuesta
-        reply_inbox_id: target_inbox.id,
-        reply_inbox_phone_number: target_inbox.channel&.phone_number,
+        reply_inbox: {
+          id: target_inbox.id,
+          name: target_inbox.name,
+          channel_type: target_inbox.channel_type,
+          phone_number: target_inbox.channel&.try(:phone_number),
+          email: target_inbox.channel&.try(:email)
+        },
 
         # Contexto OPCIONAL - puede ser nil o vacío
         context: rendered_context,

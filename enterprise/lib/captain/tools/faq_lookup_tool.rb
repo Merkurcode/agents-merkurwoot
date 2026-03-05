@@ -1,3 +1,5 @@
+# NOTE: Not used when assistant.external_agent_url is configured.
+# nauto-assistant manages its own knowledge base via Pinecone.
 class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
   description 'Search FAQ responses using semantic similarity to find relevant answers'
   param :query, type: 'string', desc: 'The question or topic to search for in the FAQ database'

@@ -10,6 +10,11 @@ class Captain::Conversation::ResponseBuilderJob < ApplicationJob
 
     Current.executed_by = @assistant
 
+    if external_agent_configured?
+      Captain::ExternalAgentService.new(conversation: conversation, assistant: assistant).fire
+      return
+    end
+
     if captain_v2_enabled?
       generate_response_with_v2
     else
@@ -133,6 +138,10 @@ class Captain::Conversation::ResponseBuilderJob < ApplicationJob
 
   def log_error(error)
     ChatwootExceptionTracker.new(error, account: account).capture_exception
+  end
+
+  def external_agent_configured?
+    ENV.fetch('EXTERNAL_CAPTAIN_AGENT_URL', nil).present?
   end
 
   def captain_v2_enabled?

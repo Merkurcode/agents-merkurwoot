@@ -24,10 +24,13 @@ class Api::V1::Accounts::Captain::AssistantsController < Api::V1::Accounts::Base
   end
 
   def playground
-    response = Captain::Llm::AssistantChatService.new(assistant: @assistant).generate_response(
-      additional_message: params[:message_content],
+    raise ActionController::BadRequest, 'EXTERNAL_CAPTAIN_AGENT_URL is not configured' if ENV.fetch('EXTERNAL_CAPTAIN_AGENT_URL', nil).blank?
+
+    response = Captain::ExternalAgentChatService.new(
+      assistant: @assistant,
+      message_content: params[:message_content],
       message_history: message_history
-    )
+    ).chat
 
     render json: response
   end

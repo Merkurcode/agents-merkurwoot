@@ -610,6 +610,14 @@ Rails.application.routes.draw do
         end
       end
     end
+
+    # Agent Bot API — authenticated via X-Bot-Token header
+    namespace :agent_bot do
+      resources :conversations, only: [] do
+        resource :reengagement, only: [:destroy],
+                                controller: 'conversation_reengagements'
+      end
+    end
   end
 
   if ChatwootApp.enterprise?

@@ -105,6 +105,208 @@
     },
     "TYPES": {
       "WEBHOOK": "Webhook AI agent"
+    },
+    "CONFIG": {
+      "TITLE": "Configure agent: \"{name}\"",
+      "SAVE": "Save",
+      "SAVING": "Saving...",
+      "SUCCESS_MESSAGE": "Agent configuration saved successfully.",
+      "ERROR_MESSAGE": "Could not save agent configuration. Please try again.",
+      "TABS": {
+        "GENERAL": "General",
+        "ASSISTANT": "Assistant",
+        "MODEL": "Model",
+        "CAPABILITIES": "Capabilities",
+        "TOOLS": "Tools",
+        "CONTENT": "Content"
+      },
+      "GENERAL": {
+        "NAME_LABEL": "Agent name",
+        "NAME_PLACEHOLDER": "e.g. Toyota Polanco WhatsApp",
+        "DESCRIPTION_LABEL": "Business description",
+        "DESCRIPTION_PLACEHOLDER": "Automotive agency located in Polanco, CDMX. We sell new and pre-owned vehicles...",
+        "DESCRIPTION_HINT": "Injected as {agency_summary} in the agent's prompt.",
+        "WEBHOOK_LABEL": "Webhook URL",
+        "WEBHOOK_PLACEHOLDER": "https://api.example.com/webhook",
+        "INDUSTRY_LABEL": "Industry / Sector",
+        "INDUSTRY_HINT": "Determines the default tools and catalogue examples.",
+        "INDUSTRY_PLACEHOLDER": "Search or type industry...",
+        "INDUSTRY_CREATE": "Create industry \"{value}\"",
+        "INDUSTRIES": {
+          "automotive": "Automotive",
+          "health": "Health / Clinic",
+          "retail": "Retail / Store",
+          "restaurant": "Restaurant",
+          "legal": "Legal",
+          "financial": "Financial / Banking",
+          "real_estate": "Real Estate",
+          "education": "Education",
+          "custom": "Other"
+        }
+      },
+      "ASSISTANT": {
+        "PRESET_LABEL": "Base personality (quick preset)",
+        "PRESET_PLACEHOLDER": "Select preset...",
+        "PRESET_HINT": "Selecting a preset fills the fields below.",
+        "PRESETS": {
+          "vektor": "Vektor",
+          "lala": "Lala",
+          "sol": "Sol",
+          "nova": "Nova",
+          "custom": "Custom"
+        },
+        "NAME_LABEL": "Assistant name",
+        "NAME_PLACEHOLDER": "e.g. Lala",
+        "TITLE_LABEL": "Title / Role",
+        "TITLE_PLACEHOLDER": "e.g. Your Toyota sales advisor",
+        "PERSONALITY_LABEL": "Personality (how the assistant IS)",
+        "PERSONALITY_PLACEHOLDER": "e.g. Friendly, empathetic, highly resourceful",
+        "TONE_LABEL": "Communication tone",
+        "TONE_PLACEHOLDER": "e.g. Warm, close, positive without being excessive",
+        "GOAL_LABEL": "Main goal",
+        "GOAL_PLACEHOLDER": "e.g. Accompany and facilitate the customer's purchase decision",
+        "SPEAKING_STYLE_LABEL": "Speaking style (example phrases)",
+        "SPEAKING_STYLE_PLACEHOLDER": "e.g. Of course! For a family of 4, I'd recommend the Corolla Cross. Do you have young children?",
+        "INSPIRATION_LABEL": "Inspiration / Reference (internal model guide)",
+        "INSPIRATION_PLACEHOLDER": "e.g. Michelle Obama + Joy from Inside Out",
+        "INSPIRATION_HINT": "This field is not shown to the customer. It guides the tone of performance."
+      },
+      "MODEL": {
+        "MODEL_LABEL": "Language model",
+        "MODELS": {
+          "gpt-4o": "gpt-4o — Best quality · Higher cost",
+          "gpt-4o-mini": "gpt-4o-mini — Balanced · Recommended for production",
+          "gpt-4-turbo": "gpt-4-turbo — High context capacity",
+          "claude-sonnet-4-6": "claude-sonnet-4-6 — Anthropic alternative"
+        },
+        "TEMPERATURE_LABEL": "Temperature",
+        "TEMPERATURE_HINT_LOW": "Precise / Consistent",
+        "TEMPERATURE_HINT_HIGH": "Creative / Variable",
+        "TEMPERATURE_DESC": "Low values = more factual and reproducible responses. High values = more variation and conversational naturalness.",
+        "WORD_LIMIT_LABEL": "Message length to customer",
+        "WORD_LIMIT_HINT": "Injected as {response_word_limit} in the WhatsApp response format prompt.",
+        "WORD_LIMIT_OPTIONS": {
+          "short": "Short — 20-40 words — Very concise (SMS, Telegram)",
+          "standard": "Standard — 50-70 words — Recommended for WhatsApp",
+          "detailed": "Detailed — 80-120 words — For customers who prefer more context",
+          "unlimited": "Unlimited — No limit — For web or email channels"
+        },
+        "MAX_TOKENS_LABEL": "Maximum context tokens (message trimmer)",
+        "MAX_TOKENS_HINT": "Controls how much previous history the LLM receives per turn."
+      },
+      "CAPABILITIES": {
+        "MODULES_TITLE": "Agent modules",
+        "MODULES_HINT": "Defines which flows the intent evaluator can take.",
+        "MODULES": {
+          "general_response": {
+            "LABEL": "General Response",
+            "DESC": "Responds about products, services, FAQs and the company."
+          },
+          "transfer_chat": {
+            "LABEL": "Transfer to Advisor",
+            "DESC": "Connects the customer with an available human agent."
+          },
+          "appointments": {
+            "LABEL": "Schedule Appointment",
+            "DESC": "Appointment scheduling flow integrated with CRM.",
+            "ACTIONS_LABEL": "Actions",
+            "ACTION_CREATE": "Create",
+            "ACTION_RESCHEDULE": "Reschedule",
+            "ACTION_CANCEL": "Cancel",
+            "FALLBACK_TITLE": "When disabled, when the customer wants to schedule, the agent should:",
+            "FALLBACK_PHONE": "Provide a phone number to schedule",
+            "FALLBACK_PHONE_PLACEHOLDER": "+52 55 1234 5678",
+            "FALLBACK_TRANSFER": "Transfer to a human advisor",
+            "FALLBACK_HOURS": "Show business hours and ask them to call",
+            "FALLBACK_CUSTOM": "Custom instruction",
+            "FALLBACK_CUSTOM_PLACEHOLDER": "Inform that appointments are managed directly at the branch..."
+          },
+          "send_documents": {
+            "LABEL": "Send Documents",
+            "DESC": "Sends files from the catalogue to the customer via chat (PDFs, images, technical sheets, manuals).",
+            "TYPES_LABEL": "Enabled file types",
+            "TYPE_PDF": "PDFs / Documents",
+            "TYPE_IMAGE": "Images",
+            "TYPE_VIDEO": "Videos"
+          },
+          "out_of_scope": {
+            "LABEL": "Out of Scope",
+            "DESC": "Handles queries that don't correspond to the business.",
+            "ATTEMPTS_LABEL": "Attempts before escalating"
+          }
+        },
+        "LEAD_WARMING_TITLE": "Lead Warming",
+        "LEAD_WARMING_ENABLED": "Enable proactive advisor suggestion",
+        "LEAD_WARMING_TURNS_LABEL": "Suggest advisor after N turns with high interest",
+        "LEAD_WARMING_PHRASES_LABEL": "Closing phrases to detect (one per line)"
+      },
+      "TOOLS": {
+        "EXPAND": "Expand",
+        "COLLAPSE": "Collapse",
+        "PARAMS_LABEL": "Parameters",
+        "EXAMPLES_LABEL": "Activation examples",
+        "EXAMPLES_HINT": "Customer phrases that trigger this tool.",
+        "EXAMPLES_ADD": "+ Add example",
+        "EXAMPLES_MAX": "(max 5)",
+        "INSTRUCTIONS_LABEL": "Custom instructions (optional)",
+        "INSTRUCTIONS_PLACEHOLDER": "empty = uses global system instructions",
+        "TOOLS_LIST": {
+          "search_product_info": {
+            "LABEL": "Knowledge base search",
+            "DESC": "Semantic search across indexed products, services and documents.",
+            "THRESHOLD_LABEL": "Similarity threshold",
+            "TOPK_LABEL": "Max results"
+          },
+          "get_all_products": {
+            "LABEL": "Product catalogue",
+            "DESC": "Lists available products or services from the catalogue.",
+            "MODE_LABEL": "Listing mode",
+            "MODE_ALL": "Show all",
+            "MODE_LIMITED": "Limited — max",
+            "MODE_SUMMARY": "Summary",
+            "PRICES_LABEL": "Show prices without being asked"
+          },
+          "get_faqs": {
+            "LABEL": "Frequently asked questions (FAQs)",
+            "DESC": "Retrieves FAQs relevant to the customer's query.",
+            "PER_PAGE_LABEL": "FAQs per search"
+          },
+          "get_marketing_campaigns": {
+            "LABEL": "Marketing campaigns",
+            "DESC": "Returns active promotions and campaigns.",
+            "NO_PARAMS": "No configurable parameters."
+          },
+          "get_kb_resources": {
+            "LABEL": "Knowledge base index",
+            "DESC": "Lets the agent explore indexed documents before searching the vector store. Useful when the catalogue has many diverse documents."
+          },
+          "send_document": {
+            "LABEL": "Send document to customer",
+            "DESC": "Sends files from the product catalogue to the customer.",
+            "SOURCE_LABEL": "Document source",
+            "SOURCE_CATALOG": "Product catalogue",
+            "SOURCE_API": "Catalogue + Nauto API (automotive only)",
+            "TYPES_LABEL": "Enabled types",
+            "TYPE_PDF": "PDFs",
+            "TYPE_IMAGE": "Images",
+            "TYPE_VIDEO": "Videos"
+          },
+          "transfer_chat": {
+            "LABEL": "Transfer conversation",
+            "DESC": "Transfers the conversation to an available human advisor.",
+            "NO_PARAMS": "No configurable parameters."
+          }
+        }
+      },
+      "CONTENT": {
+        "QUESTIONS_TITLE": "Lead qualification questions",
+        "QUESTIONS_HINT": "The agent uses these questions to discover needs when the customer has no clear intent. One question at a time.",
+        "QUESTIONS_ADD": "+ Add question",
+        "QUESTION_PLACEHOLDER": "e.g. What type of vehicle are you looking for: compact, SUV...?",
+        "INSTRUCTIONS_TITLE": "Additional instructions for the agent",
+        "INSTRUCTIONS_HINT": "Free text added to the end of the system prompt. Use this for specific business rules, restrictions or context that doesn't fit in the other fields.",
+        "INSTRUCTIONS_PLACEHOLDER": "e.g. Do not mention competitors. If asked about other brands, gently redirect to Toyota's benefits."
+      }
     }
   }
 }

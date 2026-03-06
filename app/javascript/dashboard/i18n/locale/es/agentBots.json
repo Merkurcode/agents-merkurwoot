@@ -122,6 +122,10 @@
         "CONTENT": "Contenido"
       },
       "GENERAL": {
+        "SECTION_IDENTITY": "Identidad y configuración",
+        "SECTION_IDENTITY_DESC": "Información básica sobre este agente: nombre, descripción y endpoint de webhook.",
+        "SECTION_INDUSTRY": "Industria / Sector",
+        "SECTION_INDUSTRY_DESC": "Determina las herramientas habilitadas por defecto y los ejemplos del catálogo.",
         "NAME_LABEL": "Nombre del agente",
         "NAME_PLACEHOLDER": "Ej. Toyota Polanco WhatsApp",
         "DESCRIPTION_LABEL": "Descripción del negocio",
@@ -146,6 +150,14 @@
         }
       },
       "ASSISTANT": {
+        "SECTION_PRESET": "Preset de personalidad",
+        "SECTION_PRESET_DESC": "Aplica una personalidad predefinida para configurar tu asistente rápidamente.",
+        "SECTION_IDENTITY": "Identidad",
+        "SECTION_IDENTITY_DESC": "Nombre y rol que usa el asistente al interactuar con los clientes.",
+        "SECTION_CHARACTER": "Carácter",
+        "SECTION_CHARACTER_DESC": "Define la personalidad, el tono de comunicación y el objetivo principal del asistente.",
+        "SECTION_STYLE": "Estilo de comunicación",
+        "SECTION_STYLE_DESC": "Frases de ejemplo y referentes que guían cómo se comunica el asistente.",
         "PRESET_LABEL": "Personalidad base (preset rápido)",
         "PRESET_PLACEHOLDER": "Seleccionar preset...",
         "PRESET_HINT": "Al seleccionar un preset se rellenan los campos de abajo.",
@@ -173,6 +185,14 @@
         "INSPIRATION_HINT": "Este campo no se muestra al cliente. Orienta el tono de actuación del asistente."
       },
       "MODEL": {
+        "SECTION_MODEL": "Modelo de lenguaje",
+        "SECTION_MODEL_DESC": "Selecciona el modelo de IA que procesará las conversaciones de este agente.",
+        "SECTION_TEMPERATURE": "Creatividad de respuestas",
+        "SECTION_TEMPERATURE_DESC": "Controla qué tan deterministas o creativas son las respuestas del modelo.",
+        "SECTION_WORD_LIMIT": "Extensión de mensajes",
+        "SECTION_WORD_LIMIT_DESC": "Define qué tan largas deben ser las respuestas del agente al cliente.",
+        "SECTION_CONTEXT": "Ventana de contexto",
+        "SECTION_CONTEXT_DESC": "Historial máximo de conversación enviado al modelo en cada interacción.",
         "MODEL_LABEL": "Modelo de lenguaje",
         "MODELS": {
           "gpt-4o": "gpt-4o — Mejor calidad · Mayor costo",
@@ -196,6 +216,9 @@
         "MAX_TOKENS_HINT": "Controla cuánto historial previo recibe el LLM en cada turno."
       },
       "CAPABILITIES": {
+        "SECTION_MODULES": "Módulos del agente",
+        "SECTION_LEAD_WARMING": "Lead Warming",
+        "SECTION_LEAD_WARMING_DESC": "Sugiere proactivamente conectar con un asesor humano cuando se detecta alto interés de compra.",
         "MODULES_TITLE": "Módulos del agente",
         "MODULES_HINT": "Define qué flujos puede tomar el evaluador de intención.",
         "MODULES": {
@@ -236,12 +259,40 @@
             "ATTEMPTS_LABEL": "Intentos antes de escalar"
           }
         },
+        "SECTION_REENGAGEMENT": "Reengagement proactivo",
+        "SECTION_REENGAGEMENT_DESC": "Retoma automáticamente la conversación cuando un cliente deja de responder.",
+        "REENGAGEMENT_ENABLED": "Activar reengagement proactivo",
+        "REENGAGEMENT_ATTEMPTS_LABEL": "Secuencia de intentos",
+        "REENGAGEMENT_ATTEMPT_N": "Intento {n}",
+        "REENGAGEMENT_ATTEMPTS_HINT": "Los tiempos son absolutos desde el último mensaje del bot. Intento 1 a los 5 min, intento 2 a los 15 min, etc.",
+        "REENGAGEMENT_ADD_ATTEMPT": "+ Agregar intento (máx 5)",
+        "REENGAGEMENT_UNIT_MINUTES": "minutos",
+        "REENGAGEMENT_UNIT_HOURS": "horas",
+        "REENGAGEMENT_UNIT_DAYS": "días",
+        "REENGAGEMENT_STOP_LABEL": "Cuándo detener",
+        "REENGAGEMENT_STOP_ON_ANY_REPLY": "Si el cliente responde con cualquier mensaje",
+        "REENGAGEMENT_STOP_ON_RESOLVED": "Si la conversación se resuelve",
+        "REENGAGEMENT_STOP_ON_AGENT_ASSIGNED": "Si se asigna un agente humano",
+        "REENGAGEMENT_KEYWORDS_LABEL": "Palabras / frases de detención",
+        "REENGAGEMENT_KEYWORDS_HINT": "Si el cliente escribe alguna de estas frases, el reengagement se cancela permanentemente en esta conversación.",
+        "REENGAGEMENT_KEYWORD_PLACEHOLDER": "Ej. STOP",
+        "REENGAGEMENT_ADD_KEYWORD": "+ Agregar frase",
+        "REENGAGEMENT_CASE_INSENSITIVE": "Ignorar mayúsculas/minúsculas",
+        "REENGAGEMENT_REACTIVATION_LABEL": "Reactivación",
+        "REENGAGEMENT_REACTIVATION_ON_BOT_REPLY": "Reiniciar secuencia cuando el bot envía un nuevo mensaje",
+        "REENGAGEMENT_REACTIVATION_EXCLUDE_LABEL": "No reiniciar si fue cancelado por:",
+        "REENGAGEMENT_EXCLUDE_KEYWORD": "Palabra / frase de detención",
+        "REENGAGEMENT_EXCLUDE_API_CANCEL": "El agente IA llamó al endpoint de cancelación",
+        "REENGAGEMENT_API_TITLE": "Endpoint de cancelación",
+        "REENGAGEMENT_API_DESC": "Tu agente IA puede cancelar un reengagement activo llamando a:",
         "LEAD_WARMING_TITLE": "Lead Warming",
         "LEAD_WARMING_ENABLED": "Habilitar sugerencia proactiva de asesor",
         "LEAD_WARMING_TURNS_LABEL": "Sugerir asesor después de N turnos con interés alto",
         "LEAD_WARMING_PHRASES_LABEL": "Frases de cierre a detectar (una por línea)"
       },
       "TOOLS": {
+        "SECTION_TITLE": "Herramientas del agente",
+        "SECTION_DESC": "Configura las herramientas disponibles para este agente y su comportamiento.",
         "EXPAND": "Expandir",
         "COLLAPSE": "Colapsar",
         "PARAMS_LABEL": "Parámetros",
@@ -301,6 +352,8 @@
         }
       },
       "CONTENT": {
+        "SECTION_QUESTIONS": "Preguntas de calificación del lead",
+        "SECTION_INSTRUCTIONS": "Instrucciones adicionales",
         "QUESTIONS_TITLE": "Preguntas de calificación del lead",
         "QUESTIONS_HINT": "El agente usa estas preguntas para descubrir necesidades cuando el cliente no tiene una intención clara. Una pregunta a la vez.",
         "QUESTIONS_ADD": "+ Agregar pregunta",

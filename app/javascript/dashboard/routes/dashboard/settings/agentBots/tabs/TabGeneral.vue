@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import SettingsSection from 'dashboard/components/SettingsSection.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import TextArea from 'dashboard/components-next/textarea/TextArea.vue';
 
@@ -24,18 +25,19 @@ const PREDEFINED_INDUSTRIES = [
 
 const industrySearch = ref('');
 
-const isPredefined = computed(() =>
-  PREDEFINED_INDUSTRIES.some(i => i.key === props.form.agent_behavior_config.industry_sector_type)
-);
-
 const filteredIndustries = computed(() => {
   const q = industrySearch.value.toLowerCase();
-  return q ? PREDEFINED_INDUSTRIES.filter(i => i.label.toLowerCase().includes(q)) : PREDEFINED_INDUSTRIES;
+  return q
+    ? PREDEFINED_INDUSTRIES.filter(i => i.label.toLowerCase().includes(q))
+    : PREDEFINED_INDUSTRIES;
 });
 
 const showCreateOption = computed(() => {
   const q = industrySearch.value.trim();
-  return q && !PREDEFINED_INDUSTRIES.some(i => i.label.toLowerCase() === q.toLowerCase());
+  return (
+    q &&
+    !PREDEFINED_INDUSTRIES.some(i => i.label.toLowerCase() === q.toLowerCase())
+  );
 });
 
 const selectIndustry = key => {
@@ -44,92 +46,115 @@ const selectIndustry = key => {
 };
 
 const createCustomIndustry = () => {
-  props.form.agent_behavior_config.industry_sector_type = industrySearch.value.trim();
+  props.form.agent_behavior_config.industry_sector_type =
+    industrySearch.value.trim();
   industrySearch.value = '';
 };
 
 const currentIndustryLabel = computed(() => {
-  const found = PREDEFINED_INDUSTRIES.find(i => i.key === props.form.agent_behavior_config.industry_sector_type);
-  return found ? found.label : props.form.agent_behavior_config.industry_sector_type;
+  const found = PREDEFINED_INDUSTRIES.find(
+    i => i.key === props.form.agent_behavior_config.industry_sector_type
+  );
+  return found
+    ? found.label
+    : props.form.agent_behavior_config.industry_sector_type;
 });
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <Input
-      v-model="form.name"
-      :label="$t('AGENT_BOTS.CONFIG.GENERAL.NAME_LABEL')"
-      :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.NAME_PLACEHOLDER')"
-    />
-
-    <TextArea
-      v-model="form.description"
-      :label="$t('AGENT_BOTS.CONFIG.GENERAL.DESCRIPTION_LABEL')"
-      :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.DESCRIPTION_PLACEHOLDER')"
-      :rows="4"
-    />
-    <p class="text-xs text-n-slate-11 -mt-4">
-      {{ $t('AGENT_BOTS.CONFIG.GENERAL.DESCRIPTION_HINT') }}
-    </p>
-
-    <Input
-      v-model="form.outgoing_url"
-      :label="$t('AGENT_BOTS.CONFIG.GENERAL.WEBHOOK_LABEL')"
-      :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.WEBHOOK_PLACEHOLDER')"
-    />
-
-    <div class="flex flex-col gap-2">
-      <label class="text-sm font-medium text-n-slate-12">
-        {{ $t('AGENT_BOTS.CONFIG.GENERAL.INDUSTRY_LABEL') }}
-      </label>
-
-      <div v-if="form.agent_behavior_config.industry_sector_type" class="flex items-center gap-2 mb-1">
-        <span class="text-sm text-n-slate-12 font-medium">{{ currentIndustryLabel }}</span>
-        <button
-          type="button"
-          class="text-xs text-n-brand hover:underline"
-          @click="form.agent_behavior_config.industry_sector_type = ''"
-        >
-          {{ $t('AGENT_BOTS.FORM.CANCEL') }}
-        </button>
+  <div>
+    <SettingsSection
+      :title="$t('AGENT_BOTS.CONFIG.GENERAL.SECTION_IDENTITY')"
+      :sub-title="$t('AGENT_BOTS.CONFIG.GENERAL.SECTION_IDENTITY_DESC')"
+    >
+      <div class="flex flex-col gap-4">
+        <Input
+          v-model="form.name"
+          :label="$t('AGENT_BOTS.CONFIG.GENERAL.NAME_LABEL')"
+          :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.NAME_PLACEHOLDER')"
+        />
+        <TextArea
+          v-model="form.description"
+          :label="$t('AGENT_BOTS.CONFIG.GENERAL.DESCRIPTION_LABEL')"
+          :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.DESCRIPTION_PLACEHOLDER')"
+          :rows="4"
+        />
+        <p class="text-xs text-n-slate-11 -mt-2">
+          {{ $t('AGENT_BOTS.CONFIG.GENERAL.DESCRIPTION_HINT') }}
+        </p>
+        <Input
+          v-model="form.outgoing_url"
+          :label="$t('AGENT_BOTS.CONFIG.GENERAL.WEBHOOK_LABEL')"
+          :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.WEBHOOK_PLACEHOLDER')"
+        />
       </div>
+    </SettingsSection>
 
-      <input
-        v-model="industrySearch"
-        type="text"
-        class="w-full px-3 py-2 text-sm rounded-lg border border-n-weak bg-n-background text-n-slate-12 placeholder:text-n-slate-9 focus:outline-none focus:ring-2 focus:ring-n-brand"
-        :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.INDUSTRY_PLACEHOLDER')"
-      />
-
-      <div class="flex flex-col gap-1 mt-1">
-        <label
-          v-for="industry in filteredIndustries"
-          :key="industry.key"
-          class="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-n-alpha-1"
+    <SettingsSection
+      :title="$t('AGENT_BOTS.CONFIG.GENERAL.SECTION_INDUSTRY')"
+      :sub-title="$t('AGENT_BOTS.CONFIG.GENERAL.SECTION_INDUSTRY_DESC')"
+      :show-border="false"
+    >
+      <div class="flex flex-col gap-3">
+        <div
+          v-if="form.agent_behavior_config.industry_sector_type"
+          class="flex items-center gap-2"
         >
-          <input
-            type="radio"
-            :value="industry.key"
-            :checked="form.agent_behavior_config.industry_sector_type === industry.key"
-            class="accent-n-brand"
-            @change="selectIndustry(industry.key)"
-          />
-          <span class="text-sm text-n-slate-12">{{ industry.label }}</span>
-        </label>
+          <span class="text-sm font-medium text-n-slate-12">
+            {{ currentIndustryLabel }}
+          </span>
+          <button
+            type="button"
+            class="text-xs text-n-brand hover:underline"
+            @click="form.agent_behavior_config.industry_sector_type = ''"
+          >
+            {{ $t('AGENT_BOTS.FORM.CANCEL') }}
+          </button>
+        </div>
 
-        <button
-          v-if="showCreateOption"
-          type="button"
-          class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-n-brand hover:bg-n-alpha-1 text-left"
-          @click="createCustomIndustry"
-        >
-          {{ $t('AGENT_BOTS.CONFIG.GENERAL.INDUSTRY_CREATE', { value: industrySearch.trim() }) }}
-        </button>
+        <input
+          v-model="industrySearch"
+          type="text"
+          class="w-full px-3 py-2 text-sm rounded-lg border border-n-weak bg-n-background text-n-slate-12 placeholder:text-n-slate-9 focus:outline-none focus:ring-2 focus:ring-n-brand"
+          :placeholder="$t('AGENT_BOTS.CONFIG.GENERAL.INDUSTRY_PLACEHOLDER')"
+        />
+
+        <div class="flex flex-col gap-0.5">
+          <label
+            v-for="industry in filteredIndustries"
+            :key="industry.key"
+            class="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-n-alpha-1"
+          >
+            <input
+              type="radio"
+              :value="industry.key"
+              :checked="
+                form.agent_behavior_config.industry_sector_type === industry.key
+              "
+              class="accent-n-brand"
+              @change="selectIndustry(industry.key)"
+            />
+            <span class="text-sm text-n-slate-12">{{ industry.label }}</span>
+          </label>
+
+          <button
+            v-if="showCreateOption"
+            type="button"
+            class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-n-brand hover:bg-n-alpha-1 text-left"
+            @click="createCustomIndustry"
+          >
+            {{
+              $t('AGENT_BOTS.CONFIG.GENERAL.INDUSTRY_CREATE', {
+                value: industrySearch.trim(),
+              })
+            }}
+          </button>
+        </div>
+
+        <p class="text-xs text-n-slate-11">
+          {{ $t('AGENT_BOTS.CONFIG.GENERAL.INDUSTRY_HINT') }}
+        </p>
       </div>
-
-      <p class="text-xs text-n-slate-11">
-        {{ $t('AGENT_BOTS.CONFIG.GENERAL.INDUSTRY_HINT') }}
-      </p>
-    </div>
+    </SettingsSection>
   </div>
 </template>

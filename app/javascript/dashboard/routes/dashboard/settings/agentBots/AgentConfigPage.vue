@@ -3,11 +3,11 @@ import { ref, computed, reactive, watch, onMounted } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import Button from 'dashboard/components-next/button/Button.vue';
-import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
+import SettingIntroBanner from 'dashboard/components/widgets/SettingIntroBanner.vue';
 import TabGeneral from './tabs/TabGeneral.vue';
 import TabAssistant from './tabs/TabAssistant.vue';
 import TabModel from './tabs/TabModel.vue';
@@ -18,7 +18,6 @@ import TabContent from './tabs/TabContent.vue';
 const store = useStore();
 const { t } = useI18n();
 const route = useRoute();
-const router = useRouter();
 
 const uiFlags = useMapGetter('agentBots/getUIFlags');
 const getBot = useMapGetter('agentBots/getBot');
@@ -26,15 +25,15 @@ const getBot = useMapGetter('agentBots/getBot');
 const botId = computed(() => Number(route.params.botId));
 const bot = computed(() => getBot.value(botId.value));
 
-const activeTabIndex = ref(0);
+const selectedTabIndex = ref(0);
 
 const tabs = computed(() => [
-  { label: t('AGENT_BOTS.CONFIG.TABS.GENERAL') },
-  { label: t('AGENT_BOTS.CONFIG.TABS.ASSISTANT') },
-  { label: t('AGENT_BOTS.CONFIG.TABS.MODEL') },
-  { label: t('AGENT_BOTS.CONFIG.TABS.CAPABILITIES') },
-  { label: t('AGENT_BOTS.CONFIG.TABS.TOOLS') },
-  { label: t('AGENT_BOTS.CONFIG.TABS.CONTENT') },
+  { key: 'general', name: t('AGENT_BOTS.CONFIG.TABS.GENERAL') },
+  { key: 'assistant', name: t('AGENT_BOTS.CONFIG.TABS.ASSISTANT') },
+  { key: 'model', name: t('AGENT_BOTS.CONFIG.TABS.MODEL') },
+  { key: 'capabilities', name: t('AGENT_BOTS.CONFIG.TABS.CAPABILITIES') },
+  { key: 'tools', name: t('AGENT_BOTS.CONFIG.TABS.TOOLS') },
+  { key: 'content', name: t('AGENT_BOTS.CONFIG.TABS.CONTENT') },
 ]);
 
 const defaultBehaviorConfig = () => ({
@@ -66,6 +65,21 @@ const defaultBehaviorConfig = () => ({
     transfer_chat: { enabled: true, examples: [], custom_instructions: '' },
   },
   lead_warming: { enabled: true, auto_suggest_after_turns: 5, closing_phrases: [] },
+  proactive_reengagement: {
+    enabled: false,
+    attempts: [
+      { delay_value: 5,  delay_unit: 'minutes' },
+      { delay_value: 15, delay_unit: 'minutes' },
+      { delay_value: 45, delay_unit: 'minutes' },
+    ],
+    stop_conditions: {
+      on_any_reply: true,
+      on_resolved: true,
+      on_agent_assigned: false,
+    },
+    stop_keywords: { case_insensitive: true, phrases: [] },
+    reactivation: { on_bot_reply: true, exclude_if_cancelled_by: ['keyword', 'api_cancel'] },
+  },
   module_fallbacks: {
     appointments: { strategy: 'transfer_advisor', phone_number: null, custom_message: null },
   },
@@ -88,6 +102,7 @@ const formState = reactive({
   name: '',
   description: '',
   outgoing_url: '',
+  thumbnail: '',
   assistant_config: defaultAssistantConfig(),
   agent_behavior_config: defaultBehaviorConfig(),
 });
@@ -99,13 +114,15 @@ const initForm = () => {
   formState.name = b.name || '';
   formState.description = b.description || '';
   formState.outgoing_url = b.outgoing_url || b.bot_config?.webhook_url || '';
+  formState.thumbnail = b.thumbnail || '';
 
   const ac = b.assistant_config || {};
   Object.assign(formState.assistant_config, defaultAssistantConfig(), ac);
 
   const abc = b.agent_behavior_config || {};
   const defaults = defaultBehaviorConfig();
-  formState.agent_behavior_config.industry_sector_type = abc.industry_sector_type ?? defaults.industry_sector_type;
+  formState.agent_behavior_config.industry_sector_type =
+    abc.industry_sector_type ?? defaults.industry_sector_type;
 
   if (abc.response) Object.assign(formState.agent_behavior_config.response, abc.response);
   if (abc.modules) {
@@ -130,12 +147,21 @@ const initForm = () => {
   if (abc.module_fallbacks) Object.assign(formState.agent_behavior_config.module_fallbacks, abc.module_fallbacks);
   if (abc.qualification_questions) formState.agent_behavior_config.qualification_questions = [...abc.qualification_questions];
   if (abc.additional_instructions !== undefined) formState.agent_behavior_config.additional_instructions = abc.additional_instructions;
+  if (abc.proactive_reengagement) {
+    const pr = abc.proactive_reengagement;
+    const def = formState.agent_behavior_config.proactive_reengagement;
+    def.enabled = pr.enabled ?? def.enabled;
+    if (pr.attempts?.length) def.attempts = pr.attempts;
+    if (pr.stop_conditions) Object.assign(def.stop_conditions, pr.stop_conditions);
+    if (pr.stop_keywords) Object.assign(def.stop_keywords, pr.stop_keywords);
+    if (pr.reactivation) Object.assign(def.reactivation, pr.reactivation);
+  }
 };
 
 watch(bot, initForm, { deep: true });
 
-const onTabChanged = tab => {
-  activeTabIndex.value = tabs.value.findIndex(t => t.label === tab.label);
+const onTabChange = index => {
+  selectedTabIndex.value = index;
 };
 
 const handleSave = async () => {
@@ -153,8 +179,6 @@ const handleSave = async () => {
   else useAlert(t('AGENT_BOTS.CONFIG.ERROR_MESSAGE'));
 };
 
-const goBack = () => router.push({ name: 'ai_agents' });
-
 onMounted(async () => {
   await store.dispatch('agentBots/show', botId.value);
   initForm();
@@ -162,46 +186,50 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col w-full gap-6">
-    <div v-if="uiFlags.isFetchingItem" class="flex items-center justify-center py-20">
-      <Spinner />
-    </div>
-
-    <template v-else>
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <Button
-            icon="i-lucide-arrow-left"
-            slate
-            faded
-            xs
-            @click="goBack"
+  <div class="overflow-auto flex-grow flex-shrink w-full min-w-0">
+    <SettingIntroBanner
+      :header-image="formState.thumbnail"
+      :header-title="formState.name"
+    >
+      <div class="flex items-center justify-between pr-1">
+        <woot-tabs
+          :index="selectedTabIndex"
+          :border="false"
+          @change="onTabChange"
+        >
+          <woot-tabs-item
+            v-for="(tab, index) in tabs"
+            :key="tab.key"
+            :index="index"
+            :name="tab.name"
+            :show-badge="false"
+            is-compact
           />
-          <h1 class="text-xl font-semibold text-n-slate-12">
-            {{ $t('AGENT_BOTS.CONFIG.TITLE', { name: formState.name }) }}
-          </h1>
-        </div>
+        </woot-tabs>
         <Button
           :label="$t('AGENT_BOTS.CONFIG.SAVE')"
           :is-loading="uiFlags.isUpdating"
           @click="handleSave"
         />
       </div>
+    </SettingIntroBanner>
 
-      <TabBar
-        :tabs="tabs"
-        :initial-active-tab="activeTabIndex"
-        @tab-changed="onTabChanged"
-      />
+    <div
+      v-if="uiFlags.isFetchingItem"
+      class="flex items-center justify-center py-20"
+    >
+      <Spinner />
+    </div>
 
-      <div class="flex flex-col gap-6 max-w-3xl">
-        <TabGeneral v-if="activeTabIndex === 0" :form="formState" />
-        <TabAssistant v-else-if="activeTabIndex === 1" :form="formState" />
-        <TabModel v-else-if="activeTabIndex === 2" :form="formState" />
-        <TabCapabilities v-else-if="activeTabIndex === 3" :form="formState" />
-        <TabTools v-else-if="activeTabIndex === 4" :form="formState" />
-        <TabContent v-else-if="activeTabIndex === 5" :form="formState" />
+    <section v-else class="mx-auto w-full max-w-6xl">
+      <div class="mx-8">
+        <TabGeneral v-if="selectedTabIndex === 0" :form="formState" />
+        <TabAssistant v-else-if="selectedTabIndex === 1" :form="formState" />
+        <TabModel v-else-if="selectedTabIndex === 2" :form="formState" />
+        <TabCapabilities v-else-if="selectedTabIndex === 3" :form="formState" />
+        <TabTools v-else-if="selectedTabIndex === 4" :form="formState" />
+        <TabContent v-else-if="selectedTabIndex === 5" :form="formState" />
       </div>
-    </template>
+    </section>
   </div>
 </template>

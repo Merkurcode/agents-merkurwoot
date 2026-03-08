@@ -106,6 +106,7 @@ const handleSubmit = async () => {
 };
 
 const handleClose = () => {
+  resetForm();
   emit('close');
 };
 
@@ -116,7 +117,11 @@ defineExpose({ dialogRef });
   <Dialog
     ref="dialogRef"
     :type="filter ? 'edit' : 'create'"
-    :title="filter ? $t('CAPTAIN.FILTERS.EDIT.TITLE') : $t('CAPTAIN.FILTERS.CREATE.TITLE')"
+    :title="
+      filter
+        ? $t('CAPTAIN.FILTERS.EDIT.TITLE')
+        : $t('CAPTAIN.FILTERS.CREATE.TITLE')
+    "
     :show-cancel-button="false"
     :show-confirm-button="false"
     @close="handleClose"
@@ -171,7 +176,11 @@ defineExpose({ dialogRef });
           {{ $t('CANCEL') }}
         </Button>
         <Button sm solid blue @click="handleSubmit">
-          {{ filter ? $t('CAPTAIN.FILTERS.EDIT.BUTTON') : $t('CAPTAIN.FILTERS.CREATE.BUTTON') }}
+          {{
+            filter
+              ? $t('CAPTAIN.FILTERS.EDIT.BUTTON')
+              : $t('CAPTAIN.FILTERS.CREATE.BUTTON')
+          }}
         </Button>
       </div>
     </div>

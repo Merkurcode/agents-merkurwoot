@@ -11,6 +11,7 @@ module Enterprise::Concerns::Account
 
     has_many :captain_assistants, dependent: :destroy_async, class_name: 'Captain::Assistant'
     has_many :captain_assistant_filters, dependent: :destroy_async, class_name: 'Captain::AssistantFilter'
+    has_many :captain_assistant_filter_runs, dependent: :destroy_async, class_name: 'Captain::AssistantFilterRun'
     has_many :captain_assistant_responses, dependent: :destroy_async, class_name: 'Captain::AssistantResponse'
     has_many :captain_documents, dependent: :destroy_async, class_name: 'Captain::Document'
     has_many :captain_custom_tools, dependent: :destroy_async, class_name: 'Captain::CustomTool'

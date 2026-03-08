@@ -71,6 +71,7 @@ import captainScenarios from './captain/scenarios';
 import captainTools from './captain/tools';
 import captainCustomTools from './captain/customTools';
 import captainAssistantFilters from './captain/assistantFilters';
+import captainAssistantFilterRuns from './captain/assistantFilterRuns';
 
 const plugins = [];
 
@@ -147,6 +148,7 @@ export default createStore({
     captainTools,
     captainCustomTools,
     captainAssistantFilters,
+    captainAssistantFilterRuns,
   },
   plugins,
 });

@@ -1062,11 +1062,16 @@
       "ADD_NEW": "Add Filter",
       "EMPTY_STATE": "No filters configured. Add a filter to assign this assistant to specific conversations.",
       "CARD": {
-        "CONDITIONS": "Conditions"
+        "CONDITIONS": "Conditions",
+        "MATCHING_CONVERSATIONS": "{count} matching conversations",
+        "NO_CONVERSATIONS": "No matching conversations",
+        "NO_CONVERSATIONS_TOOLTIP": "No conversations match this filter"
       },
       "OPTIONS": {
         "EDIT": "Edit",
-        "DELETE": "Delete"
+        "DELETE": "Delete",
+        "RUN": "Run",
+        "VIEW_RUNS": "View runs"
       },
       "FORM": {
         "NAME_LABEL": "Filter name",
@@ -1092,6 +1097,70 @@
         "CONFIRM": "Yes, delete",
         "SUCCESS_MESSAGE": "Filter deleted successfully.",
         "ERROR_MESSAGE": "There was an error deleting the filter, please try again."
+      }
+    },
+    "FILTER_RUNS": {
+      "INDEX": {
+        "TITLE": "Filter runs",
+        "EMPTY_STATE": "No runs have been executed for this filter yet.",
+        "TABLE": {
+          "FILTER": "Filter",
+          "STATUS": "Status",
+          "CREATED_AT": "Created at",
+          "PROGRESS": "Progress"
+        }
+      },
+      "CREATE": {
+        "TITLE": "Run Filter on Conversations",
+        "SUCCESS_NOW": "Run started. The agent is processing matching conversations.",
+        "SUCCESS_SCHEDULED": "Run scheduled successfully.",
+        "ERROR_MESSAGE": "An error occurred while scheduling the run. Please try again."
+      },
+      "FORM": {
+        "FILTER_NAME": "Filter",
+        "WHEN_LABEL": "When to run",
+        "RUN_NOW": "Run now",
+        "SCHEDULE": "Schedule",
+        "SCHEDULED_AT_LABEL": "Date and time",
+        "SCHEDULED_AT_REQUIRED": "Please select a date and time.",
+        "MESSAGE_LABEL": "Context message (optional)",
+        "MESSAGE_PLACEHOLDER": "e.g. The user has been waiting more than 24 hours. Please follow up.",
+        "MESSAGE_HINT": "This message will be sent to each matched conversation before the agent responds.",
+        "RUN_NOW_BUTTON": "Run now",
+        "SCHEDULE_BUTTON": "Schedule run"
+      },
+      "STATUS": {
+        "PENDING": "Pending",
+        "RUNNING": "Running",
+        "COMPLETED": "Completed",
+        "FAILED": "Failed"
+      },
+      "CONV_STATUS": {
+        "PENDING": "Pending",
+        "SUCCESS": "Success",
+        "FAILED": "Failed"
+      },
+      "STATS": {
+        "TOTAL": "Total",
+        "PENDING": "Pending",
+        "SUCCESS": "Success",
+        "FAILED": "Failed"
+      },
+      "DETAIL": {
+        "BACK": "Back to filters",
+        "ASSISTANT": "Assistant",
+        "CREATED_AT": "Created",
+        "SCHEDULED_AT": "Scheduled for",
+        "CONTEXT_MESSAGE": "Context message",
+        "PROCESSING": "Processing conversations",
+        "CONVERSATIONS": "Conversations",
+        "NO_CONVERSATIONS": "No conversations have been processed yet."
+      },
+      "TABLE": {
+        "CONVERSATION": "Conversation",
+        "STATUS": "Status",
+        "PROCESSED_AT": "Processed at",
+        "ERROR": "Error"
       }
     }
   }

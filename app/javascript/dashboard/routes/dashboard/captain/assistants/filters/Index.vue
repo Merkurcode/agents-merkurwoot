@@ -1,16 +1,18 @@
 <script setup>
 import { computed, ref, nextTick, onMounted } from 'vue';
 import { useMapGetter, useStore } from 'dashboard/composables/store';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import PageLayout from 'dashboard/components-next/captain/PageLayout.vue';
 import AssistantFilterCard from 'dashboard/components-next/captain/assistant/AssistantFilterCard.vue';
 import AssistantFilterDialog from 'dashboard/components-next/captain/pageComponents/filters/AssistantFilterDialog.vue';
+import AssistantFilterRunDialog from 'dashboard/components-next/captain/pageComponents/filters/AssistantFilterRunDialog.vue';
 import DeleteDialog from 'dashboard/components-next/captain/pageComponents/DeleteDialog.vue';
 
 const store = useStore();
 const route = useRoute();
+const router = useRouter();
 
 const assistantId = computed(() => Number(route.params.assistantId));
 const uiFlags = useMapGetter('captainAssistantFilters/getUIFlags');
@@ -23,7 +25,10 @@ const assistantFilters = computed(() =>
 const isFetching = computed(() => uiFlags.value.fetchingList);
 
 const selectedFilter = ref(null);
+const filterToRun = ref(null);
+const filterToDelete = ref(null);
 const filterDialogRef = ref(null);
+const runDialogRef = ref(null);
 const deleteDialogRef = ref(null);
 const isEditing = ref(false);
 
@@ -40,7 +45,16 @@ const handleAction = ({ action, id }) => {
       isEditing.value = true;
       filterDialogRef.value?.dialogRef?.open();
     } else if (action === 'delete') {
+      filterToDelete.value = assistantFilters.value.find(f => f.id === id);
       deleteDialogRef.value?.dialogRef?.open();
+    } else if (action === 'run') {
+      filterToRun.value = assistantFilters.value.find(f => f.id === id);
+      runDialogRef.value?.dialogRef?.open();
+    } else if (action === 'view_runs') {
+      router.push({
+        name: 'captain_assistants_filter_runs_index',
+        params: { ...route.params, filterId: id },
+      });
     }
   });
 };
@@ -50,8 +64,12 @@ const handleDialogClose = () => {
   isEditing.value = false;
 };
 
+const handleRunDialogClose = () => {
+  filterToRun.value = null;
+};
+
 const handleDeleteSuccess = () => {
-  selectedFilter.value = null;
+  filterToDelete.value = null;
 };
 
 onMounted(() => {
@@ -99,10 +117,15 @@ onMounted(() => {
     @close="handleDialogClose"
   />
 
+  <AssistantFilterRunDialog
+    ref="runDialogRef"
+    :filter="filterToRun"
+    @close="handleRunDialogClose"
+  />
+
   <DeleteDialog
-    v-if="selectedFilter && !isEditing"
     ref="deleteDialogRef"
-    :entity="selectedFilter"
+    :entity="filterToDelete"
     type="AssistantFilters"
     translation-key="FILTERS"
     @delete-success="handleDeleteSuccess"

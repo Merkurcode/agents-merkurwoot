@@ -23,10 +23,13 @@ const [showActionsDropdown, toggleDropdown] = useToggle();
 const conditionsSummary = computed(() => {
   const conditions = props.filter.filters || [];
   if (!conditions.length) return '—';
-  return conditions
-    .map(c => c.attribute_key || c.attributeKey)
-    .join(', ');
+  return conditions.map(c => c.attribute_key || c.attributeKey).join(', ');
 });
+
+const matchingCount = computed(
+  () => props.filter.matching_conversations_count ?? null
+);
+const hasNoConversations = computed(() => matchingCount.value === 0);
 
 const menuItems = computed(() => [
   {
@@ -34,6 +37,12 @@ const menuItems = computed(() => [
     value: 'edit',
     action: 'edit',
     icon: 'i-lucide-pencil',
+  },
+  {
+    label: t('CAPTAIN.FILTERS.OPTIONS.VIEW_RUNS'),
+    value: 'view_runs',
+    action: 'view_runs',
+    icon: 'i-lucide-history',
   },
   {
     label: t('CAPTAIN.FILTERS.OPTIONS.DELETE'),
@@ -59,8 +68,41 @@ const handleAction = ({ action }) => {
         <span class="text-xs text-n-slate-11 truncate">
           {{ $t('CAPTAIN.FILTERS.CARD.CONDITIONS') }}: {{ conditionsSummary }}
         </span>
+        <span
+          v-if="matchingCount !== null"
+          class="text-xs truncate"
+          :class="hasNoConversations ? 'text-n-ruby-11' : 'text-n-teal-11'"
+        >
+          <template v-if="hasNoConversations">
+            {{ $t('CAPTAIN.FILTERS.CARD.NO_CONVERSATIONS') }}
+          </template>
+          <template v-else>
+            {{
+              $t('CAPTAIN.FILTERS.CARD.MATCHING_CONVERSATIONS', {
+                count: matchingCount,
+              })
+            }}
+          </template>
+        </span>
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
+        <Policy :permissions="['administrator']">
+          <Button
+            v-tooltip="
+              hasNoConversations
+                ? $t('CAPTAIN.FILTERS.CARD.NO_CONVERSATIONS_TOOLTIP')
+                : undefined
+            "
+            size="xs"
+            color="blue"
+            class="rounded-md"
+            :disabled="hasNoConversations"
+            @click.stop="emit('action', { action: 'run', id: filter.id })"
+          >
+            <span class="i-lucide-play mr-1" />
+            {{ $t('CAPTAIN.FILTERS.OPTIONS.RUN') }}
+          </Button>
+        </Policy>
         <Policy
           v-on-clickaway="() => toggleDropdown(false)"
           :permissions="['administrator']"

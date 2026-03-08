@@ -69,6 +69,8 @@ Rails.application.routes.draw do
             end
             resources :assistant_responses
             resources :assistant_filters
+            resources :assistant_filter_runs, only: [:index, :show, :create]
+            resources :assistant_filter_run_conversations, only: [:update]
             resources :bulk_actions, only: [:create]
             resources :copilot_threads, only: [:index, :create] do
               resources :copilot_messages, only: [:index, :create]

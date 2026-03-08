@@ -6,12 +6,13 @@ class Captain::ExternalAgentService
     @assistant = assistant
   end
 
-  def fire
+  def fire(filter_run_conversation_id: nil, context_message: nil)
     message = last_incoming_message
-    return unless message
+    return unless message || context_message.present?
 
-    payload = build_payload(message)
-    post_to_external_agent(payload, message.id)
+    payload = build_payload(message, filter_run_conversation_id: filter_run_conversation_id,
+                                     context_message: context_message)
+    post_to_external_agent(payload, message&.id || filter_run_conversation_id)
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: @conversation.account).capture_exception
     Rails.logger.error("[CAPTAIN][ExternalAgentService] Failed to fire webhook: #{e.message}")
@@ -23,13 +24,13 @@ class Captain::ExternalAgentService
     @conversation.messages.where(message_type: :incoming).last
   end
 
-  def build_payload(message)
+  def build_payload(message, filter_run_conversation_id: nil, context_message: nil)
     account = @conversation.account
     inbox = @conversation.inbox
     contact = @conversation.contact
 
-    {
-      id: message.id,
+    payload = {
+      id: message&.id,
       event: 'message_created',
       account: { id: account.id, name: account.name },
       inbox: { id: inbox.id, name: inbox.name },
@@ -48,12 +49,15 @@ class Captain::ExternalAgentService
         phone_number: contact.phone_number,
         email: contact.email
       },
-      content: message.content,
+      content: context_message.presence || message&.content,
       content_type: 'text',
       message_type: 'incoming',
-      created_at: message.created_at.iso8601,
+      created_at: (message&.created_at || Time.current).iso8601,
       attachments: []
     }
+
+    payload[:filter_run_conversation_id] = filter_run_conversation_id if filter_run_conversation_id
+    payload
   end
 
   def post_to_external_agent(payload, message_id)

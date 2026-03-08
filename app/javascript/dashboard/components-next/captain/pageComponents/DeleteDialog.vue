@@ -16,7 +16,7 @@ const props = defineProps({
   },
   entity: {
     type: Object,
-    required: true,
+    default: null,
   },
   deletePayload: {
     type: Object,
@@ -46,7 +46,7 @@ const deleteEntity = async payload => {
 };
 
 const handleDialogConfirm = async () => {
-  await deleteEntity(props.deletePayload || props.entity.id);
+  await deleteEntity(props.deletePayload || props.entity?.id);
   deleteDialogRef.value?.close();
 };
 

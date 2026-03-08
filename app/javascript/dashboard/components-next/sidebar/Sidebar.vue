@@ -279,6 +279,14 @@ const menuItems = computed(() => {
           }),
         },
         {
+          name: 'Filters',
+          label: t('SIDEBAR.CAPTAIN_FILTERS'),
+          activeOn: ['captain_assistants_filters_index'],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_filters_index',
+          }),
+        },
+        {
           name: 'Tools',
           label: t('SIDEBAR.CAPTAIN_TOOLS'),
           activeOn: ['captain_tools_index'],

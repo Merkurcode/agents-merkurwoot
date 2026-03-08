@@ -4,7 +4,7 @@ module Enterprise::MessageTemplates::HookExecutionService
   def trigger_templates
     super
     return unless should_process_captain_response?
-    return perform_handoff unless inbox.captain_active?
+    return perform_handoff unless captain_active?
 
     schedule_captain_response
   end
@@ -30,7 +30,10 @@ module Enterprise::MessageTemplates::HookExecutionService
   private
 
   def schedule_captain_response
-    job_args = [conversation, conversation.inbox.captain_assistant]
+    assistant = resolve_captain_assistant
+    return unless assistant
+
+    job_args = [conversation, assistant]
 
     if message.attachments.blank?
       Captain::Conversation::ResponseBuilderJob.perform_later(*job_args)
@@ -38,6 +41,16 @@ module Enterprise::MessageTemplates::HookExecutionService
       wait_time = calculate_attachment_wait_time
       Captain::Conversation::ResponseBuilderJob.set(wait: wait_time).perform_later(*job_args)
     end
+  end
+
+  def resolve_captain_assistant
+    @resolved_captain_assistant ||= Captain::ConversationFilterMatcher.match(conversation) || inbox.captain_assistant
+  end
+
+  def captain_active?
+    return false unless resolve_captain_assistant.present?
+
+    inbox.captain_active? || conversation.account.usage_limits[:captain][:responses][:current_available].positive?
   end
 
   def calculate_attachment_wait_time
@@ -50,7 +63,9 @@ module Enterprise::MessageTemplates::HookExecutionService
   end
 
   def should_process_captain_response?
-    conversation.pending? && message.incoming? && inbox.captain_assistant.present?
+    return false unless conversation.pending? && message.incoming?
+
+    inbox.captain_assistant.present? || resolve_captain_assistant.present?
   end
 
   def perform_handoff
@@ -72,6 +87,9 @@ module Enterprise::MessageTemplates::HookExecutionService
   end
 
   def captain_handling_conversation?
-    conversation.pending? && inbox.respond_to?(:captain_assistant) && inbox.captain_assistant.present?
+    return false unless conversation.pending?
+
+    (inbox.respond_to?(:captain_assistant) && inbox.captain_assistant.present?) ||
+      resolve_captain_assistant.present?
   end
 end

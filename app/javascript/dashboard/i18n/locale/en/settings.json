@@ -419,7 +419,8 @@
     "DOCS": "Read docs",
     "SECURITY": "Security",
     "CRM_LIST": "Pipelines",
-    "CAPTAIN_AI": "Captain"
+    "CAPTAIN_AI": "Captain",
+    "CAPTAIN_FILTERS": "Conversation Filters"
   },
   "CAPTAIN_SETTINGS": {
     "TITLE": "Captain Settings",

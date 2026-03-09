@@ -274,6 +274,7 @@ Rails.application.routes.draw do
               get :copilot_events
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
+              get :captain_activities if ChatwootApp.enterprise?
             end
           end
 

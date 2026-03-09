@@ -369,6 +369,7 @@
       "CONTACT_DETAILS": "Contact Details",
       "CONVERSATION_ACTIONS": "Conversation Actions",
       "COPILOT_TIMELINE": "Copilot Timeline",
+      "CAPTAIN_TIMELINE": "Captain Activity",
       "CONVERSATION_LABELS": "Conversation Labels",
       "CONVERSATION_INFO": "Conversation Information",
       "CONTACT_NOTES": "Contact Notes",
@@ -475,5 +476,26 @@
     "DELETE_WITH_CONVERSATIONS": "Please change the status of assigned conversations before deleting this column.",
     "DELETE_SUCCESS": "Status column deleted successfully",
     "DELETE_FAILED": "Couldn't delete status column. Please try again"
+  },
+  "CAPTAIN_TIMELINE": {
+    "LOADING": "Loading Captain activity...",
+    "EMPTY": "No Captain activity for this conversation",
+    "ERROR": "Error loading Captain activity",
+    "JUST_NOW": "Just now",
+    "AGO": "ago",
+    "SCHEDULED": "Scheduled",
+    "STATUS": {
+      "SUCCESS": "Success",
+      "FAILED": "Failed",
+      "PENDING": "Pending"
+    },
+    "MODAL": {
+      "MESSAGE": "Message",
+      "ERROR": "Error",
+      "TRIGGERED_BY": "Triggered by",
+      "SCHEDULED_AT": "Scheduled at",
+      "PROCESSED_AT": "Processed at",
+      "CREATED_AT": "Created at"
+    }
   }
 }

@@ -93,9 +93,9 @@ onUnmounted(stopPolling);
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col w-full h-full">
     <div
-      class="flex items-center justify-between p-6 border-b border-n-slate-6"
+      class="flex items-center justify-between px-12 py-4 border-b border-n-slate-6"
     >
       <div class="flex items-center gap-4">
         <Button
@@ -129,7 +129,7 @@ onUnmounted(stopPolling);
 
     <div
       v-if="isRunning && !isLoading"
-      class="mx-6 mt-6 p-4 bg-n-blue-2 border border-n-blue-6 rounded-lg"
+      class="mx-12 mt-6 p-4 bg-n-blue-2 border border-n-blue-6 rounded-lg"
     >
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
@@ -155,7 +155,7 @@ onUnmounted(stopPolling);
       </div>
     </div>
 
-    <div v-if="!isLoading" class="grid grid-cols-4 gap-4 p-6">
+    <div v-if="!isLoading" class="grid grid-cols-4 gap-4 px-12 py-6">
       <div
         class="p-4 border border-n-slate-6 shadow outline-1 outline outline-n-container rounded-2xl bg-n-solid-2"
       >
@@ -202,23 +202,21 @@ onUnmounted(stopPolling);
       <Spinner />
     </div>
 
-    <div v-else class="flex-1 overflow-auto px-6 pb-6">
-      <div
-        class="bg-n-white dark:bg-n-slate-1 rounded-lg border border-n-slate-6 overflow-hidden"
-      >
+    <div v-else class="flex-1 overflow-auto px-12 pb-12">
+      <div class="bg-n-white dark:bg-n-slate-1 rounded-lg border border-n-slate-6 overflow-hidden">
         <table class="w-full">
           <thead class="bg-n-solid-2 border-b border-n-slate-6">
             <tr>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.TABLE.CONVERSATION') }}
               </th>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.TABLE.STATUS') }}
               </th>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.TABLE.PROCESSED_AT') }}
               </th>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.TABLE.ERROR') }}
               </th>
             </tr>
@@ -234,7 +232,7 @@ onUnmounted(stopPolling);
                 )
               "
             >
-              <td class="p-4">
+              <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <span class="i-lucide-message-square text-n-slate-9" />
                   <span class="text-sm font-medium text-n-slate-12">
@@ -242,38 +240,31 @@ onUnmounted(stopPolling);
                   </span>
                 </div>
               </td>
-              <td class="p-4">
+              <td class="px-4 py-3">
                 <span
                   :class="convStatusColors[rc.status]"
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                 >
-                  {{
-                    t(
-                      `CAPTAIN.FILTER_RUNS.CONV_STATUS.${rc.status.toUpperCase()}`
-                    )
-                  }}
+                  {{ t(`CAPTAIN.FILTER_RUNS.CONV_STATUS.${rc.status.toUpperCase()}`) }}
                 </span>
               </td>
-              <td class="p-4 text-sm text-n-slate-11">
+              <td class="px-4 py-3 text-sm text-n-slate-11">
                 {{ formatDate(rc.processed_at) }}
               </td>
-              <td class="p-4 text-sm text-n-ruby-11">
+              <td class="px-4 py-3 text-sm text-n-ruby-11">
                 {{ rc.error_message || '—' }}
               </td>
             </tr>
           </tbody>
         </table>
 
-        <div v-if="conversations.length === 0" class="p-12 text-center">
+        <div v-if="conversations.length === 0" class="py-16 text-center">
           <p class="text-n-slate-11">
             {{ t('CAPTAIN.FILTER_RUNS.DETAIL.NO_CONVERSATIONS') }}
           </p>
         </div>
 
-        <div
-          v-if="totalConversations > 0"
-          class="border-t border-n-slate-6 p-4"
-        >
+        <div v-if="totalConversations > 0" class="border-t border-n-slate-6 px-4 py-3">
           <PaginationFooter
             :current-page="currentPage"
             :total-items="totalConversations"

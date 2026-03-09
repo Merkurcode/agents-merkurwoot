@@ -70,88 +70,89 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div
-      class="flex items-center justify-between p-6 border-b border-n-slate-6"
-    >
-      <div class="flex items-center gap-4">
-        <Button
-          variant="faded"
-          color="slate"
-          icon="i-lucide-arrow-left"
-          @click="goBack"
-        />
-        <h1 class="text-2xl font-semibold text-n-slate-12">
-          {{ t('CAPTAIN.FILTER_RUNS.INDEX.TITLE') }}
-        </h1>
-      </div>
+  <div class="flex flex-col w-full h-full">
+    <div class="flex items-center gap-4 px-12 py-4 border-b border-n-slate-6">
+      <Button
+        variant="faded"
+        color="slate"
+        icon="i-lucide-arrow-left"
+        @click="goBack"
+      />
+      <h1 class="text-2xl font-semibold text-n-slate-12">
+        {{ t('CAPTAIN.FILTER_RUNS.INDEX.TITLE') }}
+      </h1>
     </div>
 
     <div v-if="isLoading" class="flex items-center justify-center py-20">
       <Spinner />
     </div>
 
-    <div v-else class="flex-1 overflow-auto px-6 py-6">
-      <div
-        class="bg-n-white dark:bg-n-slate-1 rounded-lg border border-n-slate-6 overflow-hidden"
-      >
+    <div v-else class="flex-1 overflow-auto px-12 py-12">
+      <div class="bg-n-white dark:bg-n-slate-1 rounded-lg border border-n-slate-6 overflow-hidden">
         <table class="w-full">
           <thead class="bg-n-solid-2 border-b border-n-slate-6">
             <tr>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.INDEX.TABLE.FILTER') }}
               </th>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.INDEX.TABLE.STATUS') }}
               </th>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.INDEX.TABLE.CREATED_AT') }}
               </th>
-              <th class="text-left p-4 text-sm font-medium text-n-slate-12">
+              <th class="text-left px-4 py-3 text-sm font-medium text-n-slate-12">
                 {{ t('CAPTAIN.FILTER_RUNS.INDEX.TABLE.PROGRESS') }}
               </th>
+              <th class="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="run in runs"
               :key="run.id"
-              class="border-b border-n-slate-6 hover:bg-n-slate-2 cursor-pointer"
-              @click="goToDetail(run)"
+              class="border-b border-n-slate-6"
             >
-              <td class="p-4">
+              <td class="px-4 py-3">
                 <span class="text-sm font-medium text-n-slate-12">
                   {{ run.assistant_filter?.name }}
                 </span>
               </td>
-              <td class="p-4">
+              <td class="px-4 py-3">
                 <span
                   :class="statusColors[run.status]"
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                 >
-                  {{
-                    t(`CAPTAIN.FILTER_RUNS.STATUS.${run.status.toUpperCase()}`)
-                  }}
+                  {{ t(`CAPTAIN.FILTER_RUNS.STATUS.${run.status.toUpperCase()}`) }}
                 </span>
               </td>
-              <td class="p-4 text-sm text-n-slate-11">
+              <td class="px-4 py-3 text-sm text-n-slate-11">
                 {{ formatDate(run.created_at) }}
               </td>
-              <td class="p-4 text-sm text-n-slate-11">
+              <td class="px-4 py-3 text-sm text-n-slate-11">
                 {{ run.conversations_processed }} /
                 {{ run.conversations_total }}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <Button
+                  variant="faded"
+                  color="slate"
+                  size="sm"
+                  icon="i-lucide-eye"
+                  @click="goToDetail(run)"
+                />
               </td>
             </tr>
           </tbody>
         </table>
 
-        <div v-if="runs.length === 0" class="p-12 text-center">
+        <div v-if="runs.length === 0" class="py-16 text-center">
           <p class="text-n-slate-11">
             {{ t('CAPTAIN.FILTER_RUNS.INDEX.EMPTY_STATE') }}
           </p>
         </div>
 
-        <div v-if="totalRuns > 0" class="border-t border-n-slate-6 p-4">
+        <div v-if="totalRuns > 0" class="border-t border-n-slate-6 px-4 py-3">
           <PaginationFooter
             :current-page="currentPage"
             :total-items="totalRuns"

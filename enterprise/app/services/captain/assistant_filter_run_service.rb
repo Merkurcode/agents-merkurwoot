@@ -31,8 +31,6 @@ class Captain::AssistantFilterRunService
     conversation = Conversation.find(conversation_id)
     run_conv = @run.run_conversations.create!(conversation: conversation)
 
-    send_context_message(conversation) if @run.message.present?
-
     Captain::ExternalAgentService.new(
       conversation: conversation,
       assistant: @assistant
@@ -43,16 +41,5 @@ class Captain::AssistantFilterRunService
     Rails.logger.error("[Captain][FilterRunService] Conversation #{conversation_id} failed: #{e.message}")
     run_conv&.update!(status: :failed, error_message: e.message, processed_at: Time.current)
     @run.increment!(:conversations_processed)
-  end
-
-  def send_context_message(conversation)
-    conversation.messages.create!(
-      message_type: :outgoing,
-      content: @run.message,
-      account: @account,
-      inbox: conversation.inbox,
-      content_type: :text,
-      private: false
-    )
   end
 end

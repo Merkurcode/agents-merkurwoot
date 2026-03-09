@@ -25,7 +25,7 @@ module Accounts
       AgentBot.create(
         account: @account,
         name: "#{@account.name} AI",
-        outgoing_url: "#{base_url}/unified_webhook"
+        outgoing_url: "#{base_url}/captain_conversation_webhook"
       )
     end
   end

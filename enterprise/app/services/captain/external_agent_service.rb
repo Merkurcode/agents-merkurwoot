@@ -61,7 +61,7 @@ class Captain::ExternalAgentService
   end
 
   def post_to_external_agent(payload, message_id)
-    url = "#{ENV.fetch('EXTERNAL_CAPTAIN_AGENT_URL')}/unified_webhook"
+    url = "#{ENV.fetch('EXTERNAL_CAPTAIN_AGENT_URL')}/captain_conversation_webhook"
 
     headers = build_headers(message_id)
 

@@ -271,14 +271,6 @@ const menuItems = computed(() => {
           }),
         },
         {
-          name: 'Inboxes',
-          label: t('SIDEBAR.CAPTAIN_INBOXES'),
-          activeOn: ['captain_assistants_inboxes_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_inboxes_index',
-          }),
-        },
-        {
           name: 'Filters',
           label: t('SIDEBAR.CAPTAIN_FILTERS'),
           activeOn: ['captain_assistants_filters_index'],

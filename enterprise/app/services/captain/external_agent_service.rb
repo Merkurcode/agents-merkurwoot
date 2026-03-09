@@ -57,6 +57,10 @@ class Captain::ExternalAgentService
     }
 
     payload[:filter_run_conversation_id] = filter_run_conversation_id if filter_run_conversation_id
+
+    agent_bot = AgentBot.find_by(account_id: account.id)
+    payload[:agent_bot_id] = agent_bot.id if agent_bot
+
     payload
   end
 

@@ -128,7 +128,7 @@
         "SECTION_INDUSTRY_DESC": "Determina las herramientas habilitadas por defecto y los ejemplos del catálogo.",
         "NAME_LABEL": "Nombre del agente",
         "NAME_PLACEHOLDER": "Ej. Toyota Polanco WhatsApp",
-        "DESCRIPTION_LABEL": "Descripción del negocio",
+        "DESCRIPTION_LABEL": "Descripción del agente de IA",
         "DESCRIPTION_PLACEHOLDER": "Agencia automotriz Toyota ubicada en Polanco, CDMX. Vendemos vehículos nuevos y seminuevos...",
         "DESCRIPTION_HINT": "Se inyecta como {agency_summary} en el prompt del agente.",
         "WEBHOOK_LABEL": "URL de Webhook",
@@ -195,10 +195,10 @@
         "SECTION_CONTEXT_DESC": "Historial máximo de conversación enviado al modelo en cada interacción.",
         "MODEL_LABEL": "Modelo de lenguaje",
         "MODELS": {
-          "gpt-4o": "gpt-4o — Mejor calidad · Mayor costo",
           "gpt-4o-mini": "gpt-4o-mini — Balanceado · Recomendado para producción",
-          "gpt-4-turbo": "gpt-4-turbo — Alta capacidad de contexto",
-          "claude-sonnet-4-6": "claude-sonnet-4-6 — Alternativa Anthropic"
+          "gpt-5-nano": "GPT-5 nano — Más rápido · Menor costo",
+          "gpt-5-mini": "GPT-5 mini — Balanceado · Próxima generación",
+          "gemini-2_5-flash-lite": "gemini-2.5-flash-lite — Google · Ultra rápido"
         },
         "TEMPERATURE_LABEL": "Temperatura",
         "TEMPERATURE_HINT_LOW": "Preciso / Consistente",
@@ -213,7 +213,17 @@
           "unlimited": "Libre — Sin límite — Para canales web o email"
         },
         "MAX_TOKENS_LABEL": "Tokens máximos en historial (message trimmer)",
-        "MAX_TOKENS_HINT": "Controla cuánto historial previo recibe el LLM en cada turno."
+        "MAX_TOKENS_HINT": "Controla cuánto historial previo recibe el LLM en cada turno.",
+        "SECTION_API_KEYS": "API keys de proveedores",
+        "SECTION_API_KEYS_DESC": "Reemplaza las API keys por defecto de cada proveedor. Déjalo en blanco para usar la clave por defecto de la plataforma.",
+        "OPENAI_API_KEY_LABEL": "API key de OpenAI",
+        "OPENAI_API_KEY_PLACEHOLDER": "sk-...",
+        "OPENAI_API_KEY_HINT": "Usada para modelos GPT. Reemplaza la clave por defecto de la plataforma.",
+        "OPENAI_API_KEY_SET_HINT": "Ya hay una clave guardada. Ingresa un nuevo valor para reemplazarla.",
+        "GOOGLE_API_KEY_LABEL": "API key de Google",
+        "GOOGLE_API_KEY_PLACEHOLDER": "AIza...",
+        "GOOGLE_API_KEY_HINT": "Usada para modelos Gemini. Reemplaza la clave por defecto de la plataforma.",
+        "GOOGLE_API_KEY_SET_HINT": "Ya hay una clave guardada. Ingresa un nuevo valor para reemplazarla."
       },
       "CAPABILITIES": {
         "SECTION_MODULES": "Módulos del agente",

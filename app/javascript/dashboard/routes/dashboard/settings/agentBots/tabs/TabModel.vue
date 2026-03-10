@@ -1,14 +1,34 @@
 <script setup>
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SettingsSection from 'dashboard/components/SettingsSection.vue';
 
-defineProps({
+const props = defineProps({
   form: { type: Object, required: true },
 });
 
 const { t } = useI18n();
 
-const MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'claude-sonnet-4-6'];
+const OPENAI_MODELS = new Set(['gpt-4o-mini', 'gpt-5-nano', 'gpt-5-mini']);
+const GOOGLE_MODELS = new Set(['gemini-2.5-flash-lite']);
+
+const MODELS = [
+  { id: 'gpt-4o-mini', key: 'gpt-4o-mini' },
+  { id: 'gpt-5-nano', key: 'gpt-5-nano' },
+  { id: 'gpt-5-mini', key: 'gpt-5-mini' },
+  { id: 'gemini-2.5-flash-lite', key: 'gemini-2_5-flash-lite' },
+];
+
+const selectedModel = computed(
+  () => props.form.agent_behavior_config.response.model_name
+);
+const showOpenAiKey = computed(() => OPENAI_MODELS.has(selectedModel.value));
+const showGoogleKey = computed(() => GOOGLE_MODELS.has(selectedModel.value));
+
+watch(selectedModel, () => {
+  if (!showOpenAiKey.value) props.form.openai_api_key = '';
+  if (!showGoogleKey.value) props.form.google_api_key = '';
+});
 
 const WORD_LIMIT_OPTIONS = [
   { value: '20-40', key: 'short' },
@@ -27,23 +47,23 @@ const WORD_LIMIT_OPTIONS = [
       <div class="flex flex-col gap-2">
         <label
           v-for="model in MODELS"
-          :key="model"
+          :key="model.id"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors"
           :class="
-            form.agent_behavior_config.response.model_name === model
+            form.agent_behavior_config.response.model_name === model.id
               ? 'border-n-brand bg-n-blue-1'
               : 'border-n-weak hover:bg-n-alpha-1'
           "
         >
           <input
             type="radio"
-            :value="model"
-            :checked="form.agent_behavior_config.response.model_name === model"
+            :value="model.id"
+            :checked="form.agent_behavior_config.response.model_name === model.id"
             class="accent-n-brand"
-            @change="form.agent_behavior_config.response.model_name = model"
+            @change="form.agent_behavior_config.response.model_name = model.id"
           />
           <span class="text-sm text-n-slate-12">
-            {{ $t(`AGENT_BOTS.CONFIG.MODEL.MODELS.${model}`) }}
+            {{ $t(`AGENT_BOTS.CONFIG.MODEL.MODELS.${model.key}`) }}
           </span>
         </label>
       </div>
@@ -126,7 +146,6 @@ const WORD_LIMIT_OPTIONS = [
     <SettingsSection
       :title="$t('AGENT_BOTS.CONFIG.MODEL.SECTION_CONTEXT')"
       :sub-title="$t('AGENT_BOTS.CONFIG.MODEL.SECTION_CONTEXT_DESC')"
-      :show-border="false"
     >
       <div class="flex flex-col gap-2">
         <label class="text-sm font-medium text-n-slate-12">
@@ -149,6 +168,54 @@ const WORD_LIMIT_OPTIONS = [
         <p class="text-xs text-n-slate-11">
           {{ $t('AGENT_BOTS.CONFIG.MODEL.MAX_TOKENS_HINT') }}
         </p>
+      </div>
+    </SettingsSection>
+
+    <SettingsSection
+      v-if="showOpenAiKey || showGoogleKey"
+      :title="$t('AGENT_BOTS.CONFIG.MODEL.SECTION_API_KEYS')"
+      :sub-title="$t('AGENT_BOTS.CONFIG.MODEL.SECTION_API_KEYS_DESC')"
+      :show-border="false"
+    >
+      <div class="flex flex-col gap-4">
+        <div v-if="showOpenAiKey" class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-n-slate-12">
+            {{ $t('AGENT_BOTS.CONFIG.MODEL.OPENAI_API_KEY_LABEL') }}
+          </label>
+          <input
+            type="password"
+            :value="form.openai_api_key"
+            :placeholder="$t('AGENT_BOTS.CONFIG.MODEL.OPENAI_API_KEY_PLACEHOLDER')"
+            class="px-3 py-2 text-sm rounded-lg border border-n-weak bg-n-background text-n-slate-12 focus:outline-none focus:ring-2 focus:ring-n-brand"
+            @input="e => (form.openai_api_key = e.target.value)"
+          />
+          <p class="text-xs text-n-slate-11">
+            {{
+              form.has_openai_api_key
+                ? $t('AGENT_BOTS.CONFIG.MODEL.OPENAI_API_KEY_SET_HINT')
+                : $t('AGENT_BOTS.CONFIG.MODEL.OPENAI_API_KEY_HINT')
+            }}
+          </p>
+        </div>
+        <div v-if="showGoogleKey" class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-n-slate-12">
+            {{ $t('AGENT_BOTS.CONFIG.MODEL.GOOGLE_API_KEY_LABEL') }}
+          </label>
+          <input
+            type="password"
+            :value="form.google_api_key"
+            :placeholder="$t('AGENT_BOTS.CONFIG.MODEL.GOOGLE_API_KEY_PLACEHOLDER')"
+            class="px-3 py-2 text-sm rounded-lg border border-n-weak bg-n-background text-n-slate-12 focus:outline-none focus:ring-2 focus:ring-n-brand"
+            @input="e => (form.google_api_key = e.target.value)"
+          />
+          <p class="text-xs text-n-slate-11">
+            {{
+              form.has_google_api_key
+                ? $t('AGENT_BOTS.CONFIG.MODEL.GOOGLE_API_KEY_SET_HINT')
+                : $t('AGENT_BOTS.CONFIG.MODEL.GOOGLE_API_KEY_HINT')
+            }}
+          </p>
+        </div>
       </div>
     </SettingsSection>
   </div>

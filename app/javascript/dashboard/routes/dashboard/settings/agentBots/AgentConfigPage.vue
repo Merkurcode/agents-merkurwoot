@@ -105,6 +105,10 @@ const formState = reactive({
   thumbnail: '',
   assistant_config: defaultAssistantConfig(),
   agent_behavior_config: defaultBehaviorConfig(),
+  openai_api_key: '',
+  google_api_key: '',
+  has_openai_api_key: false,
+  has_google_api_key: false,
 });
 
 const initForm = () => {
@@ -115,6 +119,10 @@ const initForm = () => {
   formState.description = b.description || '';
   formState.outgoing_url = b.outgoing_url || b.bot_config?.webhook_url || '';
   formState.thumbnail = b.thumbnail || '';
+  formState.has_openai_api_key = b.has_openai_api_key || false;
+  formState.has_google_api_key = b.has_google_api_key || false;
+  formState.openai_api_key = '';
+  formState.google_api_key = '';
 
   const ac = b.assistant_config || {};
   Object.assign(formState.assistant_config, defaultAssistantConfig(), ac);
@@ -165,15 +173,19 @@ const onTabChange = index => {
 };
 
 const handleSave = async () => {
+  const data = {
+    name: formState.name,
+    description: formState.description,
+    outgoing_url: formState.outgoing_url,
+    assistant_config: formState.assistant_config,
+    agent_behavior_config: formState.agent_behavior_config,
+  };
+  if (formState.openai_api_key) data.openai_api_key = formState.openai_api_key;
+  if (formState.google_api_key) data.google_api_key = formState.google_api_key;
+
   const result = await store.dispatch('agentBots/updateConfig', {
     id: botId.value,
-    data: {
-      name: formState.name,
-      description: formState.description,
-      outgoing_url: formState.outgoing_url,
-      assistant_config: formState.assistant_config,
-      agent_behavior_config: formState.agent_behavior_config,
-    },
+    data,
   });
   if (result) useAlert(t('AGENT_BOTS.CONFIG.SUCCESS_MESSAGE'));
   else useAlert(t('AGENT_BOTS.CONFIG.ERROR_MESSAGE'));

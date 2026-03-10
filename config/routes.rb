@@ -613,6 +613,8 @@ Rails.application.routes.draw do
 
     # Agent Bot API — authenticated via X-Bot-Token header
     namespace :agent_bot do
+      resource :profile, only: [:show], controller: 'profiles'
+      resource :credentials, only: [:show], controller: 'credentials'
       resources :conversations, only: [] do
         resource :reengagement, only: [:destroy],
                                 controller: 'conversation_reengagements'

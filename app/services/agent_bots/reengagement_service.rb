@@ -102,7 +102,14 @@ class AgentBots::ReengagementService
       max_attempts: attempts.length,
       trigger_started_at: @reengagement.trigger_started_at&.iso8601,
       conversation: @conversation.webhook_data,
-      account: { id: @conversation.account_id, name: @conversation.account.name }
+      account: { id: @conversation.account_id, name: @conversation.account.name },
+      agent_bot_config: {
+        assistant_config: @agent_bot.assistant_config,
+        agent_behavior_config: @agent_bot.agent_behavior_config,
+        has_openai_api_key: @agent_bot.has_openai_api_key?,
+        has_google_api_key: @agent_bot.has_google_api_key?,
+        has_pinecone_api_key: @agent_bot.account&.pinecone_api_key.present?
+      }
     }
 
     AgentBots::WebhookJob.perform_later(

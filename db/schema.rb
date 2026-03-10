@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_06_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -106,6 +106,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_06_000001) do
     t.string "pinecone_index"
     t.bigint "feature_flags_2", default: 0, null: false
     t.bigint "product_catalog_version", default: 0, null: false
+    t.string "pinecone_api_key"
     t.index ["status"], name: "index_accounts_on_status"
   end
 
@@ -166,6 +167,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_06_000001) do
     t.jsonb "bot_config", default: {}
     t.jsonb "assistant_config", default: {}
     t.jsonb "agent_behavior_config", default: {}
+    t.string "openai_api_key"
+    t.string "google_api_key"
     t.index ["account_id"], name: "index_agent_bots_on_account_id"
   end
 

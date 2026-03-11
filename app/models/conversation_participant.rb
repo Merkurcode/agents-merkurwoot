@@ -17,6 +17,8 @@
 #  index_conversation_participants_on_user_id_and_conversation_id  (user_id,conversation_id) UNIQUE
 #
 class ConversationParticipant < ApplicationRecord
+  enum role: { participant: 0, assignee: 1 }
+
   validates :account_id, presence: true
   validates :conversation_id, presence: true
   validates :user_id, presence: true

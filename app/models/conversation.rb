@@ -128,6 +128,9 @@ class Conversation < ApplicationRecord
   belongs_to :campaign, optional: true
   belongs_to :pipeline_status, optional: true
 
+  has_many :assignee_participants, -> { assignee }, class_name: 'ConversationParticipant', dependent: :destroy_async
+  has_many :assignees, through: :assignee_participants, source: :user
+
   has_many :mentions, dependent: :destroy_async
   has_many :messages, dependent: :destroy_async, autosave: true
   has_one :csat_survey_response, dependent: :destroy_async

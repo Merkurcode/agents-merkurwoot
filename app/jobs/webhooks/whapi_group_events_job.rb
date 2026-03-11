@@ -87,32 +87,81 @@ class Webhooks::WhapiGroupEventsJob < ApplicationJob
   def process_group_message(message_data)
     group_id = message_data['chat_id']
 
-    # Find the inbox and conversation for this group
-    contact_inbox = ContactInbox.joins(:inbox)
-                                .where(source_id: group_id)
-                                .where(inboxes: { channel_type: 'Channel::Api' })
-                                .first
-
-    unless contact_inbox
-      Rails.logger.warn "[WHATSAPP GROUPS] No contact_inbox found for group: #{group_id}"
+    conversation = Conversation.whatsapp_group.find_by(whatsapp_group_id: group_id)
+    unless conversation
+      Rails.logger.warn "[WHATSAPP GROUPS] No conversation found for group: #{group_id}"
       return
     end
 
-    inbox = contact_inbox.inbox
-    Rails.logger.info "[WHATSAPP GROUPS] Processing message for inbox: #{inbox.id}"
+    Rails.logger.info "[WHATSAPP GROUPS] Processing message for conversation #{conversation.id}"
 
-    # Use the existing IncomingMessageWhapiService to process the message
+    inbox = conversation.inbox
+    sender = find_or_create_sender(message_data, conversation.account, inbox)
+    contact = sender.is_a?(User) ? conversation.contact : sender
+
     Whatsapp::IncomingMessageWhapiService.new(
       inbox: inbox,
-      params: message_data
+      params: message_data,
+      contact: contact
     ).perform
   end
 
-  def process_group_event
-    # Handle group-specific events (group created, participant added/removed, etc.)
-    Rails.logger.info "[WHATSAPP GROUPS] Group event received: #{@payload.inspect}"
+  def find_or_create_sender(message_data, account, inbox)
+    phone = "+#{message_data['from']}"
+    name = message_data['from_name'].presence || phone
 
-    # You can add specific handling for group events here
-    # For example: participant changes, group name updates, etc.
+    user = account.users.find { |u| u.phone_number == phone }
+    return user if user
+
+    contact = account.contacts.find_by(phone_number: phone)
+    unless contact
+      contact = account.contacts.create!(name: name, phone_number: phone)
+      ContactInbox.find_or_create_by!(contact: contact, inbox: inbox) do |ci|
+        ci.source_id = message_data['from']
+      end
+    end
+
+    contact
+  end
+
+  def process_group_event
+    groups_participants = @payload['groups_participants'] || []
+
+    groups_participants.each do |participant_event|
+      case participant_event['action']
+      when 'add'
+        handle_participants_added(participant_event)
+      else
+        Rails.logger.info "[WHATSAPP GROUPS] Unhandled group action: #{participant_event['action']}"
+      end
+    end
+  end
+
+  def handle_participants_added(participant_event)
+    group_id = participant_event['group_id']
+    conversation = Conversation.whatsapp_group.find_by(whatsapp_group_id: group_id)
+
+    unless conversation
+      Rails.logger.warn "[WHATSAPP GROUPS] No conversation found for group: #{group_id}"
+      return
+    end
+
+    participant_event['participants'].each do |phone|
+      add_participant_to_conversation(phone, conversation)
+    end
+  end
+
+  def add_participant_to_conversation(phone, conversation)
+    formatted_phone = "+#{phone}"
+    contact = conversation.account.contacts.find_by(phone_number: formatted_phone)
+    contact ||= conversation.account.contacts.create!(name: formatted_phone, phone_number: formatted_phone)
+
+    participants = conversation.additional_attributes['participants'] || []
+    return if participants.any? { |p| p['whapi_id'] == phone }
+
+    participants << { 'rank' => 'member', 'phone' => phone, 'whapi_id' => phone, 'user_id' => nil, 'contact_id' => contact.id }
+
+    conversation.update!(additional_attributes: conversation.additional_attributes.merge('participants' => participants))
+    Rails.logger.info "[WHATSAPP GROUPS] Added participant #{phone} (contact #{contact.id}) to conversation #{conversation.id}"
   end
 end

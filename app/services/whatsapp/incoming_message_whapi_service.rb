@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Whatsapp::IncomingMessageWhapiService
-  pattr_initialize [:inbox!, :params!]
+  pattr_initialize [:inbox!, :params!, :contact]
 
   def perform
     return if message_already_processed?
@@ -26,6 +26,12 @@ class Whatsapp::IncomingMessageWhapiService
   end
 
   def set_contact
+    # contact pre-resolved externally (e.g. from WhapiGroupEventsJob)
+    if @contact
+      @contact_inbox = @contact.contact_inboxes.find_by(inbox: inbox)
+      return
+    end
+
     chat_id = params['chat_id'] || params['from']
     is_group = chat_id.to_s.include?('@g.us')
 
@@ -78,13 +84,19 @@ class Whatsapp::IncomingMessageWhapiService
   end
 
   def find_or_build_group_conversation
-    # Find existing group conversation for this contact_inbox
-    conversation = ::Conversation.find_by(
-      contact_inbox_id: @contact_inbox.id,
-      conversation_type: :whatsapp_group
-    )
+    group_id = params['chat_id']
 
-    conversation || build_conversation(conversation_type: :whatsapp_group)
+    if group_id
+      conversation = inbox.conversations.whatsapp_group.find_by(whatsapp_group_id: group_id)
+      return conversation if conversation
+    end
+
+    if @contact_inbox
+      conversation = ::Conversation.find_by(contact_inbox_id: @contact_inbox.id, conversation_type: :whatsapp_group)
+      return conversation if conversation
+    end
+
+    build_conversation(conversation_type: :whatsapp_group, whatsapp_group_id: group_id)
   end
 
   def find_or_build_individual_conversation
@@ -92,10 +104,7 @@ class Whatsapp::IncomingMessageWhapiService
   end
 
   def build_conversation(additional_params = {})
-    ::Conversation.new(conversation_params.merge(
-      contact_id: @contact.id,
-      contact_inbox_id: @contact_inbox.id
-    ).merge(additional_params))
+    ::Conversation.new(conversation_params.merge(additional_params))
   end
 
   def conversation_params
@@ -103,7 +112,7 @@ class Whatsapp::IncomingMessageWhapiService
       account_id: inbox.account_id,
       inbox_id: inbox.id,
       contact_id: @contact.id,
-      contact_inbox_id: @contact_inbox.id
+      contact_inbox_id: @contact_inbox&.id
     }
   end
 

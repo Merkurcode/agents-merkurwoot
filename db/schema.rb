@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_23_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -106,6 +106,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_23_000001) do
     t.string "pinecone_index"
     t.bigint "feature_flags_2", default: 0, null: false
     t.bigint "product_catalog_version", default: 0, null: false
+    t.string "pinecone_api_key"
     t.index ["status"], name: "index_accounts_on_status"
   end
 
@@ -164,6 +165,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_23_000001) do
     t.bigint "account_id"
     t.integer "bot_type", default: 0
     t.jsonb "bot_config", default: {}
+    t.jsonb "assistant_config", default: {}
+    t.jsonb "agent_behavior_config", default: {}
+    t.string "openai_api_key"
+    t.string "google_api_key"
     t.index ["account_id"], name: "index_agent_bots_on_account_id"
   end
 
@@ -403,6 +408,46 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_23_000001) do
     t.text "content"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+  end
+
+  create_table "captain_assistant_filter_run_conversations", force: :cascade do |t|
+    t.bigint "filter_run_id", null: false
+    t.bigint "conversation_id", null: false
+    t.integer "status", default: 0, null: false
+    t.text "error_message"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id"], name: "idx_on_conversation_id_fdc36da5ff"
+    t.index ["filter_run_id", "conversation_id"], name: "idx_on_filter_run_id_conversation_id_b3776d59a5", unique: true
+    t.index ["filter_run_id"], name: "idx_on_filter_run_id_4c5ad2c94b"
+  end
+
+  create_table "captain_assistant_filter_runs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "assistant_filter_id", null: false
+    t.integer "triggered_by_id"
+    t.datetime "scheduled_at"
+    t.text "message"
+    t.integer "status", default: 0, null: false
+    t.integer "conversations_total", default: 0, null: false
+    t.integer "conversations_processed", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_assistant_filter_runs_on_account_id"
+    t.index ["assistant_filter_id"], name: "index_captain_assistant_filter_runs_on_assistant_filter_id"
+  end
+
+  create_table "captain_assistant_filters", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "captain_assistant_id", null: false
+    t.string "name", null: false
+    t.jsonb "filters", default: [], null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_assistant_filters_on_account_id"
+    t.index ["captain_assistant_id"], name: "index_captain_assistant_filters_on_captain_assistant_id"
   end
 
   create_table "captain_assistant_responses", force: :cascade do |t|
@@ -812,6 +857,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_23_000001) do
     t.index ["conversation_id"], name: "index_conversation_participants_on_conversation_id"
     t.index ["user_id", "conversation_id"], name: "index_conversation_participants_on_user_id_and_conversation_id", unique: true
     t.index ["user_id"], name: "index_conversation_participants_on_user_id"
+  end
+
+  create_table "conversation_reengagements", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.bigint "agent_bot_id", null: false
+    t.string "status", default: "active", null: false
+    t.integer "current_attempt", default: 0, null: false
+    t.datetime "trigger_started_at"
+    t.datetime "next_fire_at"
+    t.datetime "last_attempt_fired_at"
+    t.datetime "processing_started_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agent_bot_id"], name: "index_conversation_reengagements_on_agent_bot_id"
+    t.index ["conversation_id"], name: "index_conversation_reengagements_on_conversation_id", unique: true
+    t.index ["processing_started_at"], name: "index_conversation_reengagements_on_processing_started_at"
+    t.index ["status", "next_fire_at"], name: "index_conversation_reengagements_on_status_and_next_fire_at"
   end
 
   create_table "conversations", id: :serial, force: :cascade do |t|
@@ -1850,12 +1913,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_23_000001) do
   add_foreign_key "bulk_processing_requests", "users"
   add_foreign_key "campaign_contacts", "campaigns"
   add_foreign_key "campaign_contacts", "contacts"
+  add_foreign_key "captain_assistant_filter_run_conversations", "captain_assistant_filter_runs", column: "filter_run_id"
+  add_foreign_key "captain_assistant_filter_run_conversations", "conversations"
+  add_foreign_key "captain_assistant_filter_runs", "accounts"
+  add_foreign_key "captain_assistant_filter_runs", "captain_assistant_filters", column: "assistant_filter_id"
+  add_foreign_key "captain_assistant_filters", "accounts"
+  add_foreign_key "captain_assistant_filters", "captain_assistants"
   add_foreign_key "contact_survey_completions", "accounts"
   add_foreign_key "contact_survey_completions", "contacts"
   add_foreign_key "contact_survey_completions", "surveys"
   add_foreign_key "conversation_follow_ups", "conversations"
   add_foreign_key "conversation_follow_ups", "lead_follow_up_sequences"
   add_foreign_key "conversation_follow_ups", "sequence_enrollments"
+  add_foreign_key "conversation_reengagements", "agent_bots"
+  add_foreign_key "conversation_reengagements", "conversations"
   add_foreign_key "conversations", "pipeline_statuses"
   add_foreign_key "crm_flow_executions", "contacts"
   add_foreign_key "crm_flow_executions", "conversations"

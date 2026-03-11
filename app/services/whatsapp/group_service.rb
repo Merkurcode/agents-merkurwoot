@@ -159,6 +159,7 @@ class Whatsapp::GroupService
       contact_inbox: group_contact_inbox,
       assignee: conversation.assignee,
       conversation_type: :whatsapp_group,
+      whatsapp_group_id: group_id,
       additional_attributes: {
         whatsapp_group_id: group_id,
         whatsapp_group_name: group_subject,

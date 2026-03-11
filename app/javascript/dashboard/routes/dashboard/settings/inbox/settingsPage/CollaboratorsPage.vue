@@ -42,6 +42,8 @@ const availablePolicies = ref([]);
 const isLoadingPolicies = ref(false);
 const showPolicyDropdown = ref(false);
 const isLinkingPolicy = ref(false);
+const assignmentType = ref('individual');
+const defaultGroupPhone = ref('');
 
 const agentList = computed(() => store.getters['agents/getAgents']);
 
@@ -143,6 +145,26 @@ const maxAssignmentLimitErrors = computed(() => {
   }
   return '';
 });
+
+const setDefaults = () => {
+  enableAutoAssignment.value = props.inbox.enable_auto_assignment;
+  maxAssignmentLimit.value =
+    props.inbox?.auto_assignment_config?.max_assignment_limit || null;
+  defaultGroupPhone.value =
+    props.inbox?.auto_assignment_config?.default_group_phone || '';
+
+  const configuredType =
+    props.inbox?.auto_assignment_config?.assignment_type || 'individual';
+
+  // Reset to 'individual' if 'group' is configured but feature is disabled
+  if (configuredType === 'group' && !isWhatsAppGroupsEnabled.value) {
+    assignmentType.value = 'individual';
+  } else {
+    assignmentType.value = configuredType;
+  }
+
+  fetchAttachedAgents();
+};
 
 const fetchAttachedAgents = async () => {
   try {
@@ -283,6 +305,8 @@ const updateInbox = async () => {
       enable_auto_assignment: enableAutoAssignment.value,
       auto_assignment_config: {
         max_assignment_limit: maxAssignmentLimit.value,
+        assignment_type: assignmentType.value,
+        default_group_phone: defaultGroupPhone.value,
       },
     };
     await store.dispatch('inboxes/updateInbox', payload);
@@ -695,5 +719,25 @@ onMounted(() => {
         </div>
       </div>
     </woot-modal>
+
+    <SettingsSection
+      :title="$t('INBOX_MGMT.WHATSAPP_GROUP_DEFAULT_PHONE.TITLE')"
+      :sub-title="$t('INBOX_MGMT.WHATSAPP_GROUP_DEFAULT_PHONE.SUB_TITLE')"
+    >
+      <div class="flex flex-col gap-4">
+        <woot-input
+          v-model="defaultGroupPhone"
+          type="tel"
+          :label="$t('INBOX_MGMT.WHATSAPP_GROUP_DEFAULT_PHONE.LABEL')"
+          :placeholder="$t('INBOX_MGMT.WHATSAPP_GROUP_DEFAULT_PHONE.PLACEHOLDER')"
+        />
+        <div>
+          <NextButton
+            :label="$t('INBOX_MGMT.SETTINGS_POPUP.UPDATE')"
+            @click="updateInbox"
+          />
+        </div>
+      </div>
+    </SettingsSection>
   </div>
 </template>

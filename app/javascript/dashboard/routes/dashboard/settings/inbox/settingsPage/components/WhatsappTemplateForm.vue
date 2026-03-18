@@ -623,26 +623,39 @@ const resolveVariableValue = (varName, visited = new Set()) => {
   return resolved;
 };
 
+// Sanitize HTML to prevent XSS attacks
+const escapeHtml = (text) => {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+};
+
 // Replace variables with example values in preview, or highlight if no example
 const replaceVariablesWithExamples = text => {
   if (!text) return '';
 
   // First replace variables with resolved example values
   let result = text.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
+    // Sanitize varName to prevent XSS
+    const safeVarName = escapeHtml(varName);
+
     // Check if variable format is incorrect
     if (!isVariableFormatCorrect(varName)) {
       // Highlight in red for incorrect format
-      return `<span class="px-1 py-0.5 mx-0.5 text-xs font-medium rounded bg-n-ruby-3 text-n-ruby-11">{{${varName}}}</span>`;
+      return `<span class="px-1 py-0.5 mx-0.5 text-xs font-medium rounded bg-n-ruby-3 text-n-ruby-11">{{${safeVarName}}}</span>`;
     }
 
     // Get resolved value (with nested variables replaced)
     const resolvedValue = resolveVariableValue(varName);
     if (resolvedValue !== null) {
+      // Sanitize resolved value to prevent XSS
+      const safeValue = escapeHtml(resolvedValue);
       // Show resolved example value with highlight
-      return `<span class="px-1 py-0.5 mx-0.5 text-xs font-medium rounded bg-n-teal-3 text-n-teal-11">${resolvedValue}</span>`;
+      return `<span class="px-1 py-0.5 mx-0.5 text-xs font-medium rounded bg-n-teal-3 text-n-teal-11">${safeValue}</span>`;
     }
     // Show variable placeholder if no example
-    return `<span class="px-1 py-0.5 mx-0.5 text-xs font-medium rounded bg-n-amber-3 text-n-amber-11">{{${varName}}}</span>`;
+    return `<span class="px-1 py-0.5 mx-0.5 text-xs font-medium rounded bg-n-amber-3 text-n-amber-11">{{${safeVarName}}}</span>`;
   });
 
   // Then apply WhatsApp formatting

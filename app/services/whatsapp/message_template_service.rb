@@ -5,6 +5,7 @@ class Whatsapp::MessageTemplateService
   ALLOWED_CATEGORIES = %w[MARKETING UTILITY].freeze
   ALLOWED_HEADER_FORMATS = %w[TEXT IMAGE VIDEO DOCUMENT].freeze
   MAX_EXAMPLE_VALUE_LENGTH = 1024
+  HTTP_TIMEOUT = 120 # 2 minutes timeout for Meta API requests
 
   # Template limits
   LIMITS = {
@@ -57,7 +58,7 @@ class Whatsapp::MessageTemplateService
     query_params[:before] = before if before.present?
 
     url = "#{business_account_path}/message_templates?#{query_params.to_query}"
-    response = HTTParty.get(url, headers: api_headers)
+    response = HTTParty.get(url, headers: api_headers, timeout: HTTP_TIMEOUT)
 
     if response.success?
       paging = response['paging'] || {}
@@ -86,7 +87,7 @@ class Whatsapp::MessageTemplateService
   def fetch_all_templates
     all_templates = []
     after_cursor = nil
-    max_iterations = 50 # Safety limit to prevent infinite loops
+    max_iterations = 60 # Safety limit: 60 pages * 100 = 6,000 templates (Meta's max limit)
 
     max_iterations.times do
       result = fetch_templates_page(limit: 100, after: after_cursor)
@@ -119,7 +120,8 @@ class Whatsapp::MessageTemplateService
     encoded_name = CGI.escape(template_name.to_s)
     response = HTTParty.get(
       "#{business_account_path}/message_templates?name=#{encoded_name}",
-      headers: api_headers
+      headers: api_headers,
+      timeout: HTTP_TIMEOUT
     )
 
     if response.success? && response['data']&.any?
@@ -153,7 +155,7 @@ class Whatsapp::MessageTemplateService
       delete_url += "&hsm_id=#{encoded_id}"
     end
 
-response = HTTParty.delete(delete_url, headers: api_headers)
+    response = HTTParty.delete(delete_url, headers: api_headers, timeout: HTTP_TIMEOUT)
 
     if response.success?
       { success: true }
@@ -465,7 +467,8 @@ response = HTTParty.delete(delete_url, headers: api_headers)
     HTTParty.post(
       "#{business_account_path}/message_templates",
       headers: api_headers,
-      body: request_body.to_json
+      body: request_body.to_json,
+      timeout: HTTP_TIMEOUT
     )
   end
 

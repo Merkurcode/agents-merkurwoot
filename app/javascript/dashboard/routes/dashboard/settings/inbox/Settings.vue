@@ -215,6 +215,10 @@ export default {
             key: 'whatsapp-health',
             name: this.$t('INBOX_MGMT.TABS.ACCOUNT_HEALTH'),
           },
+          {
+            key: 'whatsapp-templates',
+            name: this.$t('INBOX_MGMT.TABS.WHATSAPP_TEMPLATES'),
+          },
         ];
       }
 
@@ -1244,6 +1248,9 @@ export default {
             @register-webhook="registerWebhook"
           />
         </div>
+      </div>
+      <div v-if="selectedTabKey === 'whatsapp-templates'">
+        <WhatsappTemplatesPage :inbox="inbox" />
       </div>
     </section>
   </div>

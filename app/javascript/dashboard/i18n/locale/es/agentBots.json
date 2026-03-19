@@ -198,7 +198,7 @@
           "gpt-4o-mini": "gpt-4o-mini — Balanceado · Recomendado para producción",
           "gpt-5-nano": "GPT-5 nano — Más rápido · Menor costo",
           "gpt-5-mini": "GPT-5 mini — Balanceado · Próxima generación",
-          "gemini-2_5-flash-lite": "gemini-2.5-flash-lite — Google · Ultra rápido"
+          "gemini-2_5-flash": "gemini-2.5-flash — Google · Rápido con soporte de tools"
         },
         "TEMPERATURE_LABEL": "Temperatura",
         "TEMPERATURE_HINT_LOW": "Preciso / Consistente",

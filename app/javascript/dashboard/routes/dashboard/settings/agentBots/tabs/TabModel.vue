@@ -10,13 +10,15 @@ const props = defineProps({
 const { t } = useI18n();
 
 const OPENAI_MODELS = new Set(['gpt-4o-mini', 'gpt-5-nano', 'gpt-5-mini']);
-const GOOGLE_MODELS = new Set(['gemini-2.5-flash-lite']);
+const GOOGLE_MODELS = new Set(['gemini-2.5-flash']);
+// Reasoning models don't expose temperature; passing a value != 1 raises 400
+const NO_TEMPERATURE_MODELS = new Set(['gpt-5-nano', 'gpt-5-mini']);
 
 const MODELS = [
   { id: 'gpt-4o-mini', key: 'gpt-4o-mini' },
   { id: 'gpt-5-nano', key: 'gpt-5-nano' },
   { id: 'gpt-5-mini', key: 'gpt-5-mini' },
-  { id: 'gemini-2.5-flash-lite', key: 'gemini-2_5-flash-lite' },
+  { id: 'gemini-2.5-flash', key: 'gemini-2_5-flash' },
 ];
 
 const selectedModel = computed(
@@ -24,6 +26,9 @@ const selectedModel = computed(
 );
 const showOpenAiKey = computed(() => OPENAI_MODELS.has(selectedModel.value));
 const showGoogleKey = computed(() => GOOGLE_MODELS.has(selectedModel.value));
+const showTemperature = computed(
+  () => !NO_TEMPERATURE_MODELS.has(selectedModel.value)
+);
 
 watch(selectedModel, () => {
   if (!showOpenAiKey.value) props.form.openai_api_key = '';
@@ -70,6 +75,7 @@ const WORD_LIMIT_OPTIONS = [
     </SettingsSection>
 
     <SettingsSection
+      v-if="showTemperature"
       :title="$t('AGENT_BOTS.CONFIG.MODEL.SECTION_TEMPERATURE')"
       :sub-title="$t('AGENT_BOTS.CONFIG.MODEL.SECTION_TEMPERATURE_DESC')"
     >

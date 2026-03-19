@@ -91,8 +91,9 @@ class AgentBots::ReengagementService
     config   = @reengagement.reengagement_config
     attempts = config['attempts'] || []
 
+    reactivation_count = @reengagement.metadata&.dig('reactivation_count').to_i
     idempotency_key = Digest::SHA256.hexdigest(
-      "reengagement-#{@reengagement.id}-attempt-#{@reengagement.current_attempt}"
+      "reengagement-#{@reengagement.id}-attempt-#{@reengagement.current_attempt}-reactivation-#{reactivation_count}"
     )
 
     payload = {

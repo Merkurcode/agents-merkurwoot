@@ -202,6 +202,7 @@ onMounted(async () => {
     <SettingIntroBanner
       :header-image="formState.thumbnail"
       :header-title="formState.name"
+      :back-url="{ name: 'ai_agents', params: { accountId: route.params.accountId } }"
     >
       <div class="flex items-center justify-between pr-1">
         <woot-tabs

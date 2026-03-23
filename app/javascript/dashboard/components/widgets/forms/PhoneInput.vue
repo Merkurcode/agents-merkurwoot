@@ -148,11 +148,12 @@ export default {
     },
     setActiveCountry() {
       const { phoneNumber } = this;
-      if (!phoneNumber) return;
+      if (!phoneNumber || !phoneNumber.startsWith('+')) return;
       const number = parsePhoneNumber(phoneNumber);
       if (number) {
         this.activeCountryCode = number.country;
-        this.activeDialCode = number.countryCallingCode;
+        this.activeDialCode = `+${number.countryCallingCode}`;
+        this.phoneNumber = phoneNumber.replace(`+${number.countryCallingCode}`, '');
       }
     },
     toggleCountryDropdown() {

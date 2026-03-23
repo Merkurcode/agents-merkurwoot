@@ -48,7 +48,7 @@ const setPhoneNumber = computed(() => {
     return '';
   }
   return activeDialCode.value
-    ? `${activeDialCode.value}${agentPhoneNumber.value}`
+    ? `${activeDialCode.value}${agentPhoneNumber.value}`.replace(/\s/g, '')
     : '';
 });
 

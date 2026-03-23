@@ -194,7 +194,7 @@ export default {
       </div>
       <span
         v-if="activeDialCode"
-        class="flex py-2 ltr:pl-2 rtl:pr-2 text-base font-normal leading-normal text-n-slate-12"
+        class="flex py-2 ltr:pl-2 rtl:pr-2 text-base font-normal leading-normal text-n-slate-12 whitespace-nowrap"
       >
         {{ activeDialCode }}
       </span>

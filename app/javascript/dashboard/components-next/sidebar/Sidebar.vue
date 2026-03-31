@@ -752,7 +752,7 @@ const menuItems = computed(() => {
           name: 'Settings Agent Bots',
           label: t('SIDEBAR.AGENT_BOTS'),
           icon: 'i-lucide-bot',
-          to: accountScopedRoute('agent_bots'),
+          to: accountScopedRoute('ai_agents'),
         },
         {
           name: 'Settings Surveys',

@@ -97,6 +97,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_24_102005) do
     t.string "pinecone_index"
     t.bigint "feature_flags_2", default: 0, null: false
     t.bigint "product_catalog_version", default: 0, null: false
+    t.string "pinecone_api_key"
     t.index ["status"], name: "index_accounts_on_status"
   end
 
@@ -806,6 +807,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_24_102005) do
     t.index ["conversation_id"], name: "index_conversation_participants_on_conversation_id"
     t.index ["user_id", "conversation_id"], name: "index_conversation_participants_on_user_id_and_conversation_id", unique: true
     t.index ["user_id"], name: "index_conversation_participants_on_user_id"
+  end
+
+  create_table "conversation_reengagements", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.bigint "agent_bot_id", null: false
+    t.string "status", default: "active", null: false
+    t.integer "current_attempt", default: 0, null: false
+    t.datetime "trigger_started_at"
+    t.datetime "next_fire_at"
+    t.datetime "last_attempt_fired_at"
+    t.datetime "processing_started_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agent_bot_id"], name: "index_conversation_reengagements_on_agent_bot_id"
+    t.index ["conversation_id"], name: "index_conversation_reengagements_on_conversation_id", unique: true
+    t.index ["processing_started_at"], name: "index_conversation_reengagements_on_processing_started_at"
+    t.index ["status", "next_fire_at"], name: "index_conversation_reengagements_on_status_and_next_fire_at"
   end
 
   create_table "conversations", id: :serial, force: :cascade do |t|

@@ -231,9 +231,8 @@ export const actions = {
       sendAnalyticsEvent(channel.type);
       return response.data;
     } catch (error) {
-      const errorMessage = error?.response?.data?.message;
       commit(types.default.SET_INBOXES_UI_FLAG, { isCreating: false });
-      throw new Error(errorMessage);
+      return throwErrorMessage(error);
     }
   },
   createWebsiteChannel: async ({ commit }, params) => {
@@ -363,32 +362,10 @@ export const actions = {
       throw new Error(error);
     }
   },
-  setSurvey: async ({ commit, state }, { inboxId, surveyId }) => {
-    try {
-      await InboxesAPI.setSurvey(inboxId, surveyId);
-
-      const updatedInboxes = state.records.map(inbox => {
-        if (inbox.id === Number(inboxId)) {
-          return {
-            ...inbox,
-            survey_id: surveyId,
-          };
-        }
-        return inbox;
-      });
-
-      commit(types.default.SET_INBOXES, updatedInboxes);
-      return true;
-    } catch (error) {
-      throw new Error(error);
-    }
-  },
-
   createCSATTemplate: async (_, { inboxId, template }) => {
     const response = await InboxesAPI.createCSATTemplate(inboxId, template);
     return response.data;
   },
-
   getCSATTemplateStatus: async (_, { inboxId }) => {
     const response = await InboxesAPI.getCSATTemplateStatus(inboxId);
     return response.data;
@@ -437,6 +414,13 @@ export const actions = {
     } catch (error) {
       throw new Error(error);
     }
+  },
+  analyzeCSATTemplateUtility: async (_, { inboxId, template }) => {
+    const response = await InboxesAPI.analyzeCSATTemplateUtility(
+      inboxId,
+      template
+    );
+    return response.data;
   },
 };
 

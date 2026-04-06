@@ -1,16 +1,18 @@
 <script>
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
-import SettingsSection from 'dashboard/components/SettingsSection.vue';
+import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFieldSection.vue';
 import LoadingState from 'dashboard/components/widgets/LoadingState.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import SelectInput from 'dashboard/components-next/select/Select.vue';
 import FaqCategorySelector from './FaqCategorySelector.vue';
 
 export default {
   components: {
     LoadingState,
-    SettingsSection,
+    SettingsFieldSection,
     NextButton,
+    SelectInput,
     FaqCategorySelector,
   },
   props: {
@@ -32,11 +34,16 @@ export default {
       surveys: 'surveys/getSurveys',
       isFetchingSurveys: 'surveys/getUIFlags',
     }),
+    currentInboxId() {
+      return this.inbox?.id || this.$route.params.inboxId;
+    },
     activeInbox() {
       return this.inbox;
     },
     activeAgentBot() {
-      return this.$store.getters['agentBots/getActiveAgentBot'](this.inbox.id);
+      return this.$store.getters['agentBots/getActiveAgentBot'](
+        this.currentInboxId
+      );
     },
     activeSurvey() {
       return this.$store.getters['surveys/getSurvey'](
@@ -58,12 +65,15 @@ export default {
     },
   },
   mounted() {
-    this.$store.dispatch('agentBots/get');
-    this.$store.dispatch('agentBots/fetchAgentBotInbox', this.inbox.id);
+    this.fetchBotData();
     this.fetchSurveys();
   },
 
   methods: {
+    fetchBotData() {
+      this.$store.dispatch('agentBots/get');
+      this.$store.dispatch('agentBots/fetchAgentBotInbox', this.currentInboxId);
+    },
     async fetchSurveys() {
       try {
         await this.$store.dispatch('surveys/get');
@@ -119,7 +129,7 @@ export default {
 </script>
 
 <template>
-  <div class="mx-8">
+  <div class="mx-6 max-w-4xl">
     <LoadingState
       v-if="
         uiFlags.isFetching ||
@@ -127,85 +137,64 @@ export default {
         isFetchingSurveys.isFetching
       "
     />
-    <form
-      v-else
-      class="flex flex-wrap mx-0"
-      @submit.prevent="updateActiveAgentBot"
-    >
-      <!-- Bot Assignment Section -->
-      <SettingsSection
-        :title="$t('AGENT_BOTS.BOT_CONFIGURATION.TITLE')"
-        :sub-title="$t('AGENT_BOTS.BOT_CONFIGURATION.DESC')"
+    <form v-else @submit.prevent="updateActiveAgentBot">
+      <SettingsFieldSection
+        :label="$t('AGENT_BOTS.BOT_CONFIGURATION.TITLE')"
+        :help-text="$t('AGENT_BOTS.BOT_CONFIGURATION.DESC')"
+        class="[&>div]:!items-start"
       >
-        <div>
-          <label>
-            <select v-model="selectedAgentBotId">
-              <option value="" disabled selected>
-                {{ $t('AGENT_BOTS.BOT_CONFIGURATION.SELECT_PLACEHOLDER') }}
-              </option>
-              <option
-                v-for="agentBot in agentBots"
-                :key="agentBot.id"
-                :value="agentBot.id"
+        <SelectInput
+          v-model="selectedAgentBotId"
+          :placeholder="$t('AGENT_BOTS.BOT_CONFIGURATION.SELECT_PLACEHOLDER')"
+          :options="agentBots.map(bot => ({ value: bot.id, label: bot.name }))"
+        />
+        <template #extra>
+          <div class="grid grid-cols-1 lg:grid-cols-8 mt-3">
+            <div class="col-span-1 lg:col-span-2 invisible" />
+            <div class="col-span-1 lg:col-span-6 flex gap-2 mx-1">
+              <NextButton
+                type="submit"
+                :label="$t('AGENT_BOTS.BOT_CONFIGURATION.SUBMIT')"
+                :is-loading="uiFlags.isSettingAgentBot"
+              />
+              <NextButton
+                type="button"
+                :disabled="!selectedAgentBotId"
+                :is-loading="uiFlags.isDisconnecting"
+                faded
+                ruby
+                @click="disconnectBot"
               >
-                {{ agentBot.name }}
-              </option>
-            </select>
-          </label>
-        </div>
-      </SettingsSection>
+                {{ $t('AGENT_BOTS.BOT_CONFIGURATION.DISCONNECT') }}
+              </NextButton>
+            </div>
+          </div>
+        </template>
+      </SettingsFieldSection>
 
-      <!-- Survey Assignment Section -->
-      <SettingsSection
-        :title="$t('AGENT_BOTS.SURVEY.TITLE')"
-        :sub-title="$t('AGENT_BOTS.SURVEY.DESC')"
+      <SettingsFieldSection
+        :label="$t('AGENT_BOTS.SURVEY.TITLE')"
+        :help-text="$t('AGENT_BOTS.SURVEY.DESC')"
+        class="mt-6 [&>div]:!items-start"
       >
-        <div class="space-y-2">
-          <select
-            v-model="selectedSurveyId"
-            class="w-full rounded border-slate-200 focus:border-woot-500 focus:ring-0"
-            @change="updateSurveyAssignment"
-          >
-            <option :value="null">
-              {{ $t('AGENT_BOTS.SURVEY.SELECT_PLACEHOLDER') }}
-            </option>
-            <option
-              v-for="survey in surveys"
-              :key="survey.id"
-              :value="survey.id"
-            >
-              {{ survey.name }}
-            </option>
-          </select>
-        </div>
-      </SettingsSection>
+        <SelectInput
+          v-model="selectedSurveyId"
+          :placeholder="$t('AGENT_BOTS.SURVEY.SELECT_PLACEHOLDER')"
+          :options="[
+            { value: null, label: $t('AGENT_BOTS.SURVEY.SELECT_PLACEHOLDER') },
+            ...surveys.map(s => ({ value: s.id, label: s.name })),
+          ]"
+          @update:model-value="updateSurveyAssignment"
+        />
+      </SettingsFieldSection>
 
-      <!-- FAQ Categories Section -->
-      <SettingsSection
-        :title="$t('INBOX_MGMT.FAQ_CONFIGURATION.TITLE')"
-        :sub-title="$t('INBOX_MGMT.FAQ_CONFIGURATION.DESC')"
+      <SettingsFieldSection
+        :label="$t('INBOX_MGMT.FAQ_CONFIGURATION.TITLE')"
+        :help-text="$t('INBOX_MGMT.FAQ_CONFIGURATION.DESC')"
+        class="mt-6 [&>div]:!items-start"
       >
         <FaqCategorySelector ref="faqCategorySelector" :inbox-id="inbox.id" />
-      </SettingsSection>
-
-      <div class="button-container space-x-2 mb-8">
-        <NextButton
-          type="submit"
-          :label="$t('AGENT_BOTS.BOT_CONFIGURATION.SUBMIT')"
-          :is-loading="uiFlags.isSettingAgentBot"
-        />
-        <NextButton
-          v-if="selectedAgentBotId"
-          type="button"
-          :disabled="!selectedAgentBotId"
-          :is-loading="uiFlags.isDisconnecting"
-          faded
-          ruby
-          @click="disconnectBot"
-        >
-          {{ $t('AGENT_BOTS.BOT_CONFIGURATION.DISCONNECT') }}
-        </NextButton>
-      </div>
+      </SettingsFieldSection>
     </form>
   </div>
 </template>

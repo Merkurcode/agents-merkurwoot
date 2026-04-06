@@ -4,8 +4,9 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   before_action :fetch_agent_bot, only: [:set_agent_bot]
   before_action :validate_limit, only: [:create]
   # we are already handling the authorization in fetch inbox
-  before_action :check_authorization, except: [:show, :health]
-  before_action :validate_whatsapp_cloud_channel, only: [:health]
+  before_action :check_authorization, except: [:show]
+
+  include Api::V1::Accounts::Concerns::WhatsappHealthManagement
 
   def index
     @inboxes = policy_scope(Current.account.inboxes.order_by_name.includes(:channel, { avatar_attachment: [:blob] }))
@@ -90,23 +91,6 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     render status: :ok, json: { message: I18n.t('messages.inbox_deletetion_response') }
   end
 
-  def sync_templates
-    return render status: :unprocessable_entity, json: { error: 'Template sync is only available for WhatsApp channels' } unless whatsapp_channel?
-
-    trigger_template_sync
-    render status: :ok, json: { message: 'Template sync initiated successfully' }
-  rescue StandardError => e
-    render status: :internal_server_error, json: { error: e.message }
-  end
-
-  def health
-    health_data = Whatsapp::HealthService.new(@inbox.channel).fetch_health_status
-    render json: health_data
-  rescue StandardError => e
-    Rails.logger.error "[INBOX HEALTH] Error fetching health data: #{e.message}"
-    render json: { error: e.message }, status: :unprocessable_entity
-  end
-
   private
 
   def fetch_inbox
@@ -116,12 +100,6 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def fetch_agent_bot
     @agent_bot = AgentBot.find(params[:agent_bot]) if params[:agent_bot]
-  end
-
-  def validate_whatsapp_cloud_channel
-    return if @inbox.channel.is_a?(Channel::Whatsapp) && @inbox.channel.provider == 'whatsapp_cloud'
-
-    render json: { error: 'Health data only available for WhatsApp Cloud API channels' }, status: :bad_request
   end
 
   def create_channel
@@ -190,13 +168,6 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     formatted['template'] = config['template'] if config['template'].present?
   end
 
-  def format_auto_assignment_config(config)
-    formatted = {}
-    formatted[:max_assignment_limit] = config['max_assignment_limit'] if config.key?('max_assignment_limit')
-    formatted[:assignment_type] = config['assignment_type'] if config.key?('assignment_type')
-    formatted
-  end
-
   def inbox_attributes
     [:name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
@@ -238,18 +209,6 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def get_channel_attributes(channel_type)
     channel_type.constantize.const_defined?(:EDITABLE_ATTRS) ? channel_type.constantize::EDITABLE_ATTRS.presence : []
-  end
-
-  def whatsapp_channel?
-    @inbox.whatsapp? || (@inbox.twilio? && @inbox.channel.whatsapp?)
-  end
-
-  def trigger_template_sync
-    if @inbox.whatsapp?
-      Channels::Whatsapp::TemplatesSyncJob.perform_later(@inbox.channel)
-    elsif @inbox.twilio? && @inbox.channel.whatsapp?
-      Channels::Twilio::TemplatesSyncJob.perform_later(@inbox.channel)
-    end
   end
 
   def trigger_landing_page_generation

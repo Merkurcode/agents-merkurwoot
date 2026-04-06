@@ -61,14 +61,14 @@ class ContactAPI extends ApiClient {
     return axios.get(`${this.url}/${contactId}/survey_answers`);
   }
 
-  search(search = '', page = 1, sortAttr = 'name', label = '') {
+  search(search = '', page = 1, sortAttr = 'name', label = '', options = {}) {
     let requestURL = `${this.url}/search?${buildContactParams(
       page,
       sortAttr,
       label,
       search
     )}`;
-    return axios.get(requestURL);
+    return axios.get(requestURL, { signal: options.signal });
   }
 
   active(page = 1, sortAttr = 'name') {

@@ -30,6 +30,7 @@ class Company < ApplicationRecord
 
   belongs_to :account
   has_many :contacts, dependent: :nullify
+  after_create_commit :fetch_favicon, if: -> { domain.present? }
 
   scope :ordered_by_name, -> { order(:name) }
   scope :search_by_name_or_domain, lambda { |query|
@@ -42,4 +43,10 @@ class Company < ApplicationRecord
       )
     )
   }
+
+  private
+
+  def fetch_favicon
+    Avatar::AvatarFromFaviconJob.set(wait: 5.seconds).perform_later(self)
+  end
 end

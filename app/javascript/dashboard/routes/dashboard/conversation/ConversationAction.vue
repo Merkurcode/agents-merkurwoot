@@ -39,27 +39,27 @@ export default {
         {
           id: null,
           name: this.$t('CONVERSATION.PRIORITY.OPTIONS.NONE'),
-          thumbnail: `/assets/images/dashboard/priority/none.svg`,
+          icon: 'i-woot-priority-empty',
         },
         {
           id: CONVERSATION_PRIORITY.URGENT,
           name: this.$t('CONVERSATION.PRIORITY.OPTIONS.URGENT'),
-          thumbnail: `/assets/images/dashboard/priority/${CONVERSATION_PRIORITY.URGENT}.svg`,
+          icon: 'i-woot-priority-urgent',
         },
         {
           id: CONVERSATION_PRIORITY.HIGH,
           name: this.$t('CONVERSATION.PRIORITY.OPTIONS.HIGH'),
-          thumbnail: `/assets/images/dashboard/priority/${CONVERSATION_PRIORITY.HIGH}.svg`,
+          icon: 'i-woot-priority-high',
         },
         {
           id: CONVERSATION_PRIORITY.MEDIUM,
           name: this.$t('CONVERSATION.PRIORITY.OPTIONS.MEDIUM'),
-          thumbnail: `/assets/images/dashboard/priority/${CONVERSATION_PRIORITY.MEDIUM}.svg`,
+          icon: 'i-woot-priority-medium',
         },
         {
           id: CONVERSATION_PRIORITY.LOW,
           name: this.$t('CONVERSATION.PRIORITY.OPTIONS.LOW'),
-          thumbnail: `/assets/images/dashboard/priority/${CONVERSATION_PRIORITY.LOW}.svg`,
+          icon: 'i-woot-priority-low',
         },
       ],
     };
@@ -94,7 +94,10 @@ export default {
       },
       set(agent) {
         const agentId = agent ? agent.id : null;
-        this.$store.dispatch('setCurrentChatAssignee', agent);
+        this.$store.dispatch('setCurrentChatAssignee', {
+          conversationId: this.currentChat.id,
+          assignee: agent,
+        });
         this.$store
           .dispatch('assignAgent', {
             conversationId: this.currentChat.id,
@@ -247,8 +250,8 @@ export default {
 </script>
 
 <template>
-  <div class="bg-n-background">
-    <div class="multiselect-wrap--small">
+  <div>
+    <div>
       <ContactDetailsItem
         compact
         :title="$t('CONVERSATION_SIDEBAR.ASSIGNEE_LABEL')"
@@ -280,7 +283,7 @@ export default {
         @select="onClickAssignAgent"
       />
     </div>
-    <div class="multiselect-wrap--small">
+    <div>
       <ContactDetailsItem
         compact
         :title="$t('CONVERSATION_SIDEBAR.TEAM_LABEL')"
@@ -299,7 +302,7 @@ export default {
         @select="onClickAssignTeam"
       />
     </div>
-    <div class="multiselect-wrap--small">
+    <div>
       <ContactDetailsItem compact :title="$t('CONVERSATION.PRIORITY.TITLE')" />
       <MultiselectDropdown
         :options="priorityOptions"

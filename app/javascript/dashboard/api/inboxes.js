@@ -39,10 +39,6 @@ class Inboxes extends CacheEnabledApiClient {
     return axios.post(`${this.url}/${inboxId}/sync_templates`);
   }
 
-  getInbox(inboxId) {
-    return axios.get(`${this.url}/${inboxId}`);
-  }
-
   createCSATTemplate(inboxId, template) {
     return axios.post(`${this.url}/${inboxId}/csat_template`, {
       template,
@@ -55,6 +51,12 @@ class Inboxes extends CacheEnabledApiClient {
 
   getInbox(inboxId) {
     return axios.get(`${this.url}/${inboxId}`);
+  }
+
+  analyzeCSATTemplateUtility(inboxId, template) {
+    return axios.post(`${this.url}/${inboxId}/csat_template/analyze`, {
+      template,
+    });
   }
 
   // Message Templates API

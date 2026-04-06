@@ -94,6 +94,8 @@ yarn-debug.log*
 .vscode
 .claude/settings.local.json
 .cursor
+.codex/
+.claude/
 CLAUDE.local.md
 
 # Histoire deployment
@@ -125,3 +127,4 @@ BASE-DE-DATOS.md
 *.md
 !docs/**/*.md
 /docs
+Procfile.worktree

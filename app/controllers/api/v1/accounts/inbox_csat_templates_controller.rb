@@ -1,9 +1,7 @@
 class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseController
-  DEFAULT_BUTTON_TEXT = 'Please rate us'.freeze
-  DEFAULT_LANGUAGE = 'en'.freeze
-
   before_action :fetch_inbox
   before_action :validate_whatsapp_channel
+  before_action :validate_captain_enabled, only: [:analyze]
 
   def show
     service = CsatTemplateManagementService.new(@inbox)
@@ -23,6 +21,23 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
     service = CsatTemplateManagementService.new(@inbox)
     result = service.create_template(template_params)
     render_template_creation_result(result)
+  rescue ActionController::ParameterMissing
+    render json: { error: 'Template parameters are required' }, status: :unprocessable_entity
+  end
+
+  def analyze
+    template_params = extract_template_params
+    return render_missing_message_error if template_params[:message].blank?
+
+    result = CsatTemplateUtilityAnalysisService.new(
+      account: Current.account,
+      inbox: @inbox,
+      message: template_params[:message],
+      button_text: template_params[:button_text],
+      language: template_params[:language]
+    ).perform
+
+    render json: result
   rescue ActionController::ParameterMissing
     render json: { error: 'Template parameters are required' }, status: :unprocessable_entity
   end
@@ -49,6 +64,12 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
     render json: { error: 'Message is required' }, status: :unprocessable_entity
   end
 
+  def validate_captain_enabled
+    return if Current.account.feature_enabled?('captain_integration')
+
+    render json: { error: 'Captain is required for template analysis' }, status: :forbidden
+  end
+
   def render_template_creation_result(result)
     if result[:success]
       render_successful_template_creation(result)
@@ -57,18 +78,6 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
     else
       render_failed_template_creation(result)
     end
-  end
-
-  def create_template_via_provider(template_params)
-    template_config = {
-      message: template_params[:message],
-      button_text: template_params[:button_text] || DEFAULT_BUTTON_TEXT,
-      base_url: ENV.fetch('FRONTEND_URL', 'http://localhost:3000'),
-      language: template_params[:language] || DEFAULT_LANGUAGE,
-      template_name: Whatsapp::CsatTemplateNameService.csat_template_name(@inbox.id)
-    }
-
-    @inbox.channel.provider_service.create_csat_template(template_config)
   end
 
   def render_successful_template_creation(result)
@@ -101,45 +110,6 @@ class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseC
       error: error_message,
       details: whatsapp_error[:technical_details]
     }, status: :unprocessable_entity
-  end
-
-  def delete_existing_template_if_needed
-    template = @inbox.csat_config&.dig('template')
-    return true if template.blank?
-
-    template_name = template['name']
-    return true if template_name.blank?
-
-    template_status = @inbox.channel.provider_service.get_template_status(template_name)
-    return true unless template_status[:success]
-
-    deletion_result = @inbox.channel.provider_service.delete_csat_template(template_name)
-    if deletion_result[:success]
-      Rails.logger.info "Deleted existing CSAT template '#{template_name}' for inbox #{@inbox.id}"
-      true
-    else
-      Rails.logger.warn "Failed to delete existing CSAT template '#{template_name}' for inbox #{@inbox.id}: #{deletion_result[:response_body]}"
-      false
-    end
-  rescue StandardError => e
-    Rails.logger.error "Error during template deletion for inbox #{@inbox.id}: #{e.message}"
-    false
-  end
-
-  def render_template_status_response(status_result, template_name)
-    if status_result[:success]
-      render json: {
-        template_exists: true,
-        template_name: template_name,
-        status: status_result[:template][:status],
-        template_id: status_result[:template][:id]
-      }
-    else
-      render json: {
-        template_exists: false,
-        error: 'Template not found'
-      }
-    end
   end
 
   def parse_whatsapp_error(response_body)

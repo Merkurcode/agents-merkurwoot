@@ -38,6 +38,7 @@ import settings from './settings.json';
 import signup from './signup.json';
 import sla from './sla.json';
 import surveys from './surveys.json';
+import snooze from './snooze.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import contentTemplates from './contentTemplates.json';
@@ -88,6 +89,7 @@ export default {
   ...signup,
   ...sla,
   ...surveys,
+  ...snooze,
   ...teamsSettings,
   ...whatsappTemplates,
   ...contentTemplates,
@@ -96,4 +98,5 @@ export default {
   ...knowledgeBase,
   ...yearInReview,
   ...crmFlows,
+  ...yearInReview,
 };

@@ -2,10 +2,11 @@
 # use https://crontab.guru/ to validate
 # validations for this file exist in /spec/configs/schedule_spec.rb
 
-# executed At 12:00 on every day-of-month.
+# executed daily at 0000 UTC
+# schedules daily deferred jobs at stable times for each installation
 internal_check_new_versions_job:
-  cron: '0 12 */1 * *'
-  class: 'Internal::CheckNewVersionsJob'
+  cron: '0 0 * * *'
+  class: 'Internal::TriggerDailyScheduledItemsJob'
   queue: scheduled_jobs
 # # executed At every 5th minute..
 trigger_scheduled_items_job:
@@ -49,25 +50,19 @@ remove_stale_redis_keys_job.rb:
   class: 'Internal::RemoveStaleRedisKeysJob'
   queue: scheduled_jobs
 
-#executed daily at 0430 UTC
-# which will be IST 10:00 AM
-process_stale_contacts_job:
-  cron: '30 04 * * *'
-  class: 'Internal::ProcessStaleContactsJob'
-  queue: housekeeping
+# DISABLED: investigating if this job is the source of orphan conversations
+# #executed daily at 0430 UTC
+# # which will be IST 10:00 AM
+# process_stale_contacts_job:
+#   cron: '30 04 * * *'
+#   class: 'Internal::ProcessStaleContactsJob'
+#   queue: housekeeping
 
 # executed daily at 0100 UTC
 # to delete accounts marked for deletion
 delete_accounts_job:
   cron: '0 1 * * *'
   class: 'Internal::DeleteAccountsJob'
-  queue: scheduled_jobs
-
-# executed every 15 minutes
-# to assign unassigned conversations for all inboxes
-bulk_auto_assignment_job:
-  cron: '*/15 * * * *'
-  class: 'Inboxes::BulkAutoAssignmentJob'
   queue: scheduled_jobs
 
 # executed every 30 minutes for assignment_v2
@@ -111,24 +106,9 @@ remove_orphan_conversations_job:
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
 
-# executed daily at 2330 UTC
-# to purge QR codes from appointments ending today
-purge_expired_appointment_qr_codes_job:
-  cron: '30 23 * * *'
-  class: 'PurgeExpiredAppointmentQrCodesJob'
-  queue: housekeeping
-
-# executed every 5 minutes
-# to cleanup stale bulk processing requests stuck in PENDING/PROCESSING
-cleanup_stale_bulk_requests_job:
-  cron: '*/5 * * * *'
-  class: 'CleanupStaleBulkRequestsJob'
-  queue: scheduled_jobs
-
 # executed every 6 hours
 # to sync agents with CRM users (Zoho, Salesforce, HubSpot, etc.)
 crm_agent_sync_job:
   cron: '0 */6 * * *'
   class: 'Crm::AgentSyncJob'
   queue: low
-

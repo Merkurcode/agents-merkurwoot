@@ -7,6 +7,8 @@ import NewHook from './NewHook.vue';
 import SingleIntegrationHooks from './SingleIntegrationHooks.vue';
 import MultipleIntegrationHooks from './MultipleIntegrationHooks.vue';
 import ZohoDeskHooks from './ZohoDeskHooks.vue';
+import SettingsLayout from '../SettingsLayout.vue';
+import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 
 export default {
   components: {
@@ -14,6 +16,8 @@ export default {
     SingleIntegrationHooks,
     MultipleIntegrationHooks,
     ZohoDeskHooks,
+    SettingsLayout,
+    BaseSettingsHeader,
   },
   props: {
     integrationId: {
@@ -30,6 +34,7 @@ export default {
       isIntegrationSingle,
       isHookTypeInbox,
     } = useIntegrationHook(integrationId);
+
     return {
       integration,
       isIntegrationMultiple,
@@ -76,6 +81,9 @@ export default {
       return this.$t('INTEGRATION_APPS.DELETE.CANCEL_BUTTON_TEXT');
     },
   },
+  mounted() {
+    this.$store.dispatch('integrations/get');
+  },
   methods: {
     openAddHookModal() {
       this.showAddHookModal = true;
@@ -113,23 +121,33 @@ export default {
 </script>
 
 <template>
-  <div class="overflow-auto p-4 w-full my-auto flex flex-wrap h-full">
-    <div v-if="showIntegrationHooks" class="w-full">
-      <div v-if="isIntegrationMultiple">
-        <MultipleIntegrationHooks
-          :integration-id="integrationId"
-          :show-add-button="showAddButton"
-          @add="openAddHookModal"
-          @delete="openDeletePopup"
-        />
-      </div>
+  <SettingsLayout :is-loading="uiFlags.isFetching">
+    <template v-if="isIntegrationSingle" #header>
+      <BaseSettingsHeader
+        :title="integration.name || ''"
+        description=""
+        :feature-name="integrationId"
+        :back-button-label="$t('INTEGRATION_SETTINGS.HEADER')"
+      />
+    </template>
+    <template #body>
+      <div v-if="showIntegrationHooks" class="w-full">
+        <div v-if="isIntegrationMultiple">
+          <MultipleIntegrationHooks
+            :integration-id="integrationId"
+            :show-add-button="showAddButton"
+            @add="openAddHookModal"
+            @delete="openDeletePopup"
+          />
+        </div>
 
-      <div v-if="isIntegrationSingle">
-        <SingleIntegrationHooks
-          :integration-id="integrationId"
-          @add="openAddHookModal"
-          @delete="openDeletePopup"
-        />
+        <div v-if="isIntegrationSingle">
+          <SingleIntegrationHooks
+            :integration-id="integrationId"
+            @add="openAddHookModal"
+            @delete="openDeletePopup"
+          />
+        </div>
       </div>
 
       <ZohoDeskHooks
@@ -137,14 +155,11 @@ export default {
         :integration-id="integrationId"
         class="mt-4"
       />
-    </div>
-
+    </template>
     <woot-modal v-model:show="showAddHookModal" :on-close="hideAddHookModal">
       <NewHook :integration-id="integrationId" @close="hideAddHookModal" />
     </woot-modal>
-
     <woot-delete-modal
-      v-model:show="showDeleteConfirmationPopup"
       :on-close="closeDeletePopup"
       :on-confirm="confirmDeletion"
       :title="deleteTitle"
@@ -152,5 +167,5 @@ export default {
       :confirm-text="confirmText"
       :reject-text="cancelText"
     />
-  </div>
+  </SettingsLayout>
 </template>

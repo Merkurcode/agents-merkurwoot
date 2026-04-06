@@ -20,13 +20,22 @@ module Tiktok::MessagingHelpers
     {
       # TODO: Remove this once we show the social_tiktok_user_name in the UI instead of the username
       username: from,
+      social_profiles: { tiktok: from },
       social_tiktok_user_id: from_id,
       social_tiktok_user_name: from
     }
   end
 
   def find_conversation(channel, tt_conversation_id)
-    channel.inbox.contact_inboxes.find_by(source_id: tt_conversation_id)&.conversations&.first
+    contact_inbox = channel.inbox.contact_inboxes.find_by(source_id: tt_conversation_id)
+    return if contact_inbox.blank?
+
+    if channel.inbox.lock_to_single_conversation
+      contact_inbox.conversations.order(created_at: :desc).first
+    else
+      contact_inbox.conversations.where.not(status: :resolved).order(created_at: :desc).first ||
+        contact_inbox.conversations.order(created_at: :desc).first
+    end
   end
 
   def create_conversation(channel, contact_inbox, tt_conversation_id)

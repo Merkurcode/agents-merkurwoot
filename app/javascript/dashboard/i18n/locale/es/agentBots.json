@@ -5,6 +5,9 @@
     "DESCRIPTION": "Los agentes IA son como los miembros más brillantes de tu equipo. Pueden encargarse de lo rutinario para que tú te concentres en lo que importa. Gestiona tus agentes desde esta página o crea nuevos con el botón 'Agregar agente IA'.",
     "LEARN_MORE": "Aprende sobre los agentes IA",
     "GLOBAL_BOT": "Agente IA del sistema",
+    "COUNT": "{n} bot | {n} bots",
+    "SEARCH_PLACEHOLDER": "Search bots...",
+    "NO_RESULTS": "No bots found matching your search",
     "GLOBAL_BOT_BADGE": "Sistema",
     "AVATAR": {
       "SUCCESS_DELETE": "Avatar del agente IA eliminado correctamente.",

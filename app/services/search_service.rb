@@ -171,6 +171,45 @@ class SearchService
     accessable_inbox_ids.include?(inbox_id)
   end
 
+  def apply_message_filters(query)
+    return query unless current_account.feature_enabled?('advanced_search')
+
+    query = apply_time_filter(query, 'messages.created_at')
+    query = apply_sender_filter(query)
+    apply_inbox_id_filter(query)
+  end
+
+  def apply_sender_filter(query)
+    sender_type, sender_id = parse_from_param(params[:from])
+    return query unless sender_type && sender_id
+
+    query.where(sender_type: sender_type, sender_id: sender_id)
+  end
+
+  def parse_from_param(from_param)
+    return [nil, nil] unless from_param&.match?(/\A(contact|agent):\d+\z/)
+
+    type, id = from_param.split(':')
+    sender_type = type == 'agent' ? 'User' : 'Contact'
+    [sender_type, id.to_i]
+  end
+
+  def apply_inbox_id_filter(query)
+    return query if params[:inbox_id].blank?
+
+    inbox_id = params[:inbox_id].to_i
+    return query if inbox_id.zero?
+    return query unless validate_inbox_access(inbox_id)
+
+    query.where(inbox_id: inbox_id)
+  end
+
+  def validate_inbox_access(inbox_id)
+    return true if should_skip_inbox_filtering?
+
+    accessable_inbox_ids.include?(inbox_id)
+  end
+
   def should_skip_inbox_filtering?
     account_user.administrator? || user_has_access_to_all_inboxes?
     if account_user.administrator?

@@ -19,6 +19,11 @@ export const TWILIO_CHANNEL_MEDIUM = {
   SMS: 'sms',
 };
 
+export const TWILIO_CHANNEL_MEDIUM = {
+  WHATSAPP: 'whatsapp',
+  SMS: 'sms',
+};
+
 const INBOX_ICON_MAP_FILL = {
   [INBOX_TYPES.WEB]: 'i-ri-global-fill',
   [INBOX_TYPES.FB]: 'i-ri-messenger-fill',

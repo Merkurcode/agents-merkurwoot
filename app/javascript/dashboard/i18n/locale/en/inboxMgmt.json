@@ -16,7 +16,7 @@
     "CREATE_FLOW": {
       "CHANNEL": {
         "TITLE": "Choose Channel",
-        "BODY": "Choose the provider you want to integrate with Chatwoot."
+        "BODY": "Choose the provider you want to integrate with Nauto Console."
       },
       "INBOX": {
         "TITLE": "Create Inbox",
@@ -42,7 +42,7 @@
         "PLACEHOLDER": "Enter your website name (eg: Acme Inc)"
       },
       "FB": {
-        "HELP": "PS: By signing in, we only get access to your Page's messages. Your private messages can never be accessed by Chatwoot.",
+        "HELP": "PS: By signing in, we only get access to your Page's messages. Your private messages can never be accessed by Nauto Console.",
         "CHOOSE_PAGE": "Choose Page",
         "CHOOSE_PLACEHOLDER": "Select a page from the list",
         "INBOX_NAME": "Inbox Name",
@@ -115,6 +115,18 @@
           "HELP_TEXT": "Auto-send greeting messages when customers start a conversation and send their first message.",
           "ENABLED": "Enabled",
           "DISABLED": "Disabled"
+        },
+        "AUTO_GENERATE_LANDING_PAGE": {
+          "SECTION_TITLE": "Auto Generate Landing Page",
+          "LABEL": "Auto generate landing page",
+          "DESCRIPTION_LABEL": "Landing Page Description",
+          "DESCRIPTION_PLACEHOLDER": "Describe your landing page. Include details about your business, services, and what you want to highlight to your customers."
+        },
+        "LANDING_PAGE_URL": {
+          "LABEL": "Landing Page URL",
+          "OPEN_LINK": "Open Landing Page",
+          "HELP_TEXT": "This is your auto-generated landing page. Share this URL with your customers to showcase your business and services.",
+          "ERROR_MESSAGE": "Unable to generate landing page URL. Please try refreshing the page or contact support if the problem persists."
         },
         "REPLY_TIME": {
           "TITLE": "Set Reply time",
@@ -246,6 +258,8 @@
           "TWILIO": "Twilio",
           "WHATSAPP_CLOUD": "WhatsApp Cloud",
           "WHATSAPP_CLOUD_DESC": "Quick setup through Meta",
+          "WHATSAPP_LIGHT": "WhatsApp Light",
+          "WHATSAPP_LIGHT_DESC": "Simple setup with QR code - No templates support",
           "TWILIO_DESC": "Connect via Twilio credentials",
           "360_DIALOG": "360Dialog"
         },
@@ -321,6 +335,34 @@
         },
         "API": {
           "ERROR_MESSAGE": "We were not able to save the WhatsApp channel"
+        }
+      },
+      "WHATSAPP_LIGHT": {
+        "TITLE": "WhatsApp Light",
+        "DESC": "Simple WhatsApp integration with QR code authentication.",
+        "INBOX_NAME": {
+          "LABEL": "Inbox Name",
+          "PLACEHOLDER": "Enter an inbox name",
+          "ERROR": "This field is required"
+        },
+        "PHONE_NUMBER": {
+          "LABEL": "Phone Number",
+          "PLACEHOLDER": "Enter phone number (e.g. +1234567890)",
+          "ERROR": "Please provide a valid phone number that starts with a + sign and does not contain any spaces."
+        },
+        "SUBMIT_BUTTON": "Create WhatsApp Light Channel",
+        "QR_TITLE": "Scan QR Code",
+        "QR_DESC": "Scan this QR code with your WhatsApp to connect your account",
+        "WAITING": "Waiting for channel to be provisioned...",
+        "WAITING_AUTH": "Waiting for authentication...",
+        "EXPIRES_IN": "QR code expires in {seconds} seconds",
+        "QR_EXPIRED": "QR code has expired",
+        "GENERATE_NEW_QR": "Generate New QR Code",
+        "SUCCESS": "WhatsApp connected successfully!",
+        "REDIRECTING": "Redirecting to agent assignment...",
+        "SETUP_ERROR": "Failed to complete setup. Please try again.",
+        "API": {
+          "ERROR_MESSAGE": "We were not able to create the WhatsApp Light channel"
         }
       },
       "VOICE": {
@@ -438,9 +480,9 @@
         "TITLE": "Telegram Channel",
         "DESC": "Integrate with Telegram channel and start supporting your customers.",
         "BOT_TOKEN": {
-          "LABEL": "Bot Token",
-          "SUBTITLE": "Configure the bot token you have obtained from Telegram BotFather.",
-          "PLACEHOLDER": "Bot Token"
+          "LABEL": "AI agent Token",
+          "SUBTITLE": "Configure the AI agent token you have obtained from Telegram BotFather.",
+          "PLACEHOLDER": "AI agent Token"
         },
         "SUBMIT_BUTTON": "Create Telegram Channel",
         "API": {
@@ -449,7 +491,7 @@
       },
       "AUTH": {
         "TITLE": "Choose a channel",
-        "DESC": "Chatwoot supports live-chat widgets, Facebook Messenger, WhatsApp, Emails, etc., as channels. If you want to build a custom channel, you can create it using the API channel. To get started, choose one of the channels below.",
+        "DESC": "Nauto Console supports live-chat widgets, Facebook Messenger, WhatsApp, Emails, etc., as channels. If you want to build a custom channel, you can create it using the API channel. To get started, choose one of the channels below.",
         "TITLE_NEXT": "Complete the setup",
         "TITLE_FINISH": "Voilà!",
         "CHANNEL": {
@@ -479,7 +521,7 @@
           },
           "TELEGRAM": {
             "TITLE": "Telegram",
-            "DESCRIPTION": "Configure Telegram channel using Bot token"
+            "DESCRIPTION": "Configure Telegram channel using AI agent token"
           },
           "LINE": {
             "TITLE": "Line",
@@ -507,11 +549,11 @@
       },
       "DETAILS": {
         "TITLE": "Inbox Details",
-        "DESC": "From the dropdown below, select the Facebook Page you want to connect to Chatwoot. You can also give a custom name to your inbox for better identification."
+        "DESC": "From the dropdown below, select the Facebook Page you want to connect to Nauto Console. You can also give a custom name to your inbox for better identification."
       },
       "FINISH": {
         "TITLE": "Nailed It!",
-        "DESC": "You have successfully finished integrating your Facebook Page with Chatwoot. Next time a customer messages your Page, the conversation will automatically appear on your inbox.<br>We are also providing you with a widget script that you can easily add to your website. Once this is live on your website, customers can message you right from your website without the help of any external tool and the conversation will appear right here, on Chatwoot.<br>Cool, huh? Well, we sure try to be :)"
+        "DESC": "You have successfully finished integrating your Facebook Page with Nauto Console. Next time a customer messages your Page, the conversation will automatically appear on your inbox.<br>We are also providing you with a widget script that you can easily add to your website. Once this is live on your website, customers can message you right from your website without the help of any external tool and the conversation will appear right here, on Nauto Console.<br>Cool, huh? Well, we sure try to be :)"
       },
       "EMAIL_PROVIDER": {
         "TITLE": "Select your email provider",
@@ -634,9 +676,10 @@
       "PRE_CHAT_FORM": "Pre Chat Form",
       "BUSINESS_HOURS": "Business Hours",
       "WIDGET_BUILDER": "Widget Builder",
-      "BOT_CONFIGURATION": "Bot Configuration",
+      "BOT_CONFIGURATION": "AI agent Configuration",
       "ACCOUNT_HEALTH": "Account Health",
-      "CSAT": "CSAT"
+      "CSAT": "CSAT",
+      "WHATSAPP_TEMPLATES": "Templates"
     },
     "CHANNEL_PREFERENCES": "Channel Preferences",
     "WIDGET_FEATURES": "Widget features",
@@ -711,7 +754,7 @@
       "DISPLAY_FILE_PICKER": "Display file picker on the widget",
       "DISPLAY_EMOJI_PICKER": "Display emoji picker on the widget",
       "ALLOW_END_CONVERSATION": "Allow users to end conversation from the widget",
-      "USE_INBOX_AVATAR_FOR_BOT": "Use inbox name and avatar for the bot"
+      "USE_INBOX_AVATAR_FOR_BOT": "Use inbox name and avatar for the AI agent"
     },
     "SETTINGS_POPUP": {
       "MESSENGER_HEADING": "Messenger Script",
@@ -850,6 +893,12 @@
       "CONFIRM_DELETE": "Delete",
       "DELETE_SUCCESS": "Assignment policy removed successfully",
       "DELETE_ERROR": "Failed to remove assignment policy"
+    },
+    "WHATSAPP_GROUP_DEFAULT_PHONE": {
+      "TITLE": "WhatsApp Group Default Phone",
+      "SUB_TITLE": "Optional phone number to automatically add to every WhatsApp group created from this inbox",
+      "LABEL": "Default phone number",
+      "PLACEHOLDER": "+1234567890"
     },
     "FACEBOOK_REAUTHORIZE": {
       "TITLE": "Reauthorize",
@@ -1123,8 +1172,8 @@
         "USER_MESSAGE": "Hi",
         "AGENT_MESSAGE": "Hello"
       },
-      "BRANDING_TEXT": "Powered by Chatwoot",
-      "SCRIPT_SETTINGS": "\n      window.chatwootSettings = {options};"
+      "BRANDING_TEXT": "Powered by Nauto Console",
+      "SCRIPT_SETTINGS": "\n      window.nautoConsoleSettings = {options};"
     },
     "EMAIL_PROVIDERS": {
       "MICROSOFT": {
@@ -1154,6 +1203,182 @@
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
       "VOICE": "Voice"
+    },
+    "WHATSAPP_TEMPLATES": {
+      "TITLE": "WhatsApp Templates",
+      "DESCRIPTION": "Create and manage WhatsApp message templates. Templates must be approved by Meta before they can be used to send messages.",
+      "PURPOSE_NOTE": "WhatsApp only allows free-form messages within 24 hours of a customer's last message. After this window closes, you must use pre-approved templates to contact customers. Templates are essential for: order confirmations, shipping updates, appointment reminders, payment notifications, and marketing campaigns.",
+      "CREATE_BUTTON": "Create Template",
+      "SYNC_BUTTON": "Refresh",
+      "CANCEL": "Cancel",
+      "LOADING": "Loading templates...",
+      "EMPTY_STATE": "No templates found. Create your first template to get started.",
+      "FETCH_ERROR": "Failed to load templates. Please try again.",
+      "CREATE_SUCCESS": "Template created successfully and sent for approval.",
+      "CREATE_ERROR": "Failed to create template. Please try again.",
+      "DELETE_SUCCESS": "Template deleted successfully.",
+      "DELETE_ERROR": "Failed to delete template. Please try again.",
+      "DELETE_PERMISSION_ERROR": "Insufficient permissions to delete this template. Please check your WhatsApp Business Account permissions in Meta Business Manager.",
+      "DELETE_UNDER_REVIEW": "Cannot delete template while it is under review by Meta.",
+      "DELETE": {
+        "CONFIRM": {
+          "TITLE": "Delete Template",
+          "MESSAGE": "Are you sure you want to delete the template",
+          "YES": "Yes, Delete",
+          "NO": "Cancel"
+        }
+      },
+      "STATUS": {
+        "APPROVED": "Approved",
+        "PENDING": "Pending",
+        "REJECTED": "Rejected",
+        "PAUSED": "Paused",
+        "IN_APPEAL": "In appeal",
+        "DISABLED": "Disabled",
+        "FLAGGED": "Flagged",
+        "PENDING_DELETION": "Pending deletion",
+        "REINSTATED": "Reinstated"
+      },
+      "LIST": {
+        "SEARCH_PLACEHOLDER": "Search by name...",
+        "SHOWING": "Showing {from}-{to} of {total}",
+        "FILTERED": "({count} of {total} templates)",
+        "NO_RESULTS": "No templates found matching your filters.",
+        "CLEAR_SEARCH": "Clear filters",
+        "CLEAR_FILTERS": "Clear filters",
+        "TEMPLATE_LIMIT": "{count} / 6,000 templates",
+        "ALL_CATEGORIES": "All categories",
+        "ALL_STATUSES": "All statuses",
+        "ALL_LANGUAGES": "All languages",
+        "CATEGORIES_SELECTED": "{count} categories",
+        "STATUSES_SELECTED": "{count} statuses",
+        "LANGUAGES_SELECTED": "{count} languages",
+        "SELECT_ALL": "Select all"
+      },
+      "CATEGORY": {
+        "MARKETING": "Marketing",
+        "UTILITY": "Utility",
+        "AUTHENTICATION": "Authentication"
+      },
+      "FORM": {
+        "TITLE": "Create New Template",
+        "WARNING": {
+          "TITLE": "Important: Meta Restriction - Templates cannot be edited",
+          "MESSAGE": "Due to Meta's WhatsApp Business API restrictions, templates cannot be modified once created. You can create templates with the same name in different languages, but within the same language, the name must be unique. Also, once a name is used in a language, it cannot be reused even if you delete the template."
+        },
+        "META_APPROVAL": {
+          "TITLE": "Meta Approval Process",
+          "MESSAGE": "Template approval is subject to Meta's proprietary filters. You may need to try creating the template multiple times. The review process is guaranteed within 24 hours, but typically takes just a few minutes.",
+          "REJECTION_TITLE": "Your template may be rejected due to:",
+          "REASON_1": "Meta's proprietary Machine Learning classifiers",
+          "REASON_2": "Meta's NLP (Natural Language Processing) text analysis",
+          "REASON_3": "User feedback (reports, blocks) from users who have previously received templates from your business",
+          "REASON_4": "Your account history and business reputation on WhatsApp"
+        },
+        "NAME": {
+          "LABEL": "Template Name",
+          "PLACEHOLDER": "order_confirmation",
+          "HELP": "Use lowercase letters, numbers, and underscores only. Must start with a letter. Minimum 3 characters."
+        },
+        "LANGUAGE": {
+          "LABEL": "Language",
+          "PLACEHOLDER": "Select language"
+        },
+        "CATEGORY": {
+          "LABEL": "Category",
+          "PLACEHOLDER": "Select category"
+        },
+        "CATEGORY_OPTIONS": {
+          "UTILITY": "Utility",
+          "UTILITY_DESC": "Allows businesses to follow up on user actions or requests, as these messages are usually triggered by user actions. Examples: order confirmations, shipping updates, account alerts, appointment reminders, payment notifications. Lower cost per message.",
+          "MARKETING": "Marketing",
+          "MARKETING_DESC": "Allows businesses to achieve a wide range of goals, from generating awareness to driving sales and retargeting customers. Examples: offers, discounts, product announcements, newsletters, and any message that doesn't fit utility criteria. Higher cost per message."
+        },
+        "HEADER": {
+          "TITLE": "Header (Optional)",
+          "FORMAT_LABEL": "Header Format",
+          "FORMAT_PLACEHOLDER": "Select header format",
+          "TEXT_LABEL": "Header Text",
+          "TEXT_PLACEHOLDER": "Enter header text",
+          "TEXT_HELP": "Maximum 60 characters. Only 1 variable allowed (e.g. {'{{'}1{'}}'}).",
+          "MEDIA_URL_LABEL": "Sample Media URL",
+          "MEDIA_URL_PLACEHOLDER": "https://example.com/image.jpg",
+          "MEDIA_URL_HELP": "Provide a publicly accessible URL for the sample media. This is used for template approval only."
+        },
+        "HEADER_FORMAT_OPTIONS": {
+          "NONE": "No header",
+          "TEXT": "Text",
+          "IMAGE": "Image",
+          "VIDEO": "Video",
+          "DOCUMENT": "Document"
+        },
+        "BODY": {
+          "LABEL": "Body Text",
+          "PLACEHOLDER_POSITIONAL": "Hello {'{{'}1{'}}'}, your order #{'{{'}2{'}}'} has been shipped!",
+          "PLACEHOLDER_NAMED": "Hello {'{{'}variable_1{'}}'}, your order #{'{{'}variable_2{'}}'} has been shipped!",
+          "HELP": "Use positional variables ({'{{'}1{'}}'}, {'{{'}2{'}}'}) OR named variables ({'{{'}variable_1{'}}'}, {'{{'}variable_2{'}}'}). Do not mix both types.",
+          "INSERT_VAR": "Insert variable",
+          "VAR_FORMAT": "Variable format",
+          "FORMAT_POSITIONAL": "Positional ({'{{'}1{'}}'}, {'{{'}2{'}}'})",
+          "FORMAT_NAMED": "Named ({'{{'}variable_1{'}}'})",
+          "VAR_RULES": "Variables cannot be at the beginning or end of the message. Use letters, numbers, and underscores only inside {'{{'}  {'}}'}.",
+          "FORMAT_MISMATCH_POSITIONAL": "The template contains incorrectly formatted variable parameters. Positional variable parameters must be sequential numbers with two pairs of curly braces (e.g., {'{{'}1{'}}'}, {'{{'}2{'}}'}, {'{{'}3{'}}'}).",
+          "FORMAT_MISMATCH_NAMED": "The template contains incorrectly formatted variable parameters. Named variable parameters must be lowercase characters, underscores, and numbers with two pairs of curly braces (e.g., {'{{'}customer_name{'}}'}, {'{{'}order_id{'}}'}).",
+          "VAR_SAMPLES": {
+            "TITLE": "Variable Samples",
+            "DESCRIPTION": "Include sample values for all variables so Meta can review your template. Do not include real customer data to protect privacy.",
+            "PLACEHOLDER": "Enter sample value for {var}"
+          }
+        },
+        "FOOTER": {
+          "LABEL": "Footer (Optional)",
+          "PLACEHOLDER": "Thank you for your purchase!",
+          "HELP": "Add a short footer message. Maximum 60 characters."
+        },
+        "SUBMIT": "Create Template",
+        "CANCEL": "Cancel",
+        "PREVIEW": {
+          "TITLE": "Message Preview",
+          "NOTE": "This is an approximation. Actual appearance may vary slightly on WhatsApp."
+        },
+        "ERRORS": {
+          "NAME_FORMAT": "Use only lowercase letters, numbers, and underscores. Must start with a letter.",
+          "NAME_MIN": "Template name must be at least 3 characters.",
+          "NAME_MAX": "Template name cannot exceed {max} characters.",
+          "HEADER_MAX": "Header text cannot exceed {max} characters.",
+          "HEADER_VARS": "Header can only contain 1 variable (e.g. {'{{'}1{'}}'}).",
+          "BODY_MAX": "Body text cannot exceed {max} characters.",
+          "BODY_VARS": "Numeric variables must be sequential starting from {'{{'}1{'}}'}. Example: {'{{'}1{'}}'}, {'{{'}2{'}}'}, {'{{'}3{'}}'}.",
+          "FOOTER_MAX": "Footer text cannot exceed {max} characters.",
+          "FOOTER_VARS": "Footer cannot contain variables.",
+          "UNCLOSED_BRACES": "Unclosed variable braces. Make sure each {{ has a matching }}.",
+          "EMPTY_VARIABLE": "Empty variable detected. Variables cannot be empty.",
+          "INVALID_VAR_FORMAT": "Invalid variable format: {vars}. Use only letters, numbers, and underscores.",
+          "VAR_POSITION": "Variables cannot be at the beginning or end of the template.",
+          "MISSING_VAR_EXAMPLES": "Please provide sample values for: {vars}",
+          "SELF_REFERENCE": "Example value for {vars} cannot reference itself"
+        }
+      }
+    },
+    "WHATSAPP_GROUPS": {
+      "SUB_TITLE": "Special inbox for WhatsApp group conversations",
+      "NOTE": "<strong>Note:</strong> This is a system-managed inbox used exclusively for WhatsApp group conversations. It is automatically created and cannot be modified or deleted.",
+      "TYPE_LABEL": "Type:",
+      "TYPE_VALUE": "WhatsApp Groups",
+      "STATUS_LABEL": "Status:",
+      "STATUS_VALUE": "Active",
+      "AUTO_ASSIGNMENT_LABEL": "Auto Assignment:",
+      "AUTO_ASSIGNMENT_VALUE": "Disabled"
+    },
+    "FAQ_CONFIGURATION": {
+      "TITLE": "FAQ Categories",
+      "DESC": "Select FAQ categories that the AI agent can use to answer common questions.",
+      "NO_CATEGORIES": "No FAQ categories available. Create categories in Knowledge Base > FAQs first.",
+      "SELECTED_COUNT": "{count} categories selected",
+      "SAVE": "Save Configuration",
+      "SUCCESS_MESSAGE": "FAQ configuration saved successfully",
+      "ERROR_MESSAGE": "Failed to save FAQ configuration",
+      "FETCH_ERROR": "Failed to load FAQ categories"
     }
   }
 }

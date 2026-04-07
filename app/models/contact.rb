@@ -46,29 +46,45 @@ class Contact < ApplicationRecord
   include AvailabilityStatusable
   include Labelable
   include LlmFormattable
+  include Discard::Model
+
+  default_scope -> { kept }
 
   validates :account_id, presence: true
-  validates :email, allow_blank: true, uniqueness: { scope: [:account_id], case_sensitive: false },
+  validates :email, allow_blank: true,
+                    uniqueness: { scope: [:account_id], case_sensitive: false, conditions: -> { kept } },
                     format: { with: Devise.email_regexp, message: I18n.t('errors.contacts.email.invalid') }
-  validates :identifier, allow_blank: true, uniqueness: { scope: [:account_id] }
+  validates :identifier, allow_blank: true, uniqueness: { scope: [:account_id], conditions: -> { kept } }
   validates :phone_number,
-            allow_blank: true, uniqueness: { scope: [:account_id] },
+            allow_blank: true,
+            uniqueness: { scope: [:account_id], conditions: -> { kept } },
             format: { with: /\+[1-9]\d{1,14}\z/, message: I18n.t('errors.contacts.phone_number.invalid') }
 
   belongs_to :account
   has_many :conversations, dependent: :destroy_async
   has_many :contact_inboxes, dependent: :destroy_async
   has_many :csat_survey_responses, dependent: :destroy_async
+  has_many :survey_answers, dependent: :destroy_async
+  has_many :contact_survey_completions, dependent: :destroy_async
   has_many :inboxes, through: :contact_inboxes
   has_many :messages, as: :sender, dependent: :destroy_async
   has_many :notes, dependent: :destroy_async
+  has_many :appointments, dependent: :destroy_async
   before_validation :prepare_contact_attributes
   after_create_commit :dispatch_create_event, :ip_lookup
   after_update_commit :dispatch_update_event
   after_destroy_commit :dispatch_destroy_event
+  after_discard :dispatch_discard_event
   before_save :sync_contact_attributes
 
   enum contact_type: { visitor: 0, lead: 1, customer: 2 }
+  enum source_type: {
+    organic: 0,         # Organic/natural contact creation
+    notion_import: 1,   # Imported from Notion database
+    manual: 2,          # Manually created
+    api: 3,             # Created via API
+    campaign: 4         # Created via campaign
+  }, _prefix: :contact_source
 
   scope :order_on_last_activity_at, lambda { |direction|
     order(
@@ -174,7 +190,9 @@ class Contact < ApplicationRecord
       name: name,
       phone_number: phone_number,
       thumbnail: avatar_url,
-      blocked: blocked
+      blocked: blocked,
+      contact_type: contact_type,
+      crm_metadata: additional_attributes&.dig('crm_metadata')
     }
   end
 
@@ -249,5 +267,12 @@ class Contact < ApplicationRecord
       contact_data: push_event_data.merge(account_id: account_id)
     )
   end
+
+  def dispatch_discard_event
+    # Cascade soft delete to conversations
+    conversations.find_each(&:discard)
+    Rails.configuration.dispatcher.dispatch(CONTACT_DISCARDED, Time.zone.now, contact: self)
+  end
 end
+Contact.include_mod_with('Audit::Contact')
 Contact.include_mod_with('Concerns::Contact')

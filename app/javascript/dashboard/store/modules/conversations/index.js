@@ -12,6 +12,7 @@ const state = {
   allConversations: [],
   attachments: {},
   listLoadingStatus: true,
+  listLoadingStatusPipeline: false,
   chatStatusFilter: wootConstants.STATUS_TYPE.OPEN,
   chatSortFilter: wootConstants.SORT_BY_TYPE.LATEST,
   currentInbox: null,
@@ -157,6 +158,23 @@ export const mutations = {
       getters.getConversationById(_state)(conversationId) || {};
     conversation.snoozed_until = snoozedUntil;
     conversation.status = status;
+  },
+
+  [types.CHANGE_CONVERSATION_PIPELINE_STATUS](_state, conversation) {
+    const index = _state.allConversations.findIndex(
+      c => c.id === conversation.id
+    );
+    if (index > -1) {
+      const selectedConversation = _state.allConversations[index];
+      _state.allConversations[index] = {
+        ...selectedConversation,
+        pipeline_status_id: conversation.pipeline_status_id,
+      };
+    }
+  },
+
+  [types.TOGGLE_SINGLE_PIPELINE_STATUS](_state, status) {
+    _state.listLoadingStatusPipeline = status;
   },
 
   [types.MUTE_CONVERSATION](_state) {

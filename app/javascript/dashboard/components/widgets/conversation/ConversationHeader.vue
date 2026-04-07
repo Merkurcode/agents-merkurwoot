@@ -13,6 +13,7 @@ import { conversationListPageURL } from 'dashboard/helper/URLHelper';
 import { snoozedReopenTime } from 'dashboard/helper/snoozeHelpers';
 import { useInbox } from 'dashboard/composables/useInbox';
 import { useI18n } from 'vue-i18n';
+import { CONVERSATION_TYPES } from 'dashboard/helper/inbox';
 
 const props = defineProps({
   chat: {
@@ -39,19 +40,21 @@ const chatMetadata = computed(() => props.chat.meta);
 
 const backButtonUrl = computed(() => {
   const {
-    params: { inbox_id: inboxId, label, teamId, id: customViewId },
+    params: { inbox_id: inboxId, label, teamId, locationId, id: customViewId },
     name,
   } = route;
 
   const conversationTypeMap = {
     conversation_through_mentions: 'mention',
     conversation_through_unattended: 'unattended',
+    conversation_through_board: 'board',
   };
   return conversationListPageURL({
     accountId: accountId.value,
     inboxId,
     label,
     teamId,
+    locationId,
     conversationType: conversationTypeMap[name],
     customViewId,
   });
@@ -67,6 +70,22 @@ const isHMACVerified = computed(() => {
 const currentContact = computed(() =>
   store.getters['contacts/getContact'](props.chat.meta.sender.id)
 );
+
+const isGroupConversation = computed(() => {
+  return props.chat.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP;
+});
+
+const displayName = computed(() => {
+  if (isGroupConversation.value) {
+    // For group conversations, use the group name from additional_attributes
+    return (
+      props.chat.additional_attributes?.whatsappGroupName ||
+      props.chat.additional_attributes?.whatsapp_group_name ||
+      'WhatsApp Group'
+    );
+  }
+  return currentContact.value.name;
+});
 
 const isSnoozed = computed(
   () => currentChat.value.status === wootConstants.STATUS_TYPE.SNOOZED
@@ -106,7 +125,7 @@ const hasSlaPolicyId = computed(() => props.chat?.sla_policy_id);
         class="ltr:mr-2 rtl:ml-2"
       />
       <Avatar
-        :name="currentContact.name"
+        :name="displayName"
         :src="currentContact.thumbnail"
         :size="32"
         :status="currentContact.availability_status"
@@ -120,7 +139,7 @@ const hasSlaPolicyId = computed(() => props.chat?.sla_policy_id);
           <span
             class="text-sm font-medium truncate leading-tight text-n-slate-12"
           >
-            {{ currentContact.name }}
+            {{ displayName }}
           </span>
           <fluent-icon
             v-if="!isHMACVerified"

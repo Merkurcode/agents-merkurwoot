@@ -14,6 +14,22 @@ trigger_scheduled_items_job:
   class: 'TriggerScheduledItemsJob'
   queue: scheduled_jobs
 
+process_lead_follow_ups_job:
+  cron: '*/5 * * * *'
+  class: 'ProcessLeadFollowUpsJob'
+  queue: scheduled_jobs
+
+# executed every minute to dispatch proactive reengagement attempts
+process_reengagements_job:
+  cron: '*/1 * * * *'
+  class: 'ProcessReengagementsJob'
+  queue: scheduled_jobs
+
+reactivate_completed_follow_ups_job:
+  cron: '*/5 * * * *'
+  class: 'ReactivateCompletedFollowUpsJob'
+  queue: scheduled_jobs
+
 # executed At every minute..
 trigger_imap_email_inboxes_job:
   cron: '*/1 * * * *'
@@ -68,3 +84,53 @@ remove_orphan_conversations_job:
   cron: '0 */12 * * *'
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
+
+# executed every 5 minutes
+# to cleanup stale bulk processing requests stuck in PENDING/PROCESSING
+cleanup_stale_bulk_requests_job:
+  cron: '*/5 * * * *'
+  class: 'CleanupStaleBulkRequestsJob'
+  queue: scheduled_jobs
+
+# executed daily at 0200 UTC
+# to cleanup temporary uploaded files older than 24 hours
+cleanup_temp_uploads_job:
+  cron: '0 2 * * *'
+  class: 'CleanupTempUploadsJob'
+  queue: scheduled_jobs
+
+# executed daily at 2230 UTC
+# removes old notifications (>1 month) and trims to 300 per user
+remove_old_notification_job:
+  cron: '30 22 * * *'
+  class: 'Notification::RemoveOldNotificationJob'
+  queue: purgable
+
+# executed every 12 hours
+# to remove orphan conversations without contact
+remove_orphan_conversations_job:
+  cron: '0 */12 * * *'
+  class: 'Internal::RemoveOrphanConversationsJob'
+  queue: housekeeping
+
+# executed daily at 2330 UTC
+# to purge QR codes from appointments ending today
+purge_expired_appointment_qr_codes_job:
+  cron: '30 23 * * *'
+  class: 'PurgeExpiredAppointmentQrCodesJob'
+  queue: housekeeping
+
+# executed every 5 minutes
+# to cleanup stale bulk processing requests stuck in PENDING/PROCESSING
+cleanup_stale_bulk_requests_job:
+  cron: '*/5 * * * *'
+  class: 'CleanupStaleBulkRequestsJob'
+  queue: scheduled_jobs
+
+# executed every 6 hours
+# to sync agents with CRM users (Zoho, Salesforce, HubSpot, etc.)
+crm_agent_sync_job:
+  cron: '0 */6 * * *'
+  class: 'Crm::AgentSyncJob'
+  queue: low
+

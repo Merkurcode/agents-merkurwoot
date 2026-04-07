@@ -37,6 +37,10 @@ const props = defineProps({
     type: String,
     default: 'Search',
   },
+  searchKeys: {
+    type: Array,
+    default: () => ['name'],
+  },
 });
 
 const emit = defineEmits(['select']);
@@ -124,6 +128,7 @@ const hasIcon = computed(() => {
           :has-thumbnail="hasThumbnail"
           :input-placeholder="inputPlaceholder"
           :no-search-result="noSearchResult"
+          :search-keys="searchKeys"
           @select="onClickSelectItem"
         />
       </div>

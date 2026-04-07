@@ -196,6 +196,9 @@ GEM
       bigdecimal
       rexml
     crass (1.0.6)
+    creek (2.6.3)
+      nokogiri (>= 1.10.0)
+      rubyzip (>= 1.0.0)
     csv (3.3.0)
     csv-safe (3.3.1)
       csv (~> 3.0)
@@ -235,6 +238,8 @@ GEM
     diff-lcs (1.5.1)
     digest-crc (0.6.5)
       rake (>= 12.0.0, < 14.0.0)
+    discard (1.4.0)
+      activerecord (>= 4.2, < 9.0)
     docile (1.4.1)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
@@ -331,6 +336,7 @@ GEM
       googleauth (~> 1)
     ffi (1.17.2)
     ffi (1.17.2-arm64-darwin)
+    ffi (1.17.2-x64-mingw-ucrt)
     ffi (1.17.2-x86_64-darwin)
     ffi (1.17.2-x86_64-linux-gnu)
     ffi-compiler (1.0.1)
@@ -413,6 +419,9 @@ GEM
       google-protobuf (>= 3.25, < 5.0)
       googleapis-common-protos-types (~> 1.0)
     grpc (1.72.0-arm64-darwin)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.72.0-x64-mingw-ucrt)
       google-protobuf (>= 3.25, < 5.0)
       googleapis-common-protos-types (~> 1.0)
     grpc (1.72.0-x86_64-darwin)
@@ -557,7 +566,6 @@ GEM
     mime-types-data (3.2023.0218.1)
     mini_magick (4.12.0)
     mini_mime (1.1.5)
-    mini_portile2 (2.8.9)
     minitest (5.25.5)
     mock_redis (0.36.0)
       ruby2_keywords
@@ -767,7 +775,14 @@ GEM
     reverse_markdown (2.1.1)
       nokogiri
     rexml (3.4.4)
+    roo (2.10.1)
+      nokogiri (~> 1)
+      rubyzip (>= 1.3.0, < 3.0.0)
     rotp (6.3.0)
+    rqrcode (3.1.0)
+      chunky_png (~> 1.0)
+      rqrcode_core (~> 2.0)
+    rqrcode_core (2.0.0)
     rspec-core (3.13.0)
       rspec-support (~> 3.13.0)
     rspec-expectations (3.13.2)
@@ -841,9 +856,10 @@ GEM
       marcel (~> 1.0)
       ruby_llm-schema (~> 0.2.1)
       zeitwerk (~> 2)
-    ruby_llm-schema (0.2.5)
+    ruby_llm-schema (0.3.0)
     ruby_parser (3.20.0)
       sexp_processor (~> 4.16)
+    rubyzip (2.3.2)
     sass (3.7.4)
       sass-listen (~> 4.0.0)
     sass-listen (4.0.0)
@@ -1020,7 +1036,7 @@ PLATFORMS
   arm64-darwin-20
   arm64-darwin-21
   arm64-darwin-22
-  ruby
+  x64-mingw-ucrt
   x86_64-darwin-18
   x86_64-darwin-20
   x86_64-darwin-21
@@ -1051,6 +1067,7 @@ DEPENDENCIES
   cld3 (~> 3.7)
   climate_control
   commonmarker
+  creek (~> 2.6.3)
   csv-safe
   database_cleaner
   datadog (~> 2.0)
@@ -1059,6 +1076,7 @@ DEPENDENCIES
   devise-secure_password!
   devise-two-factor (>= 5.0.0)
   devise_token_auth (>= 1.2.3)
+  discard (~> 1.3)
   dotenv-rails (>= 3.0.0)
   down
   elastic-apm
@@ -1129,6 +1147,8 @@ DEPENDENCIES
   responders (>= 3.1.1)
   rest-client
   reverse_markdown
+  roo (~> 2.10.0)
+  rqrcode
   rspec-rails (>= 6.1.5)
   rspec_junit_formatter
   rubocop
@@ -1139,6 +1159,7 @@ DEPENDENCIES
   ruby-openai
   ruby_llm (>= 1.8.2)
   ruby_llm-schema
+  rubyzip (~> 2.3.0)
   scout_apm
   scss_lint
   searchkick
@@ -1175,9 +1196,10 @@ DEPENDENCIES
   webmock
   wisper (= 2.0.0)
   working_hours
+  write_xlsx (~> 1.11.0)
 
 RUBY VERSION
    ruby 3.4.4p34
 
 BUNDLED WITH
-   2.5.16
+   2.7.2

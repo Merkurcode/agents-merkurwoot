@@ -1,6 +1,7 @@
 import advancedFilters from './advancedFilters.json';
 import agentBots from './agentBots.json';
 import agentMgmt from './agentMgmt.json';
+import appointments from './appointments.json';
 import attributesMgmt from './attributesMgmt.json';
 import auditLogs from './auditLogs.json';
 import automation from './automation.json';
@@ -23,9 +24,12 @@ import inbox from './inbox.json';
 import inboxMgmt from './inboxMgmt.json';
 import integrationApps from './integrationApps.json';
 import integrations from './integrations.json';
+import knowledgeBase from './knowledgeBase.json';
 import labelsMgmt from './labelsMgmt.json';
+import locations from './locations.json';
 import login from './login.json';
 import macros from './macros.json';
+import metaCampaigns from './metaCampaigns.json';
 import report from './report.json';
 import resetPassword from './resetPassword.json';
 import search from './search.json';
@@ -33,13 +37,16 @@ import setNewPassword from './setNewPassword.json';
 import settings from './settings.json';
 import signup from './signup.json';
 import sla from './sla.json';
+import surveys from './surveys.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
+import crmFlows from './crmFlows.json';
 
 export default {
   ...advancedFilters,
   ...agentBots,
   ...agentMgmt,
+  ...appointments,
   ...attributesMgmt,
   ...auditLogs,
   ...automation,
@@ -62,9 +69,12 @@ export default {
   ...inboxMgmt,
   ...integrationApps,
   ...integrations,
+  ...knowledgeBase,
   ...labelsMgmt,
+  ...locations,
   ...login,
   ...macros,
+  ...metaCampaigns,
   ...report,
   ...resetPassword,
   ...search,
@@ -72,6 +82,8 @@ export default {
   ...settings,
   ...signup,
   ...sla,
+  ...surveys,
   ...teamsSettings,
   ...whatsappTemplates,
+  ...crmFlows,
 };

@@ -40,12 +40,22 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
         )
       )
       @inbox.save!
+      trigger_landing_page_generation
     end
   end
 
   def update
-    inbox_params = permitted_params.except(:channel, :csat_config)
+    return if @inbox.whatsapp_groups_inbox?
+
+    inbox_params = permitted_params.except(:channel, :csat_config, :auto_assignment_config)
     inbox_params[:csat_config] = format_csat_config(permitted_params[:csat_config]) if permitted_params[:csat_config].present?
+
+    if permitted_params[:auto_assignment_config].present?
+      current_config = @inbox.auto_assignment_config || {}
+      new_config = current_config.merge(permitted_params[:auto_assignment_config].to_h)
+      inbox_params[:auto_assignment_config] = new_config
+    end
+
     @inbox.update!(inbox_params)
     update_inbox_working_hours
     update_channel if channel_update_required?
@@ -154,6 +164,13 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     formatted['template'] = config['template'] if config['template'].present?
   end
 
+  def format_auto_assignment_config(config)
+    formatted = {}
+    formatted[:max_assignment_limit] = config['max_assignment_limit'] if config.key?('max_assignment_limit')
+    formatted[:assignment_type] = config['assignment_type'] if config.key?('assignment_type')
+    formatted
+  end
+
   def inbox_attributes
     [:name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
@@ -183,6 +200,20 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def get_channel_attributes(channel_type)
     channel_type.constantize.const_defined?(:EDITABLE_ATTRS) ? channel_type.constantize::EDITABLE_ATTRS.presence : []
+  end
+
+  def trigger_landing_page_generation
+    return unless @inbox.web_widget?
+    return unless @inbox.channel.auto_generate_landing_page
+
+    LandingPage::GenerateLandingPageJob.perform_later(@inbox.id)
+  end
+
+  def trigger_landing_page_generation
+    return unless @inbox.web_widget?
+    return unless @inbox.channel.auto_generate_landing_page
+
+    LandingPage::GenerateLandingPageJob.perform_later(@inbox.id)
   end
 end
 

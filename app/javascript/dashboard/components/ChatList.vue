@@ -69,11 +69,13 @@ import { ASSIGNEE_TYPE_TAB_PERMISSIONS } from 'dashboard/constants/permissions.j
 const props = defineProps({
   conversationInbox: { type: [String, Number], default: 0 },
   teamId: { type: [String, Number], default: 0 },
+  locationId: { type: [String, Number], default: 0 },
   label: { type: String, default: '' },
   conversationType: { type: String, default: '' },
   foldersId: { type: [String, Number], default: 0 },
   showConversationList: { default: true, type: Boolean },
   isOnExpandedLayout: { default: false, type: Boolean },
+  isOnBoardSection: { default: false, type: Boolean },
 });
 
 const emit = defineEmits(['conversationLoad']);
@@ -90,7 +92,7 @@ const virtualListRef = ref(null);
 provide('contextMenuElementTarget', virtualListRef);
 
 const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ME);
-const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
+const activeStatus = ref(wootConstants.STATUS_TYPE.ALL);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
 const showAdvancedFilters = ref(false);
 // chatsOnView is to store the chats that are currently visible on the screen,
@@ -169,6 +171,10 @@ const activeFolder = computed(() => {
     return firstValue;
   }
   return undefined;
+});
+
+const isOnBoard = computed(() => {
+  return activeFolder.value?.is_board || props.isOnBoardSection;
 });
 
 const activeFolderName = computed(() => {
@@ -272,6 +278,7 @@ const conversationFilters = computed(() => {
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
+    locationId: props.locationId || undefined,
     conversationType: props.conversationType || undefined,
   };
 });
@@ -283,7 +290,17 @@ const activeTeam = computed(() => {
   return {};
 });
 
+const activeLocation = computed(() => {
+  if (props.locationId) {
+    return getLocationFn.value(props.locationId);
+  }
+  return {};
+});
+
 const pageTitle = computed(() => {
+  if (isOnBoard.value) {
+    return t('CHAT_LIST.BOARD');
+  }
   if (hasAppliedFilters.value) {
     return t('CHAT_LIST.TAB_HEADING');
   }
@@ -292,6 +309,9 @@ const pageTitle = computed(() => {
   }
   if (activeTeam.value.name) {
     return activeTeam.value.name;
+  }
+  if (activeLocation.value.name) {
+    return activeLocation.value.name;
   }
   if (props.label) {
     return `#${props.label}`;
@@ -362,7 +382,7 @@ const uniqueInboxes = computed(() => {
 function setFiltersFromUISettings() {
   const { conversations_filter_by: filterBy = {} } = uiSettings.value;
   const { status, order_by: orderBy } = filterBy;
-  activeStatus.value = status || wootConstants.STATUS_TYPE.OPEN;
+  activeStatus.value = status || wootConstants.STATUS_TYPE.ALL;
   activeSortBy.value = Object.values(wootConstants.SORT_BY_TYPE).includes(
     orderBy
   )
@@ -463,6 +483,10 @@ function setParamsForEditFolderModal() {
       { id: 'medium', name: t('CONVERSATION.PRIORITY.OPTIONS.MEDIUM') },
       { id: 'high', name: t('CONVERSATION.PRIORITY.OPTIONS.HIGH') },
       { id: 'urgent', name: t('CONVERSATION.PRIORITY.OPTIONS.URGENT') },
+    ],
+    conversationType: [
+      { id: 'default', name: t('CONVERSATION.TYPE.DEFAULT') },
+      { id: 'whatsapp_group', name: t('CONVERSATION.TYPE.WHATSAPP_GROUP') },
     ],
     filterTypes: advancedFilterTypes.value,
     allCustomAttributes: conversationCustomAttributes.value,
@@ -631,7 +655,7 @@ function openLastItemAfterDeleteInFolder() {
 
 function redirectToConversationList() {
   const {
-    params: { accountId, inbox_id: inboxId, label, teamId },
+    params: { accountId, inbox_id: inboxId, label, teamId, locationId },
     name,
   } = route;
 
@@ -649,6 +673,7 @@ function redirectToConversationList() {
       inboxId,
       label,
       teamId,
+      locationId,
     })
   );
 }
@@ -841,6 +866,7 @@ provide('isConversationSelected', isConversationSelected);
 provide('deleteConversation', handleDelete);
 
 watch(activeTeam, () => resetAndFetchData());
+watch(activeLocation, () => resetAndFetchData());
 
 watch(
   computed(() => props.conversationInbox),
@@ -871,6 +897,23 @@ watch(conversationFilters, (newVal, oldVal) => {
     store.dispatch('updateChatListFilters', newVal);
   }
 });
+
+watch(conversationList, newConversations => {
+  if (isOnBoard.value) {
+    store.dispatch('pipelineStatuses/organizeConversations', {
+      conversations: newConversations,
+    });
+  }
+});
+
+watch(
+  () => conversationStats.value.missingPages,
+  async newMissingPages => {
+    if (isOnBoard.value && !!newMissingPages) {
+      await loadMoreConversations();
+    }
+  }
+);
 </script>
 
 <template>
@@ -890,6 +933,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       :is-on-expanded-layout="isOnExpandedLayout"
       :conversation-stats="conversationStats"
       :is-list-loading="chatListLoading && !conversationList.length"
+      :is-on-board="isOnBoard"
       @add-folders="onClickOpenAddFoldersModal"
       @delete-folders="onClickOpenDeleteFoldersModal"
       @filters-modal="onToggleAdvanceFiltersModal"
@@ -904,6 +948,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       <SaveCustomView
         v-model="appliedFilter"
         :custom-views-query="foldersQuery"
+        :is-on-board="isOnBoard"
         :open-last-saved-item="openLastSavedItemInFolder"
         @close="onCloseAddFoldersModal"
       />
@@ -946,7 +991,9 @@ watch(conversationFilters, (newVal, oldVal) => {
       @assign-labels="onAssignLabels"
       @assign-team="onAssignTeamsForBulk"
     />
+
     <div
+      v-if="!isOnBoard"
       ref="conversationListRef"
       class="flex-1 min-h-0 overflow-y-auto conversations-list"
       :class="{ '!overflow-hidden': isContextMenuOpen }"
@@ -983,6 +1030,17 @@ watch(conversationFilters, (newVal, oldVal) => {
         @observed="loadMoreConversations"
       />
     </div>
+
+    <div
+      v-if="isOnBoard"
+      class="flex p-4 max-w-screen overflow-x-scroll relative h-screen"
+    >
+      <Board
+        class="absolute"
+        :by-pipeline-status="conversationStats.byPipelineStatus"
+      />
+    </div>
+
     <Dialog
       ref="deleteConversationDialogRef"
       type="alert"

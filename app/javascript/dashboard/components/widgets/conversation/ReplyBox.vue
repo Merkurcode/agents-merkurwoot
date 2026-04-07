@@ -7,7 +7,9 @@ import { useTrack } from 'dashboard/composables';
 import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixins';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
+import CannedResponse from './CannedResponse.vue';
 import ReplyToMessage from './ReplyToMessage.vue';
+import ResizableTextArea from 'shared/components/ResizableTextArea.vue';
 import AttachmentPreview from 'dashboard/components/widgets/AttachmentsPreview.vue';
 import ReplyTopPanel from 'dashboard/components/widgets/WootWriter/ReplyTopPanel.vue';
 import ReplyEmailHead from './ReplyEmailHead.vue';
@@ -126,6 +128,8 @@ export default {
       recordingAudioState: '',
       recordingAudioDurationText: '',
       replyType: REPLY_EDITOR_MODES.REPLY,
+      mentionSearchKey: '',
+      hasSlashCommand: false,
       bccEmails: '',
       ccEmails: '',
       toEmails: '',
@@ -190,10 +194,11 @@ export default {
       return true;
     },
     isReplyRestricted() {
-      return (
-        !this.currentChat?.can_reply &&
-        !(this.isAWhatsAppChannel || this.isAPIInbox)
-      );
+      // Si es un grupo de WhatsApp, siempre está restringido (solo nota privada)
+      if (this.currentChat?.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP) {
+        return true;
+      }
+      return !this.currentChat?.can_reply && !this.isAWhatsAppChannel;
     },
     inboxId() {
       return this.currentChat.inbox_id;
@@ -242,6 +247,9 @@ export default {
       const { additional_attributes: additionalAttributes } = this.currentChat;
       const type = additionalAttributes ? additionalAttributes.type : '';
       return type || '';
+    },
+    isWhatsAppGroupConversation() {
+      return this.currentChat?.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP;
     },
     maxLength() {
       if (this.isPrivate) {
@@ -455,6 +463,13 @@ export default {
         this.copilot.reset();
       }
 
+      // Si es un grupo de WhatsApp, forzar siempre modo nota privada
+      if (this.currentChat?.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP) {
+        this.replyType = REPLY_EDITOR_MODES.NOTE;
+        return; // No continuar con la lógica normal
+      }
+
+      // Si ya está en modo nota privada, no cambiar el modo
       if (this.isOnPrivateNote) {
         return;
       }
@@ -486,7 +501,25 @@ export default {
         this.resetRecorderAndClearAttachments();
       }
     },
-    message() {
+    message(updatedMessage) {
+      // Check if the message starts with a slash.
+      const bodyWithoutSignature = removeSignature(
+        updatedMessage,
+        this.signatureToApply
+      );
+      const startsWithSlash = bodyWithoutSignature.startsWith('/');
+
+      // Determine if the user is potentially typing a slash command.
+      // This is true if the message starts with a slash and the rich content editor is not active.
+      this.hasSlashCommand = startsWithSlash && !this.showRichContentEditor;
+      this.showMentions = this.hasSlashCommand;
+
+      // If a slash command is active, extract the command text after the slash.
+      // If not, reset the mentionSearchKey.
+      this.mentionSearchKey = this.hasSlashCommand
+        ? bodyWithoutSignature.substring(1)
+        : '';
+
       // Autosave the current message draft.
       this.doAutoSaveDraft();
     },
@@ -498,6 +531,11 @@ export default {
 
   mounted() {
     this.getFromDraft();
+
+    // Si es un grupo de WhatsApp, forzar modo nota privada (DESPUÉS de getFromDraft)
+    if (this.currentChat?.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP) {
+      this.replyType = REPLY_EDITOR_MODES.NOTE;
+    }
     // Don't use the keyboard listener mixin here as the events here are supposed to be
     // working even if the editor is focussed.
     document.addEventListener('paste', this.onPaste);
@@ -559,14 +597,20 @@ export default {
     },
     handleInsert(article) {
       const { url, title } = article;
-      // Removing empty lines from the title
-      const lines = title.split('\n');
-      const nonEmptyLines = lines.filter(line => line.trim() !== '');
-      const filteredMarkdown = nonEmptyLines.join(' ');
-      emitter.emit(
-        BUS_EVENTS.INSERT_INTO_RICH_EDITOR,
-        `[${filteredMarkdown}](${url})`
-      );
+      if (this.isRichEditorEnabled) {
+        // Removing empty lines from the title
+        const lines = title.split('\n');
+        const nonEmptyLines = lines.filter(line => line.trim() !== '');
+        const filteredMarkdown = nonEmptyLines.join(' ');
+        emitter.emit(
+          BUS_EVENTS.INSERT_INTO_RICH_EDITOR,
+          `[${filteredMarkdown}](${url})`
+        );
+      } else {
+        this.addIntoEditor(
+          `${this.$t('CONVERSATION.REPLYBOX.INSERT_READ_MORE')} ${url}`
+        );
+      }
 
       useTrack(CONVERSATION_EVENTS.INSERT_ARTICLE_LINK);
     },
@@ -658,6 +702,7 @@ export default {
         Escape: {
           action: () => {
             this.hideEmojiPicker();
+            this.hideMentions();
           },
           allowOnFocusedInput: true,
         },
@@ -946,18 +991,45 @@ export default {
       this.$store.dispatch('draftMessages/setReplyEditorMode', {
         mode,
       });
-      if (canReply || this.isAWhatsAppChannel || this.isAPIInbox)
+
+      // Si es un grupo de WhatsApp, forzar siempre modo nota privada
+      if (this.currentChat?.conversation_type === CONVERSATION_TYPES.WHATSAPP_GROUP) {
+        this.replyType = REPLY_EDITOR_MODES.NOTE;
+      } else if (canReply || this.isAWhatsAppChannel) {
         this.replyType = mode;
-      if (this.isRecordingAudio) {
-        this.toggleAudioRecorder();
       }
+
+      if (this.showRichContentEditor) {
+        if (this.isRecordingAudio) {
+          this.toggleAudioRecorder();
+        }
+        return;
+      }
+      this.$nextTick(() => this.$refs.messageInput.focus());
     },
     clearEditorSelection() {
       this.updateEditorSelectionWith = '';
     },
+    insertIntoTextEditor(text, selectionStart, selectionEnd) {
+      const { message } = this;
+      const newMessage =
+        message.slice(0, selectionStart) +
+        text +
+        message.slice(selectionEnd, message.length);
+      this.message = newMessage;
+    },
     addIntoEditor(content) {
-      this.updateEditorSelectionWith = content;
-      this.onFocus();
+      if (this.showRichContentEditor) {
+        this.updateEditorSelectionWith = content;
+        this.onFocus();
+      }
+      if (!this.showRichContentEditor) {
+        const { selectionStart, selectionEnd } = this.$refs.messageInput.$el;
+        this.insertIntoTextEditor(content, selectionStart, selectionEnd);
+      }
+    },
+    executeCopilotAction(action, data) {
+      this.copilot.execute(action, data);
     },
     executeCopilotAction(action, data) {
       this.copilot.execute(action, data);
@@ -1009,6 +1081,9 @@ export default {
       if (this.showEmojiPicker) {
         this.toggleEmojiPicker();
       }
+    },
+    hideMentions() {
+      this.showMentions = false;
     },
     onTypingOn() {
       this.toggleTyping('on');
@@ -1265,6 +1340,7 @@ export default {
       :characters-remaining="charactersRemaining"
       :editor-content="message"
       :popout-reply-box="popOutReplyBox"
+      :show-only-private-note="isWhatsAppGroupConversation"
       @set-reply-mode="setReplyMode"
       @toggle-popout="togglePopout"
       @toggle-copilot="copilot.toggleEditor"
@@ -1502,5 +1578,10 @@ export default {
     transform: rotate(0deg);
     @apply ltr:left-1 rtl:right-1 -bottom-2;
   }
+}
+
+.normal-editor__canned-box {
+  width: calc(100% - 2 * 1rem);
+  left: 1rem;
 }
 </style>

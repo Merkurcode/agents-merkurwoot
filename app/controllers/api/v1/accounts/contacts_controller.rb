@@ -25,9 +25,10 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
     render json: { error: 'Specify search string with parameter q' }, status: :unprocessable_entity if params[:q].blank? && return
 
     contacts = Current.account.contacts.where(
-      'name ILIKE :search OR email ILIKE :search OR phone_number ILIKE :search OR contacts.identifier LIKE :search',
+      'contacts.name ILIKE :search OR contacts.email ILIKE :search OR contacts.phone_number ILIKE :search OR contacts.identifier LIKE :search OR contacts.additional_attributes->>\'company_name\' ILIKE :search OR EXISTS (SELECT 1 FROM companies WHERE companies.id = contacts.company_id AND companies.name ILIKE :search)',
       search: "%#{params[:q].strip}%"
     )
+
     @contacts = fetch_contacts_with_has_more(contacts)
   end
 
@@ -53,6 +54,8 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   def active
     contacts = Current.account.contacts.where(id: ::OnlineStatusTracker
                   .get_available_contact_ids(Current.account.id))
+    # Supervisor only sees contacts with conversations assigned to themselves or subordinates
+    contacts = filter_contacts_for_supervisor(contacts) if Current.account_user&.supervisor?
     @contacts = fetch_contacts(contacts)
     @contacts_count = @contacts.total_count
   end
@@ -84,7 +87,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
   def create
     ActiveRecord::Base.transaction do
-      @contact = Current.account.contacts.new(permitted_params.except(:avatar_url))
+      @contact = find_and_restore_discarded_contact || Current.account.contacts.new(permitted_params.except(:avatar_url))
       @contact.save!
       @contact_inbox = build_contact_inbox
       process_avatar_from_url
@@ -105,7 +108,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
                           :unprocessable_entity)
     end
 
-    @contact.destroy!
+    ::DeleteObjectJob.perform_now(@contact, Current.user, request.ip)
     head :ok
   end
 
@@ -122,8 +125,20 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
     @resolved_contacts = Current.account.contacts.resolved_contacts(use_crm_v2: Current.account.feature_enabled?('crm_v2'))
 
+    # Supervisor only sees contacts with conversations assigned to themselves or subordinates
+    @resolved_contacts = filter_contacts_for_supervisor(@resolved_contacts) if Current.account_user&.supervisor?
+
     @resolved_contacts = @resolved_contacts.tagged_with(params[:labels], any: true) if params[:labels].present?
     @resolved_contacts
+  end
+
+  def filter_contacts_for_supervisor(contacts)
+    assignee_ids = Current.account_user.all_subordinate_user_ids + [Current.user.id]
+    contact_ids = Current.account.conversations
+                         .where(assignee_id: assignee_ids)
+                         .pluck(:contact_id)
+                         .uniq
+    contacts.where(id: contact_ids)
   end
 
   def set_current_page
@@ -171,7 +186,8 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def permitted_params
-    params.permit(:name, :identifier, :email, :phone_number, :avatar, :blocked, :avatar_url, additional_attributes: {}, custom_attributes: {})
+    params.permit(:name, :identifier, :email, :phone_number, :avatar, :blocked, :avatar_url, :contact_type, additional_attributes: {},
+                                                                                                            custom_attributes: {})
   end
 
   def contact_custom_attributes
@@ -204,6 +220,26 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
     contact_scope = Current.account.contacts
     contact_scope = contact_scope.includes(contact_inboxes: [:inbox]) if @include_contact_inboxes
     @contact = contact_scope.find(params[:id])
+  end
+
+  def find_and_restore_discarded_contact
+    discarded_contact = find_discarded_contact
+    return unless discarded_contact
+
+    discarded_contact.undiscard
+    discarded_contact.assign_attributes(permitted_params.except(:avatar_url).compact_blank)
+    discarded_contact
+  end
+
+  def find_discarded_contact
+    discarded_scope = Contact.unscoped.where(account_id: Current.account.id).discarded
+    attrs = permitted_params
+
+    contact = discarded_scope.find_by(identifier: attrs[:identifier]) if attrs[:identifier].present?
+    contact ||= discarded_scope.find_by('LOWER(email) = ?', attrs[:email].downcase) if attrs[:email].present?
+    contact ||= discarded_scope.find_by(phone_number: attrs[:phone_number]) if attrs[:phone_number].present?
+
+    contact
   end
 
   def process_avatar_from_url

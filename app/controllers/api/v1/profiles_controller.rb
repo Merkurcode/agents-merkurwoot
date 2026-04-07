@@ -43,6 +43,11 @@ class Api::V1::ProfilesController < Api::BaseController
     @user.reload
   end
 
+  def update_working_hours
+    @user.current_account_user.update!(working_hours_params.slice(:timezone).compact)
+    @user.current_account_user.update_working_hours(working_hours_params[:working_hours])
+  end
+
   private
 
   def set_user
@@ -64,13 +69,18 @@ class Api::V1::ProfilesController < Api::BaseController
       :display_name,
       :avatar,
       :message_signature,
+      :phone_number,
       :account_id,
       ui_settings: {}
     )
   end
 
+  def working_hours_params
+    params.require(:profile).permit(:timezone, working_hours: Inbox::OFFISABLE_ATTRS)
+  end
+
   def custom_attributes_params
-    params.require(:profile).permit(:phone_number)
+    params.require(:profile).permit(custom_attributes: {})
   end
 
   def password_params

@@ -22,12 +22,15 @@ export default {
   data() {
     return {
       selectedAgentBotId: null,
+      selectedSurveyId: null,
     };
   },
   computed: {
     ...mapGetters({
       agentBots: 'agentBots/getBots',
       uiFlags: 'agentBots/getUIFlags',
+      surveys: 'surveys/getSurveys',
+      isFetchingSurveys: 'surveys/getUIFlags',
     }),
     currentInboxId() {
       return this.inbox?.id || this.$route.params.inboxId;
@@ -37,10 +40,28 @@ export default {
         this.currentInboxId
       );
     },
+    activeSurvey() {
+      return this.$store.getters['surveys/getSurvey'](
+        this.activeInbox?.survey_id
+      );
+    },
+    activeSurvey() {
+      return this.$store.getters['surveys/getSurvey'](
+        this.activeInbox?.survey_id
+      );
+    },
   },
   watch: {
     activeAgentBot() {
-      this.selectedAgentBotId = this.activeAgentBot.id;
+      this.selectedAgentBotId = this.activeAgentBot?.id || null;
+    },
+    'activeInbox.survey_id': {
+      immediate: true,
+      handler(surveyId) {
+        if (surveyId) {
+          this.selectedSurveyId = surveyId;
+        }
+      },
     },
   },
   mounted() {
@@ -56,12 +77,28 @@ export default {
       try {
         await this.$store.dispatch('agentBots/setAgentBotInbox', {
           inboxId: this.inbox.id,
-          // Added this to make sure that empty values are not sent to the API
-          botId: this.selectedAgentBotId ? this.selectedAgentBotId : undefined,
+          botId: this.selectedAgentBotId || undefined,
         });
+
+        // Save FAQ categories selection if component is available
+        if (this.$refs.faqCategorySelector?.saveSelection) {
+          await this.$refs.faqCategorySelector.saveSelection();
+        }
+
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.SUCCESS_MESSAGE'));
       } catch (error) {
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.ERROR_MESSAGE'));
+      }
+    },
+    async updateSurveyAssignment() {
+      try {
+        await this.$store.dispatch('inboxes/setSurvey', {
+          inboxId: this.inbox.id,
+          surveyId: this.selectedSurveyId,
+        });
+        useAlert(this.$t('AGENT_BOTS.SURVEY.SUCCESS_MESSAGE'));
+      } catch (error) {
+        useAlert(this.$t('AGENT_BOTS.SURVEY.ERROR_MESSAGE'));
       }
     },
     async disconnectBot() {

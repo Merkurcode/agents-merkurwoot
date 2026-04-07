@@ -149,9 +149,16 @@ export const getters = {
         (item.channel_type === INBOX_TYPES.TWILIO && item.medium === 'sms')
     );
   },
+  getEmailInboxes($state) {
+    return $state.records.filter(
+      item => item.channel_type === INBOX_TYPES.EMAIL
+    );
+  },
   getWhatsAppInboxes($state) {
     return $state.records.filter(
-      item => item.channel_type === INBOX_TYPES.WHATSAPP
+      item =>
+        item.channel_type === INBOX_TYPES.WHATSAPP &&
+        item.provider !== 'whatsapp_light'
     );
   },
   dialogFlowEnabledInboxes($state) {
@@ -209,6 +216,10 @@ export const actions = {
     } catch (error) {
       commit(types.default.SET_INBOXES_UI_FLAG, { isFetching: false });
     }
+  },
+  fetchInbox: async ({ commit }, inboxId) => {
+    const response = await InboxesAPI.getInbox(inboxId);
+    commit(types.default.EDIT_INBOXES, response.data);
   },
   createChannel: async ({ commit }, params) => {
     try {
@@ -374,6 +385,61 @@ export const actions = {
     } catch (error) {
       throwErrorMessage(error);
       return null;
+    }
+  },
+
+  createCSATTemplate: async (_, { inboxId, template }) => {
+    const response = await InboxesAPI.createCSATTemplate(inboxId, template);
+    return response.data;
+  },
+
+  getCSATTemplateStatus: async (_, { inboxId }) => {
+    const response = await InboxesAPI.getCSATTemplateStatus(inboxId);
+    return response.data;
+  },
+
+  // Message Templates actions
+  getMessageTemplates: async (_, { inboxId, params = {} }) => {
+    const response = await InboxesAPI.getMessageTemplates(inboxId, params);
+    return response.data;
+  },
+
+  createMessageTemplate: async (_, { inboxId, template }) => {
+    const response = await InboxesAPI.createMessageTemplate(inboxId, template);
+    return response.data;
+  },
+
+  getMessageTemplateStatus: async (_, { inboxId, templateName }) => {
+    const response = await InboxesAPI.getMessageTemplateStatus(
+      inboxId,
+      templateName
+    );
+    return response.data;
+  },
+
+  deleteMessageTemplate: async (_, { inboxId, templateName, templateId }) => {
+    await InboxesAPI.deleteMessageTemplate(inboxId, templateName, templateId);
+    return { success: true };
+  },
+
+  setSurvey: async ({ commit, state }, { inboxId, surveyId }) => {
+    try {
+      await InboxesAPI.setSurvey(inboxId, surveyId);
+
+      const updatedInboxes = state.records.map(inbox => {
+        if (inbox.id === Number(inboxId)) {
+          return {
+            ...inbox,
+            survey_id: surveyId,
+          };
+        }
+        return inbox;
+      });
+
+      commit(types.default.SET_INBOXES, updatedInboxes);
+      return true;
+    } catch (error) {
+      throw new Error(error);
     }
   },
 };

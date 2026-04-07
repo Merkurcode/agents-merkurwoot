@@ -42,6 +42,7 @@ class ConversationFinder
 
     mine_count, unassigned_count, all_count, = set_count_for_all_conversations
     assigned_count = all_count - unassigned_count
+    missing_pages = missing_pages(mine_count, unassigned_count, all_count)
 
     filter_by_assignee_type
 
@@ -51,7 +52,8 @@ class ConversationFinder
         mine_count: mine_count,
         assigned_count: assigned_count,
         unassigned_count: unassigned_count,
-        all_count: all_count
+        all_count: all_count,
+        missing_pages: missing_pages
       }
     }
   end
@@ -77,14 +79,33 @@ class ConversationFinder
   def set_up
     set_inboxes
     set_team
+    set_location
     set_assignee_type
 
     find_all_conversations
     filter_by_status unless params[:q]
     filter_by_team
+    filter_by_location
     filter_by_labels
     filter_by_query
     filter_by_source_id
+  end
+
+  def missing_pages(mine_count, unassigned_count, all_count)
+    return 0 unless params[:conversation_type] == 'board'
+
+    records_per_page = ENV.fetch('CONVERSATION_RESULTS_PER_PAGE', '25').to_i
+    total_pages =
+      case params[:assignee_type]
+      when 'me'
+        (mine_count.to_f / records_per_page).ceil
+      when 'unassigned'
+        (unassigned_count.to_f / records_per_page).ceil
+      else
+        (all_count.to_f / records_per_page).ceil
+      end
+
+    total_pages.to_i - current_page.to_i
   end
 
   def set_inboxes
@@ -103,8 +124,12 @@ class ConversationFinder
     @team = current_account.teams.find(params[:team_id]) if params[:team_id]
   end
 
+  def set_location
+    @location = current_account.locations.find(params[:location_id]) if params[:location_id]
+  end
+
   def find_conversation_by_inbox
-    @conversations = current_account.conversations
+    @conversations = current_account.conversations.with_active_contact
 
     return unless params[:inbox_id]
 
@@ -168,6 +193,14 @@ class ConversationFinder
     return unless @team
 
     @conversations = @conversations.where(team: @team)
+  end
+
+  def filter_by_location
+    return unless @location
+
+    location_ids = @location.with_descendants.pluck(:id)
+    user_ids = current_account.account_users.where(location_id: location_ids).pluck(:user_id)
+    @conversations = @conversations.where(assignee_id: user_ids)
   end
 
   def filter_by_labels

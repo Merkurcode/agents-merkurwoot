@@ -10,6 +10,7 @@
     "TAB_HEADING": "Conversations",
     "MENTION_HEADING": "Mentions",
     "UNATTENDED_HEADING": "Unattended",
+    "BOARD": "Pipelines",
     "SEARCH": {
       "INPUT": "Search for People, Chats, Saved Replies .."
     },
@@ -21,13 +22,13 @@
     },
     "CHAT_STATUS_FILTER_ITEMS": {
       "open": {
-        "TEXT": "Open"
+        "TEXT": "Human in the Loop"
       },
       "resolved": {
         "TEXT": "Resolved"
       },
       "pending": {
-        "TEXT": "Pending"
+        "TEXT": "AI Agent"
       },
       "snoozed": {
         "TEXT": "Snoozed"

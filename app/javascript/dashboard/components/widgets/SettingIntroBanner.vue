@@ -1,16 +1,12 @@
-<script>
-export default {
-  props: {
-    headerTitle: {
-      type: String,
-      default: '',
-    },
-    headerContent: {
-      type: String,
-      default: '',
-    },
-  },
-};
+<script setup>
+import BackButton from 'dashboard/components/widgets/BackButton.vue';
+
+defineProps({
+  headerTitle: { type: String, default: '' },
+  headerContent: { type: String, default: '' },
+  headerImage: { type: String, default: '' },
+  backUrl: { type: [String, Object], default: '' },
+});
 </script>
 
 <template>

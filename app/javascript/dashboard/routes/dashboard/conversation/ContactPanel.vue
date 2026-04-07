@@ -16,6 +16,7 @@ import ConversationParticipant from './ConversationParticipant.vue';
 import ContactInfo from './contact/ContactInfo.vue';
 import ContactNotes from './contact/ContactNotes.vue';
 import ConversationInfo from './ConversationInfo.vue';
+import ContactSurveyResponses from './ContactSurveyResponses.vue';
 import CustomAttributes from './customAttributes/CustomAttributes.vue';
 import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
@@ -23,11 +24,18 @@ import ShopifyOrdersList from 'dashboard/components/widgets/conversation/Shopify
 import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
+import ConversationSumary from './ConversationSumary.vue';
+import CopilotTimeline from './CopilotTimeline.vue';
+import CrmSyncPanel from './CrmSyncPanel.vue';
 
 const props = defineProps({
   conversationId: {
     type: [Number, String],
     required: true,
+  },
+  conversationSummary: {
+    type: String,
+    default: '',
   },
   inboxId: {
     type: Number,
@@ -71,6 +79,22 @@ const isLinearClientIdConfigured = computed(() => {
 
 const isLinearConnected = computed(
   () => linearIntegration.value?.enabled || false
+);
+
+const salesforceIntegration = useFunctionGetter(
+  'integrations/getIntegration',
+  'salesforce'
+);
+const zohoIntegration = useFunctionGetter(
+  'integrations/getIntegration',
+  'zoho'
+);
+const hubspotIntegration = useFunctionGetter(
+  'integrations/getIntegration',
+  'hubspot'
+);
+const hasCrmIntegration = computed(
+  () => salesforceIntegration.value?.enabled || zohoIntegration.value?.enabled || hubspotIntegration.value?.enabled
 );
 
 const store = useStore();
@@ -125,6 +149,7 @@ onMounted(() => {
   conversationSidebarItems.value = conversationSidebarItemsOrder.value;
   getContactDetails();
   store.dispatch('attributes/get', 0);
+  store.dispatch('pipelineStatuses/get');
   // Load integrations to ensure linear integration state is available
   store.dispatch('integrations/get', 'linear');
 });
@@ -137,7 +162,8 @@ onMounted(() => {
       @close="closeContactPanel"
     />
     <ContactInfo :contact="contact" :channel-type="channelType" />
-    <div class="px-2 pb-8 list-group">
+
+    <div class="pb-8 list-group px-2">
       <Draggable
         :list="conversationSidebarItems"
         animation="200"
@@ -163,6 +189,53 @@ onMounted(() => {
               <ConversationAction
                 :conversation-id="conversationId"
                 :inbox-id="inboxId"
+              />
+            </AccordionItem>
+          </div>
+          <div
+            v-else-if="element.name === 'copilot_timeline'"
+            class="conversation--actions"
+          >
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.COPILOT_TIMELINE')"
+              :is-open="isContactSidebarItemOpen('is_copilot_timeline_open')"
+              compact
+              @toggle="
+                value => toggleSidebarUIState('is_copilot_timeline_open', value)
+              "
+            >
+              <CopilotTimeline :conversation-id="conversationId" />
+            </AccordionItem>
+          </div>
+          <div
+            v-else-if="element.name === 'sumary'"
+            class="conversation--actions"
+          >
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.SUMMARY.TITLE')"
+              :is-open="isContactSidebarItemOpen('is_conv_sumary_open')"
+              @toggle="
+                value => toggleSidebarUIState('is_conv_sumary_open', value)
+              "
+            >
+              <ConversationSumary :raw-sumary="conversationSummary" />
+            </AccordionItem>
+          </div>
+          <div
+            v-else-if="element.name === 'survey_responses'"
+            class="conversation--actions"
+          >
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.SURVEY_RESPONSES')"
+              :is-open="isContactSidebarItemOpen('is_survey_responses_open')"
+              compact
+              @toggle="
+                value => toggleSidebarUIState('is_survey_responses_open', value)
+              "
+            >
+              <ContactSurveyResponses
+                v-if="contactId"
+                :contact-id="contactId"
               />
             </AccordionItem>
           </div>
@@ -299,6 +372,17 @@ onMounted(() => {
           </div>
         </template>
       </Draggable>
+
+      <!-- CRM Sync (fuera del Draggable, no reordenable) -->
+      <AccordionItem
+        v-if="hasCrmIntegration"
+        :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CRM_SYNC')"
+        :is-open="isContactSidebarItemOpen('is_crm_sync_open')"
+        compact
+        @toggle="value => toggleSidebarUIState('is_crm_sync_open', value)"
+      >
+        <CrmSyncPanel :conversation-id="conversationId" />
+      </AccordionItem>
     </div>
   </div>
 </template>

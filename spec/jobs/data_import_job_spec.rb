@@ -1,7 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe DataImportJob do
-  subject(:job) { described_class.perform_later(data_import) }
+  subject(:job) do
+    described_class.perform_later(data_import)
+  end
 
   let!(:data_import) { create(:data_import) }
 
@@ -30,18 +32,77 @@ RSpec.describe DataImportJob do
     end
   end
 
+  describe '#detect_delimiter' do
+    let(:job_instance) { described_class.new }
+
+    context 'when CSV uses comma delimiter' do
+      it 'detects comma as the delimiter' do
+        csv_data = "name,email,phone\nJohn,john@example.com,123456\nJane,jane@example.com,789012"
+        expect(job_instance.send(:detect_delimiter, csv_data)).to eq(',')
+      end
+    end
+
+    context 'when CSV uses semicolon delimiter' do
+      it 'detects semicolon as the delimiter' do
+        csv_data = "name;email;phone\nJohn;john@example.com;123456\nJane;jane@example.com;789012"
+        expect(job_instance.send(:detect_delimiter, csv_data)).to eq(';')
+      end
+    end
+
+    context 'when CSV has mixed delimiters but semicolons are more frequent' do
+      it 'detects semicolon as the delimiter' do
+        csv_data = "name;email;phone;address\nJohn Smith;john@example.com;123,456;New York"
+        expect(job_instance.send(:detect_delimiter, csv_data)).to eq(';')
+      end
+    end
+
+    context 'when CSV has equal delimiters' do
+      it 'defaults to comma' do
+        csv_data = "name\nJohn"
+        expect(job_instance.send(:detect_delimiter, csv_data)).to eq(',')
+      end
+    end
+  end
+
   describe 'importing data' do
     context 'when the data is valid' do
+      before do
+        create(:label, title: 'label_test', account: data_import.account)
+        # Create the corresponding ActsAsTaggableOn::Tag for the label
+        ActsAsTaggableOn::Tag.find_or_create_by!(name: 'label_test')
+      end
+
       it 'imports data into the account' do
         csv_length = CSV.parse(data_import.import_file.download, headers: true).length
 
         described_class.perform_now(data_import)
+
         expect(data_import.account.contacts.count).to eq(csv_length)
         expect(data_import.reload.total_records).to eq(csv_length)
         expect(data_import.reload.processed_records).to eq(csv_length)
         contact = Contact.find_by(phone_number: '+918080808080')
         expect(contact).to be_truthy
+        expect(contact.reload.label_list).to eq(['label_test'])
         expect(contact['additional_attributes']['company']).to eq('My Company Name')
+      end
+    end
+
+    context 'when CSV uses semicolon delimiter' do
+      it 'correctly imports data with semicolon delimiter' do
+        semicolon_data = [
+          %w[name email phone_number],
+          ['John Doe', 'john@example.com', '+918181818181'],
+          ['Jane Smith', 'jane@example.com', '+918282828282']
+        ]
+        semicolon_csv = semicolon_data.map { |row| row.join(';') }.join("\n")
+        semicolon_import = create(:data_import)
+        allow(semicolon_import.import_file).to receive(:download).and_return(semicolon_csv)
+
+        described_class.perform_now(semicolon_import)
+
+        expect(semicolon_import.account.contacts.count).to eq(2)
+        expect(Contact.from_email('john@example.com')).to be_present
+        expect(Contact.from_email('jane@example.com')).to be_present
       end
     end
 

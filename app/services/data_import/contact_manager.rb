@@ -21,6 +21,7 @@ class DataImport::ContactManager
     contact = find_contact_by_identifier(params)
     contact ||= find_contact_by_email(params)
     contact ||= find_contact_by_phone_number(params)
+    contact ||= find_and_restore_discarded_contact(params)
 
     update_contact_with_merged_attributes(params, contact) if contact.present? && contact.valid?
     contact
@@ -44,6 +45,24 @@ class DataImport::ContactManager
     @account.contacts.find_by(phone_number: format_phone_number(params[:phone_number]))
   end
 
+  def find_and_restore_discarded_contact(params)
+    discarded_contact = find_discarded_contact(params)
+    return unless discarded_contact
+
+    discarded_contact.undiscard
+    discarded_contact
+  end
+
+  def find_discarded_contact(params)
+    discarded_scope = Contact.unscoped.where(account_id: @account.id).discarded
+
+    contact = discarded_scope.find_by(identifier: params[:identifier]) if params[:identifier].present?
+    contact ||= discarded_scope.find_by('LOWER(email) = ?', params[:email].downcase) if params[:email].present?
+    contact ||= discarded_scope.find_by(phone_number: format_phone_number(params[:phone_number])) if params[:phone_number].present?
+
+    contact
+  end
+
   def format_phone_number(phone_number)
     phone_number.start_with?('+') ? phone_number : "+#{phone_number}"
   end
@@ -53,6 +72,7 @@ class DataImport::ContactManager
     contact.email = params[:email] if params[:email].present?
     contact.phone_number = format_phone_number(params[:phone_number]) if params[:phone_number].present?
     update_contact_attributes(params, contact)
+
     contact.save
   end
 

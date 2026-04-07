@@ -29,6 +29,10 @@ export default {
       type: Function,
       default: () => {},
     },
+    isOnBoard: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['close'],
   setup() {
@@ -68,6 +72,7 @@ export default {
           name: this.name,
           filter_type: this.filterType,
           query: this.customViewsQuery,
+          is_board: this.isOnBoard,
         });
         this.alertMessage =
           this.filterType === 0
@@ -108,8 +113,8 @@ export default {
       <NextInput
         v-model="name"
         :placeholder="$t('FILTER.CUSTOM_VIEWS.ADD.PLACEHOLDER')"
-        :message="v$.name.$error && $t('FILTER.CUSTOM_VIEWS.ADD.ERROR_MESSAGE')"
-        :message-type="v$.name.$error && 'error'"
+        :message="v$.name.$error ? $t('FILTER.CUSTOM_VIEWS.ADD.ERROR_MESSAGE') : ''"
+        :message-type="v$.name.$error ? 'error' : 'info'"
         @blur="v$.name.$touch"
       />
       <div class="flex flex-row justify-end w-full gap-2">

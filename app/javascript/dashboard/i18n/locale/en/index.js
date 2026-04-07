@@ -1,6 +1,8 @@
 import advancedFilters from './advancedFilters.json';
 import agentBots from './agentBots.json';
 import agentMgmt from './agentMgmt.json';
+import appointments from './appointments.json';
+import locations from './locations.json';
 import attributesMgmt from './attributesMgmt.json';
 import auditLogs from './auditLogs.json';
 import automation from './automation.json';
@@ -27,6 +29,7 @@ import integrations from './integrations.json';
 import labelsMgmt from './labelsMgmt.json';
 import login from './login.json';
 import macros from './macros.json';
+import metaCampaigns from './metaCampaigns.json';
 import report from './report.json';
 import resetPassword from './resetPassword.json';
 import search from './search.json';
@@ -40,11 +43,14 @@ import whatsappTemplates from './whatsappTemplates.json';
 import contentTemplates from './contentTemplates.json';
 import mfa from './mfa.json';
 import yearInReview from './yearInReview.json';
+import crmFlows from './crmFlows.json';
 
 export default {
   ...advancedFilters,
   ...agentBots,
   ...agentMgmt,
+  ...appointments,
+  ...locations,
   ...attributesMgmt,
   ...auditLogs,
   ...automation,
@@ -71,6 +77,7 @@ export default {
   ...labelsMgmt,
   ...login,
   ...macros,
+  ...metaCampaigns,
   ...report,
   ...resetPassword,
   ...search,

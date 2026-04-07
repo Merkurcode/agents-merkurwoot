@@ -57,6 +57,9 @@ export default {
     showAddButton() {
       return this.showIntegrationHooks && this.isIntegrationMultiple;
     },
+    isZoho() {
+      return this.integrationId === 'zoho';
+    },
     deleteTitle() {
       return this.isHookTypeInbox
         ? this.$t('INTEGRATION_APPS.DELETE.TITLE.INBOX')

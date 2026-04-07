@@ -134,6 +134,16 @@ export default {
       return '';
     },
     tabs() {
+      // WhatsApp Groups inbox only shows basic settings tab
+      if (this.inbox?.is_whatsapp_groups_inbox) {
+        return [
+          {
+            key: 'inbox-settings',
+            name: this.$t('INBOX_MGMT.TABS.SETTINGS'),
+          },
+        ];
+      }
+
       let visibleToAllChannelTabs = [
         {
           key: 'inbox-settings',
@@ -204,6 +214,10 @@ export default {
           {
             key: 'whatsapp-health',
             name: this.$t('INBOX_MGMT.TABS.ACCOUNT_HEALTH'),
+          },
+          {
+            key: 'whatsapp-templates',
+            name: this.$t('INBOX_MGMT.TABS.WHATSAPP_TEMPLATES'),
           },
         ];
       }
@@ -1234,6 +1248,9 @@ export default {
             @register-webhook="registerWebhook"
           />
         </div>
+      </div>
+      <div v-if="selectedTabKey === 'whatsapp-templates'">
+        <WhatsappTemplatesPage :inbox="inbox" />
       </div>
     </section>
   </div>

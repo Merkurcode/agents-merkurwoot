@@ -5,6 +5,8 @@ class Api::V1::Accounts::Conversations::AssignmentsController < Api::V1::Account
       set_agent
     elsif params.key?(:team_id)
       set_team
+    elsif params.key?(:location_id)
+      set_location
     else
       render json: nil
     end
@@ -19,6 +21,8 @@ class Api::V1::Accounts::Conversations::AssignmentsController < Api::V1::Account
       assignee_type: params[:assignee_type]
     ).perform
 
+    @agent = resource if resource.is_a?(User)
+    trigger_whatsapp_group_creation(resource)
     render_agent(resource)
   end
 
@@ -39,7 +43,34 @@ class Api::V1::Accounts::Conversations::AssignmentsController < Api::V1::Account
     render json: @team
   end
 
+  def set_location
+    @location = Current.account.locations.find_by(id: params[:location_id])
+    @conversation.update!(location: @location)
+    render json: @location
+  end
+
   def agent_bot_assignment?
     params[:assignee_type].to_s == 'AgentBot'
+  end
+
+  def trigger_whatsapp_group_creation(resource)
+    return unless whatsapp_group_enabled?
+    return unless resource.present?
+
+    group_options = {
+      group_name: params[:group_name],
+      welcome_message: params[:welcome_message]
+    }.compact
+
+    Whatsapp::CreateGroupJob.perform_later(@conversation.id, group_options)
+  end
+
+  def whatsapp_group_enabled?
+    return false if agent_bot_assignment?
+    return false unless Current.account.feature_enabled?(:whatsapp_groups)
+
+    @conversation.inbox.auto_assignment_config&.dig('assignment_type') == 'group' &&
+      @agent.phone_number.present? &&
+      @conversation.contact&.phone_number.present?
   end
 end

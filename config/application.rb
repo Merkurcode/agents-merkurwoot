@@ -12,7 +12,7 @@ Bundler.require(*Rails.groups)
 # We rely on DOTENV to load the environment variables
 # We need these environment variables to load the specific APM agent
 Dotenv::Rails.load
-require 'datadog' if ENV.fetch('DD_TRACE_AGENT_URL', false).present?
+require 'datadog' if ENV.fetch('DD_API_KEY', false).present?
 require 'elastic-apm' if ENV.fetch('ELASTIC_APM_SECRET_TOKEN', false).present?
 require 'scout_apm' if ENV.fetch('SCOUT_KEY', false).present?
 
@@ -68,6 +68,10 @@ module Chatwoot
 
     # Disable PDF/video preview generation as we don't use them
     config.active_storage.previewers = []
+
+    # Middleware to limit request size for kb_resources uploads
+    require_relative '../app/middleware/request_size_limiter'
+    config.middleware.use RequestSizeLimiter
 
     # Active Record Encryption configuration
     # Required for MFA/2FA features - skip if not using encryption

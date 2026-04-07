@@ -3,18 +3,71 @@ import { ref, computed } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
+import { useAccount } from 'dashboard/composables/useAccount';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email } from '@vuelidate/validators';
 import Button from 'dashboard/components-next/button/Button.vue';
+import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
+import WeeklyAvailabilitySection from '../components/WeeklyAvailabilitySection.vue';
+import { isPhoneNumberValid } from 'shared/helpers/Validators';
+import parsePhoneNumber from 'libphonenumber-js';
 
 const emit = defineEmits(['close']);
 
 const store = useStore();
 const { t } = useI18n();
+const { currentAccount } = useAccount();
 
 const agentName = ref('');
 const agentEmail = ref('');
+const agentPhoneNumber = ref('');
+const activeDialCode = ref('');
 const selectedRoleId = ref('agent');
+const responsibleId = ref(null);
+const locationId = ref(null);
+
+const parsedPhoneNumber = computed(() => {
+  return parsePhoneNumber(agentPhoneNumber.value || '');
+});
+
+const isPhoneNumberNotValid = computed(() => {
+  if (agentPhoneNumber.value !== '') {
+    return (
+      !isPhoneNumberValid(agentPhoneNumber.value, activeDialCode.value) ||
+      (agentPhoneNumber.value !== '' ? activeDialCode.value === '' : false)
+    );
+  }
+  return false;
+});
+
+const setPhoneNumber = computed(() => {
+  if (parsedPhoneNumber.value && parsedPhoneNumber.value.countryCallingCode) {
+    return agentPhoneNumber.value;
+  }
+  if (agentPhoneNumber.value === '' && activeDialCode.value !== '') {
+    return '';
+  }
+  return activeDialCode.value
+    ? `${activeDialCode.value}${agentPhoneNumber.value}`.replace(/\s/g, '')
+    : '';
+});
+
+const setPhoneCode = code => {
+  if (agentPhoneNumber.value !== '' && parsedPhoneNumber.value) {
+    const dialCode = parsedPhoneNumber.value.countryCallingCode;
+    if (dialCode === code) {
+      return;
+    }
+    activeDialCode.value = `+${dialCode}`;
+    const newPhoneNumber = agentPhoneNumber.value.replace(
+      `+${dialCode}`,
+      `${code}`
+    );
+    agentPhoneNumber.value = newPhoneNumber;
+  } else {
+    activeDialCode.value = code;
+  }
+};
 
 const rules = {
   agentName: { required },
@@ -30,6 +83,22 @@ const v$ = useVuelidate(rules, {
 
 const uiFlags = useMapGetter('agents/getUIFlags');
 const getCustomRoles = useMapGetter('customRole/getCustomRoles');
+const agents = useMapGetter('agents/getAgents');
+const locations = useMapGetter('locations/getLocations');
+
+const responsibleOptions = computed(() => {
+  return agents.value.map(agent => ({
+    value: agent.current_account_user_id,
+    label: agent.name,
+  }));
+});
+
+const locationOptions = computed(() => {
+  return locations.value.map(location => ({
+    value: location.id,
+    label: location.name,
+  }));
+});
 
 const roles = computed(() => {
   const defaultRoles = [
@@ -37,6 +106,11 @@ const roles = computed(() => {
       id: 'administrator',
       name: 'administrator',
       label: t('AGENT_MGMT.AGENT_TYPES.ADMINISTRATOR'),
+    },
+    {
+      id: 'supervisor',
+      name: 'supervisor',
+      label: t('AGENT_MGMT.AGENT_TYPES.SUPERVISOR'),
     },
     {
       id: 'agent',
@@ -61,15 +135,39 @@ const selectedRole = computed(() =>
   )
 );
 
+const accountDefaults = computed(() => {
+  if (!currentAccount.value) {
+    return { timezone: null, working_hours: [] };
+  }
+  return {
+    timezone: currentAccount.value.business_hours_timezone || null,
+    working_hours: currentAccount.value.business_hours || [],
+  };
+});
+
+const childRef = ref(null);
+
 const addAgent = async () => {
   v$.value.$touch();
-  if (v$.value.$invalid) return;
+  if (v$.value.$invalid || isPhoneNumberNotValid.value) return;
 
   try {
+    const availability = childRef.value.updateWeeklyAvailability();
+
     const payload = {
       name: agentName.value,
       email: agentEmail.value,
+      phone_number: setPhoneNumber.value,
+      ...availability,
     };
+
+    if (responsibleId.value) {
+      payload.responsible_id = responsibleId.value;
+    }
+
+    if (locationId.value) {
+      payload.location_id = locationId.value;
+    }
 
     if (selectedRole.value.name.startsWith('custom_')) {
       payload.custom_role_id = selectedRole.value.id;
@@ -145,6 +243,62 @@ const addAgent = async () => {
             @input="v$.agentEmail.$touch"
           />
         </label>
+      </div>
+
+      <div class="w-full">
+        <label :class="{ error: isPhoneNumberNotValid }">
+          {{ $t('AGENT_MGMT.ADD.FORM.PHONE_NUMBER.LABEL') }}
+          <woot-phone-input
+            v-model="agentPhoneNumber"
+            :value="agentPhoneNumber"
+            :error="isPhoneNumberNotValid"
+            :placeholder="$t('AGENT_MGMT.ADD.FORM.PHONE_NUMBER.PLACEHOLDER')"
+            @set-code="setPhoneCode"
+          />
+          <span v-if="isPhoneNumberNotValid" class="message">
+            {{ $t('CONTACT_FORM.FORM.PHONE_NUMBER.ERROR') }}
+          </span>
+        </label>
+      </div>
+
+      <div class="w-full">
+        <label>
+          {{ $t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.LABEL') }}
+          <ComboBox
+            v-model="responsibleId"
+            :options="responsibleOptions"
+            :placeholder="$t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.PLACEHOLDER')"
+            :search-placeholder="
+              $t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.SEARCH_PLACEHOLDER')
+            "
+            :empty-state="$t('AGENT_MGMT.ADD.FORM.RESPONSIBLE.EMPTY_STATE')"
+            class="[&_button]:!bg-n-alpha-black2 mb-4"
+          />
+        </label>
+      </div>
+
+      <div class="w-full">
+        <label>
+          {{ $t('AGENT_MGMT.ADD.FORM.LOCATION.LABEL') }}
+          <ComboBox
+            v-model="locationId"
+            :options="locationOptions"
+            :placeholder="$t('AGENT_MGMT.ADD.FORM.LOCATION.PLACEHOLDER')"
+            :search-placeholder="
+              $t('AGENT_MGMT.ADD.FORM.LOCATION.SEARCH_PLACEHOLDER')
+            "
+            :empty-state="$t('AGENT_MGMT.ADD.FORM.LOCATION.EMPTY_STATE')"
+            class="[&_button]:!bg-n-alpha-black2 mb-4"
+          />
+        </label>
+      </div>
+
+      <div class="w-full">
+        <WeeklyAvailabilitySection
+          ref="childRef"
+          :user="{}"
+          :account-defaults="accountDefaults"
+        />
       </div>
 
       <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">

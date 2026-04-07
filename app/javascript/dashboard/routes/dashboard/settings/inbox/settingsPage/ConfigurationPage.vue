@@ -59,6 +59,12 @@ export default {
     isForwardingEnabled() {
       return !!this.inbox.forwarding_enabled;
     },
+    landingPageUrl() {
+      return this.inbox?.landing_page_url;
+    },
+    autoGenerateLandingPage() {
+      return this.inbox?.auto_generate_landing_page || false;
+    },
   },
   watch: {
     inbox() {
@@ -74,6 +80,7 @@ export default {
   },
   mounted() {
     this.setDefaults();
+    this.fetchLandingPageUrl();
   },
   methods: {
     setDefaults() {
@@ -86,6 +93,76 @@ export default {
       this.$nextTick(() => {
         this.isSettingDefaults = false;
       });
+    },
+    async fetchLandingPageUrl() {
+      // Only fetch if it's a web widget and auto-generate is enabled
+      if (
+        !this.isAWebWidgetInbox ||
+        !this.autoGenerateLandingPage ||
+        this.landingPageUrl
+      ) {
+        return;
+      }
+
+      // Reset error state
+      this.landingPageError = false;
+
+      try {
+        // Sleep de 10 segundos
+        let index = 1;
+        let inbox;
+
+        while (index <= 5) {
+          // Race between the store dispatch and timeout
+          this.$store.dispatch('inboxes/fetchInbox', this.inbox.id);
+          inbox = this.$store.getters['inboxes/getInbox'](this.inbox?.id);
+
+          if (inbox?.landing_page_url) break;
+
+          await new Promise(resolve => setTimeout(resolve, 10000));
+
+          index += 1;
+        }
+
+        if (!inbox?.landing_page_url) throw new Error();
+      } catch (error) {
+        this.landingPageError = true;
+      }
+    },
+    async fetchLandingPageUrl() {
+      // Only fetch if it's a web widget and auto-generate is enabled
+      if (
+        !this.isAWebWidgetInbox ||
+        !this.autoGenerateLandingPage ||
+        this.landingPageUrl
+      ) {
+        return;
+      }
+
+      // Reset error state
+      this.landingPageError = false;
+
+      try {
+        // Sleep de 10 segundos
+        let index = 1;
+        let inbox;
+
+        while (index <= 5) {
+          // Race between the store dispatch and timeout
+          this.$store.dispatch('inboxes/fetchInbox', this.inbox.id);
+          inbox = this.$store.getters['inboxes/getInbox'](this.inbox?.id);
+
+          if (inbox?.landing_page_url) break;
+
+          await new Promise(resolve => setTimeout(resolve, 10000));
+
+          index += 1;
+        }
+
+        if (!inbox?.landing_page_url) throw new Error();
+      } catch (error) {
+        this.landingPageError = true;
+      }
     },
     handleHmacFlag() {
       this.updateInbox();

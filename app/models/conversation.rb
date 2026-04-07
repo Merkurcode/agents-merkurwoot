@@ -8,6 +8,7 @@
 #  assignee_last_seen_at  :datetime
 #  cached_label_list      :text
 #  contact_last_seen_at   :datetime
+#  conversation_type      :integer          default("default"), not null
 #  custom_attributes      :jsonb
 #  first_reply_created_at :datetime
 #  identifier             :string
@@ -15,6 +16,7 @@
 #  priority               :integer
 #  snoozed_until          :datetime
 #  status                 :integer          default("open"), not null
+#  summary                :text             default("")
 #  uuid                   :uuid             not null
 #  waiting_since          :datetime
 #  created_at             :datetime         not null
@@ -27,6 +29,7 @@
 #  contact_inbox_id       :bigint
 #  display_id             :integer          not null
 #  inbox_id               :integer          not null
+#  pipeline_status_id     :bigint
 #  sla_policy_id          :bigint
 #  team_id                :bigint
 #
@@ -39,16 +42,22 @@
 #  index_conversations_on_campaign_id                 (campaign_id)
 #  index_conversations_on_contact_id                  (contact_id)
 #  index_conversations_on_contact_inbox_id            (contact_inbox_id)
+#  index_conversations_on_conversation_type           (conversation_type)
 #  index_conversations_on_first_reply_created_at      (first_reply_created_at)
 #  index_conversations_on_id_and_account_id           (account_id,id)
 #  index_conversations_on_identifier_and_account_id   (identifier,account_id)
 #  index_conversations_on_inbox_id                    (inbox_id)
+#  index_conversations_on_pipeline_status_id          (pipeline_status_id)
 #  index_conversations_on_priority                    (priority)
 #  index_conversations_on_status_and_account_id       (status,account_id)
 #  index_conversations_on_status_and_priority         (status,priority)
 #  index_conversations_on_team_id                     (team_id)
 #  index_conversations_on_uuid                        (uuid) UNIQUE
 #  index_conversations_on_waiting_since               (waiting_since)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (pipeline_status_id => pipeline_statuses.id)
 #
 
 class Conversation < ApplicationRecord
@@ -61,6 +70,9 @@ class Conversation < ApplicationRecord
   include SortHandler
   include PushDataHelper
   include ConversationMuteHelpers
+  include Discard::Model
+
+  default_scope -> { kept }
 
   validates :account_id, presence: true
   validates :inbox_id, presence: true
@@ -74,11 +86,20 @@ class Conversation < ApplicationRecord
 
   enum status: { open: 0, resolved: 1, pending: 2, snoozed: 3 }
   enum priority: { low: 0, medium: 1, high: 2, urgent: 3 }
+  enum conversation_type: { default: 0, whatsapp_group: 1 }
+  enum source_type: {
+    incoming: 0,        # Normal incoming conversations
+    campaign: 1,        # Campaign-initiated conversations
+    notion_lead: 2,     # Leads from Notion databases
+    api: 3,             # API-initiated conversations
+    bulk_created: 4     # Bulk created conversations
+  }
 
   scope :unassigned, -> { where(assignee_id: nil) }
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
+  scope :with_active_contact, -> { joins(:contact).merge(Contact.kept) }
   scope :resolvable_not_waiting, lambda { |auto_resolve_after|
     return none if auto_resolve_after.to_i.zero?
 
@@ -105,6 +126,7 @@ class Conversation < ApplicationRecord
   belongs_to :contact_inbox
   belongs_to :team, optional: true
   belongs_to :campaign, optional: true
+  belongs_to :pipeline_status, optional: true
 
   has_many :mentions, dependent: :destroy_async
   has_many :messages, dependent: :destroy_async, autosave: true
@@ -113,14 +135,22 @@ class Conversation < ApplicationRecord
   has_many :notifications, as: :primary_actor, dependent: :destroy_async
   has_many :attachments, through: :messages
   has_many :reporting_events, dependent: :destroy_async
+  has_one :conversation_follow_up, dependent: :destroy
+  has_one :conversation_reengagement, dependent: :destroy
+  has_many :sequence_enrollments, dependent: :destroy
+  has_many :enrollment_events, dependent: :destroy
+  has_one :meta_campaign_interaction, dependent: :destroy
 
   before_save :ensure_snooze_until_reset
   before_create :determine_conversation_status
   before_create :ensure_waiting_since
+  before_create :assign_pipeline_status
 
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
   after_create_commit :load_attributes_created_by_db_triggers
+  after_discard :destroy_notifications
+  after_discard :dispatch_discard_event
 
   delegate :auto_resolve_after, to: :account
 
@@ -140,6 +170,13 @@ class Conversation < ApplicationRecord
   # TODO: Migrate to use a timestamp with microsecond precision
   def last_activity_at
     self[:last_activity_at] || created_at
+  end
+
+  # Returns the timestamp of the last chat message (incoming/outgoing/template)
+  # Excludes activity messages like status changes, assignments, etc.
+  # Falls back to last_activity_at if not set (for conversations before migration)
+  def last_chat_message_at
+    self[:last_chat_message_at] || last_activity_at
   end
 
   def last_incoming_message
@@ -315,6 +352,14 @@ class Conversation < ApplicationRecord
                                                                        performed_by: Current.executed_by)
   end
 
+  def destroy_notifications
+    notifications.destroy_all
+  end
+
+  def dispatch_discard_event
+    Rails.configuration.dispatcher.dispatch(CONVERSATION_DISCARDED, Time.zone.now, conversation: self)
+  end
+
   def conversation_status_changed_to_open?
     return false unless open?
     # saved_change_to_status? method only works in case of update
@@ -335,6 +380,16 @@ class Conversation < ApplicationRecord
     return unless additional_attributes['referer']
 
     self['additional_attributes']['referer'] = nil unless url_valid?(additional_attributes['referer'])
+  end
+
+  def assign_pipeline_status
+    first_status = account.pipeline_statuses.order(:created_at).first
+    self.pipeline_status = first_status if first_status.present?
+  end
+
+  def assign_pipeline_status!
+    first_status = account.pipeline_statuses.order(:created_at).first
+    update!(pipeline_status: first_status) if first_status.present?
   end
 
   # creating db triggers

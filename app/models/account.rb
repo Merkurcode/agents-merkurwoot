@@ -46,6 +46,13 @@ class Account < ApplicationRecord
           'type': %w[array null],
           'items': { 'type': 'string' }
         },
+        'enabled_appointment_types': {
+          'type': %w[array null],
+          'items': {
+            'type': 'string',
+            'enum': %w[physical_visit digital_meeting phone_call]
+          }
+        },
         'captain_models': {
           'type': %w[object null],
           'properties': {
@@ -102,14 +109,20 @@ class Account < ApplicationRecord
   has_many :api_channels, dependent: :destroy_async, class_name: '::Channel::Api'
   has_many :articles, dependent: :destroy_async, class_name: '::Article'
   has_many :assignment_policies, dependent: :destroy_async
+  has_many :surveys, dependent: :destroy_async
   has_many :automation_rules, dependent: :destroy_async
   has_many :macros, dependent: :destroy_async
   has_many :campaigns, dependent: :destroy_async
+  has_many :lead_follow_up_sequences, dependent: :destroy_async
   has_many :canned_responses, dependent: :destroy_async
   has_many :categories, dependent: :destroy_async, class_name: '::Category'
   has_many :contacts, dependent: :destroy_async
+  has_many :appointments, dependent: :destroy_async
+  has_many :locations, dependent: :destroy_async
   has_many :conversations, dependent: :destroy_async
   has_many :csat_survey_responses, dependent: :destroy_async
+  has_many :survey_answers, dependent: :destroy_async
+  has_many :contact_survey_completions, dependent: :destroy_async
   has_many :custom_attribute_definitions, dependent: :destroy_async
   has_many :custom_filters, dependent: :destroy_async
   has_many :dashboard_apps, dependent: :destroy_async
@@ -138,7 +151,17 @@ class Account < ApplicationRecord
   has_many :webhooks, dependent: :destroy_async
   has_many :whatsapp_channels, dependent: :destroy_async, class_name: '::Channel::Whatsapp'
   has_many :working_hours, dependent: :destroy_async
-
+  has_many :business_working_hours, class_name: 'WorkingHour', as: :workable, dependent: :destroy_async
+  has_many :marketing_campaigns, dependent: :destroy_async
+  has_many :pipeline_statuses, dependent: :destroy_async
+  has_many :product_catalogs, dependent: :destroy_async
+  has_many :bulk_processing_requests, dependent: :destroy_async
+  has_many :faq_categories, dependent: :destroy_async
+  has_many :faq_items, dependent: :destroy_async
+  has_many :kb_resources, dependent: :destroy_async
+  has_many :kb_folders, dependent: :destroy_async
+  has_many :account_addresses, as: :addressable, dependent: :destroy_async
+  accepts_nested_attributes_for :account_addresses, allow_destroy: true, reject_if: :all_blank
   has_one_attached :contacts_export
 
   enum :locale, LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h, prefix: true
@@ -147,7 +170,7 @@ class Account < ApplicationRecord
   scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
 
   before_validation :validate_limit_keys
-  after_create_commit :notify_creation
+  after_create_commit :notify_creation, :setup_nauto_webhooks
   after_destroy :remove_account_sequences
 
   def agents
@@ -156,6 +179,10 @@ class Account < ApplicationRecord
 
   def administrators
     users.where(account_users: { role: :administrator })
+  end
+
+  def supervisors
+    users.where(account_users: { role: :supervisor })
   end
 
   def all_conversation_tags
@@ -199,10 +226,62 @@ class Account < ApplicationRecord
     ISO_639.find(account_locale)&.english_name&.downcase || 'english'
   end
 
+  def whatsapp_groups_inbox
+    return nil unless feature_enabled?(:whatsapp_groups)
+
+    @whatsapp_groups_inbox ||= Whatsapp::GroupsInboxService.new(account: self).find_or_create_groups_inbox
+  end
+
+  def business_hours_open?
+    return true unless business_hours_enabled
+
+    tz = business_hours_timezone || 'UTC'
+    current_time = Time.current.in_time_zone(tz)
+    today_hours = business_working_hours.find_by(day_of_week: current_time.wday)
+    return true unless today_hours
+
+    today_hours.open_now?
+  end
+
+  def business_hours_schedule
+    business_working_hours.order(:day_of_week).map do |wh|
+      {
+        day_of_week: wh.day_of_week,
+        open_hour: wh.open_hour,
+        open_minutes: wh.open_minutes,
+        close_hour: wh.close_hour,
+        close_minutes: wh.close_minutes,
+        closed_all_day: wh.closed_all_day,
+        open_all_day: wh.open_all_day
+      }
+    end
+  end
+
+  def available_appointment_types
+    # Si no está configurado, devolver todos los tipos disponibles
+    enabled_appointment_types.presence || %w[physical_visit digital_meeting phone_call]
+  end
+
+  def appointment_type_enabled?(type)
+    available_appointment_types.include?(type.to_s)
+  end
+
+  def increment_product_catalog_version!
+    increment!(:product_catalog_version)
+  end
+
+  def product_catalog_full_sync_threshold
+    PRODUCT_CATALOG_FULL_SYNC_THRESHOLD
+  end
+
   private
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
+  end
+
+  def setup_nauto_webhooks
+    Accounts::SetupNautoWebhooksService.new(self).perform
   end
 
   trigger.after(:insert).for_each(:row) do

@@ -5,9 +5,14 @@ import { required, minLength } from '@vuelidate/validators';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
+import { useAccount } from 'dashboard/composables/useAccount';
 import Button from 'dashboard/components-next/button/Button.vue';
+import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
 import Auth from '../../../../api/auth';
 import wootConstants from 'dashboard/constants/globals';
+import WeeklyAvailabilitySection from '../components/WeeklyAvailabilitySection.vue';
+import { isPhoneNumberValid } from 'shared/helpers/Validators';
+import parsePhoneNumber from 'libphonenumber-js';
 
 const props = defineProps({
   id: {
@@ -19,6 +24,10 @@ const props = defineProps({
     required: true,
   },
   email: {
+    type: String,
+    default: '',
+  },
+  phoneNumber: {
     type: String,
     default: '',
   },
@@ -38,19 +47,62 @@ const props = defineProps({
     type: Number,
     default: null,
   },
+  responsibleId: {
+    type: Number,
+    default: null,
+  },
+  locationId: {
+    type: Number,
+    default: null,
+  },
+  agent: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 const emit = defineEmits(['close']);
+
+const childRef = ref(null);
 
 const { AVAILABILITY_STATUS_KEYS } = wootConstants;
 
 const store = useStore();
 const { t } = useI18n();
+const { currentAccount } = useAccount();
 
 const agentName = ref(props.name);
+const agentPhoneNumber = ref('');
+const activeDialCode = ref('');
 const agentAvailability = ref(props.availability);
 const selectedRoleId = ref(props.customRoleId || props.type);
 const agentCredentials = ref({ email: props.email });
+const selectedResponsibleId = ref(props.responsibleId);
+const selectedLocationId = ref(props.locationId);
+
+const isPhoneNumberNotValid = computed(() => {
+  if (agentPhoneNumber.value !== '') {
+    return (
+      !isPhoneNumberValid(agentPhoneNumber.value, activeDialCode.value) ||
+      (agentPhoneNumber.value !== '' ? activeDialCode.value === '' : false)
+    );
+  }
+  return false;
+});
+
+const setPhoneCode = code => {
+  activeDialCode.value = code;
+};
+
+// Initialize phone number from props — pass the full number so PhoneInput
+// can correctly detect the country flag from the +XX prefix.
+if (props.phoneNumber) {
+  const parsed = parsePhoneNumber(props.phoneNumber);
+  if (parsed && parsed.countryCallingCode) {
+    activeDialCode.value = `+${parsed.countryCallingCode}`;
+  }
+  agentPhoneNumber.value = props.phoneNumber;
+}
 
 const rules = {
   agentName: { required, minLength: minLength(1) },
@@ -68,8 +120,36 @@ const pageTitle = computed(
   () => `${t('AGENT_MGMT.EDIT.TITLE')} - ${props.name}`
 );
 
+const accountDefaults = computed(() => {
+  if (!currentAccount.value) {
+    return { timezone: null, working_hours: [] };
+  }
+  return {
+    timezone: currentAccount.value.business_hours_timezone || null,
+    working_hours: currentAccount.value.business_hours || [],
+  };
+});
+
 const uiFlags = useMapGetter('agents/getUIFlags');
 const getCustomRoles = useMapGetter('customRole/getCustomRoles');
+const agents = useMapGetter('agents/getAgents');
+const locations = useMapGetter('locations/getLocations');
+
+const responsibleOptions = computed(() => {
+  return agents.value
+    .filter(agent => agent.id !== props.id)
+    .map(agent => ({
+      value: agent.current_account_user_id,
+      label: agent.name,
+    }));
+});
+
+const locationOptions = computed(() => {
+  return locations.value.map(location => ({
+    value: location.id,
+    label: location.name,
+  }));
+});
 
 const roles = computed(() => {
   const defaultRoles = [
@@ -77,6 +157,11 @@ const roles = computed(() => {
       id: 'administrator',
       name: 'administrator',
       label: t('AGENT_MGMT.AGENT_TYPES.ADMINISTRATOR'),
+    },
+    {
+      id: 'supervisor',
+      name: 'supervisor',
+      label: t('AGENT_MGMT.AGENT_TYPES.SUPERVISOR'),
     },
     {
       id: 'agent',
@@ -119,14 +204,26 @@ const availabilityStatuses = computed(() =>
 
 const editAgent = async () => {
   v$.value.$touch();
-  if (v$.value.$invalid) return;
+  if (v$.value.$invalid || isPhoneNumberNotValid.value) return;
 
   try {
+    const availability = childRef.value.updateWeeklyAvailability();
+
     const payload = {
       id: props.id,
       name: agentName.value,
+      phone_number: setPhoneNumber.value,
       availability: agentAvailability.value,
+      ...availability,
     };
+
+    if (selectedResponsibleId.value) {
+      payload.responsible_id = selectedResponsibleId.value;
+    }
+
+    if (selectedLocationId.value) {
+      payload.location_id = selectedLocationId.value;
+    }
 
     if (selectedRole.value.name.startsWith('custom_')) {
       payload.custom_role_id = selectedRole.value.id;
@@ -184,6 +281,22 @@ const resetPassword = async () => {
       </div>
 
       <div class="w-full">
+        <label :class="{ error: isPhoneNumberNotValid }">
+          {{ $t('AGENT_MGMT.ADD.FORM.PHONE_NUMBER.LABEL') }}
+          <woot-phone-input
+            v-model="agentPhoneNumber"
+            :value="agentPhoneNumber"
+            :error="isPhoneNumberNotValid"
+            :placeholder="$t('AGENT_MGMT.ADD.FORM.PHONE_NUMBER.PLACEHOLDER')"
+            @set-code="setPhoneCode"
+          />
+          <span v-if="isPhoneNumberNotValid" class="message">
+            {{ $t('CONTACT_FORM.FORM.PHONE_NUMBER.ERROR') }}
+          </span>
+        </label>
+      </div>
+
+      <div class="w-full">
         <label :class="{ error: v$.agentAvailability.$error }">
           {{ $t('PROFILE_SETTINGS.FORM.AVAILABILITY.LABEL') }}
           <select
@@ -202,6 +315,46 @@ const resetPassword = async () => {
             {{ $t('AGENT_MGMT.EDIT.FORM.AGENT_AVAILABILITY.ERROR') }}
           </span>
         </label>
+      </div>
+
+      <div class="w-full">
+        <label>
+          {{ $t('AGENT_MGMT.EDIT.FORM.RESPONSIBLE.LABEL') }}
+          <ComboBox
+            v-model="selectedResponsibleId"
+            :options="responsibleOptions"
+            :placeholder="$t('AGENT_MGMT.EDIT.FORM.RESPONSIBLE.PLACEHOLDER')"
+            :search-placeholder="
+              $t('AGENT_MGMT.EDIT.FORM.RESPONSIBLE.SEARCH_PLACEHOLDER')
+            "
+            :empty-state="$t('AGENT_MGMT.EDIT.FORM.RESPONSIBLE.EMPTY_STATE')"
+            class="[&_button]:!bg-n-alpha-black2 mb-4"
+          />
+        </label>
+      </div>
+
+      <div class="w-full">
+        <label>
+          {{ $t('AGENT_MGMT.EDIT.FORM.LOCATION.LABEL') }}
+          <ComboBox
+            v-model="selectedLocationId"
+            :options="locationOptions"
+            :placeholder="$t('AGENT_MGMT.EDIT.FORM.LOCATION.PLACEHOLDER')"
+            :search-placeholder="
+              $t('AGENT_MGMT.EDIT.FORM.LOCATION.SEARCH_PLACEHOLDER')
+            "
+            :empty-state="$t('AGENT_MGMT.EDIT.FORM.LOCATION.EMPTY_STATE')"
+            class="[&_button]:!bg-n-alpha-black2 mb-4"
+          />
+        </label>
+      </div>
+
+      <div class="w-full">
+        <WeeklyAvailabilitySection
+          ref="childRef"
+          :user="agent"
+          :account-defaults="accountDefaults"
+        />
       </div>
 
       <div class="flex flex-row justify-start w-full gap-2 px-0 py-2">

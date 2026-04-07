@@ -33,7 +33,10 @@ class AccountDashboard < Administrate::BaseDashboard
     conversations: CountField,
     locale: Field::Select.with_options(collection: LANGUAGES_CONFIG.map { |_x, y| y[:iso_639_1_code] }),
     status: Field::Select.with_options(collection: [%w[Active active], %w[Suspended suspended]]),
+    pinecone_index: Field::String,
+    pinecone_api_key: Field::String,
     account_users: Field::HasMany,
+    account_addresses: AccountAddressesField,
     custom_attributes: Field::String
   }.merge(enterprise_attribute_types).freeze
 
@@ -68,8 +71,11 @@ class AccountDashboard < Administrate::BaseDashboard
     updated_at
     locale
     status
+    pinecone_index
+    pinecone_api_key
     conversations
     account_users
+    account_addresses
   ] + enterprise_show_page_attributes).freeze
 
   # FORM_ATTRIBUTES
@@ -87,6 +93,9 @@ class AccountDashboard < Administrate::BaseDashboard
     name
     locale
     status
+    pinecone_index
+    pinecone_api_key
+    account_addresses
   ] + enterprise_form_attributes).freeze
 
   # COLLECTION_FILTERS
@@ -121,6 +130,15 @@ class AccountDashboard < Administrate::BaseDashboard
 
     # Add manually_managed_features to permitted attributes only for Chatwoot Cloud
     attrs << { manually_managed_features: [] } if ChatwootApp.chatwoot_cloud?
+
+    # Add nested attributes for account addresses
+    attrs << {
+      account_addresses_attributes: %i[
+        id street exterior_number interior_number neighborhood
+        postal_code city state email phone webpage
+        establishment_summary _destroy
+      ]
+    }
 
     attrs
   end

@@ -17,7 +17,7 @@ module Enterprise::DeleteObjectJob
     Enterprise::AuditLog.create(
       auditable: object,
       audited_changes: object.attributes,
-      action: 'destroy',
+      action: soft_deleted ? 'discard' : 'destroy',
       user: user,
       associated: object.account,
       remote_address: ip

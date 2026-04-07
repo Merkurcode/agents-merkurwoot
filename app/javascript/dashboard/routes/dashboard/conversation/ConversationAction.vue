@@ -6,6 +6,7 @@ import { useAgentsList } from 'dashboard/composables/useAgentsList';
 import ContactDetailsItem from './ContactDetailsItem.vue';
 import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import ConversationLabels from './labels/LabelBox.vue';
+import SurveyCallModal from './SurveyCallModal.vue';
 import { CONVERSATION_PRIORITY } from '../../../../shared/constants/messages';
 import { CONVERSATION_EVENTS } from '../../../helper/AnalyticsHelper/events';
 import { useTrack } from 'dashboard/composables';
@@ -17,6 +18,7 @@ export default {
     MultiselectDropdown,
     ConversationLabels,
     NextButton,
+    SurveyCallModal,
   },
   props: {
     conversationId: {
@@ -32,6 +34,7 @@ export default {
   },
   data() {
     return {
+      showSurveyCallModal: false,
       priorityOptions: [
         {
           id: null,
@@ -66,7 +69,13 @@ export default {
       currentChat: 'getSelectedChat',
       currentUser: 'getCurrentUser',
       teams: 'teams/getTeams',
+      contactGetter: 'contacts/getContact',
+      pipelineStatuses: 'pipelineStatuses/getPipelineStatuses',
     }),
+    contact() {
+      const contactId = this.currentChat?.meta?.sender?.id;
+      return this.contactGetter(contactId);
+    },
     hasAnAssignedTeam() {
       return !!this.currentChat?.meta?.team;
     },
@@ -148,6 +157,22 @@ export default {
           });
       },
     },
+    assignedPipelineStatus: {
+      get() {
+        return this.pipelineStatuses.find(
+          s => s.id === this.currentChat.pipeline_status_id
+        ) || null;
+      },
+      set(statusItem) {
+        const conversationId = this.currentChat.id;
+        const pipelineStatusId = statusItem ? statusItem.id : null;
+        this.$store
+          .dispatch('togglePipelineStatus', { conversationId, pipelineStatusId })
+          .then(() => {
+            useAlert(this.$t('CONVERSATION_SIDEBAR.PIPELINE_STATUS_LABEL'));
+          });
+      },
+    },
     showSelfAssign() {
       if (!this.assignedAgent) {
         return true;
@@ -198,12 +223,27 @@ export default {
       }
     },
 
+    onClickAssignPipelineStatus(selectedItem) {
+      const isSame =
+        this.assignedPipelineStatus &&
+        this.assignedPipelineStatus.id === selectedItem.id;
+      this.assignedPipelineStatus = isSame ? null : selectedItem;
+    },
+
     onClickAssignPriority(selectedPriorityItem) {
       const isSamePriority =
         this.assignedPriority &&
         this.assignedPriority.id === selectedPriorityItem.id;
 
       this.assignedPriority = isSamePriority ? null : selectedPriorityItem;
+    },
+
+    openSurveyCallModal() {
+      this.showSurveyCallModal = true;
+    },
+
+    closeSurveyCallModal() {
+      this.showSurveyCallModal = false;
     },
   },
 };
@@ -239,6 +279,7 @@ export default {
         :input-placeholder="
           $t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.PLACEHOLDER.AGENT')
         "
+        :search-keys="['name', 'location_name']"
         @select="onClickAssignAgent"
       />
     </div>
@@ -279,10 +320,45 @@ export default {
         @select="onClickAssignPriority"
       />
     </div>
+    <div v-if="pipelineStatuses.length" class="multiselect-wrap--small">
+      <ContactDetailsItem
+        compact
+        :title="$t('CONVERSATION_SIDEBAR.PIPELINE_STATUS_LABEL')"
+      />
+      <MultiselectDropdown
+        :options="pipelineStatuses"
+        :selected-item="assignedPipelineStatus"
+        :has-thumbnail="false"
+        :multiselector-title="$t('CONVERSATION_SIDEBAR.PIPELINE_STATUS_LABEL')"
+        :multiselector-placeholder="$t('CONVERSATION_SIDEBAR.SELECT.PLACEHOLDER')"
+        :no-search-result="$t('CONVERSATION_SIDEBAR.SELECT.PLACEHOLDER')"
+        :input-placeholder="$t('CONVERSATION_SIDEBAR.PIPELINE_STATUS_LABEL')"
+        @select="onClickAssignPipelineStatus"
+      />
+    </div>
     <ContactDetailsItem
       compact
       :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONVERSATION_LABELS')"
     />
     <ConversationLabels :conversation-id="conversationId" />
+
+    <!-- Survey Call Button -->
+    <div class="mt-4 px-2">
+      <NextButton
+        variant="outline"
+        size="sm"
+        icon="i-lucide-phone"
+        class="w-full"
+        :label="$t('CONVERSATION.SURVEY_CALL.BUTTON_LABEL')"
+        @click="openSurveyCallModal"
+      />
+    </div>
+
+    <!-- Survey Call Modal -->
+    <SurveyCallModal
+      :show="showSurveyCallModal"
+      :contact="contact"
+      @close="closeSurveyCallModal"
+    />
   </div>
 </template>

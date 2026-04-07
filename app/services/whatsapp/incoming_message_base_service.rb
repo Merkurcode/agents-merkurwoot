@@ -59,6 +59,43 @@ class Whatsapp::IncomingMessageBaseService
       message.external_error = "#{error[:code]}: #{error[:title]}"
     end
     message.save!
+
+    # Update campaign contact status if this is a campaign message
+    update_campaign_contact_status(message, status)
+  end
+
+  def update_campaign_contact_status(message, status)
+    # Only process outgoing campaign messages
+    return unless message.outgoing?
+
+    # Check for campaign_id in content_attributes or additional_attributes
+    campaign_id = message.content_attributes&.dig('campaign_id') || message.additional_attributes&.dig('campaign_id')
+    return unless campaign_id
+
+    # Find the campaign contact
+    contact = message.conversation&.contact
+    return unless contact
+
+    campaign_contact = CampaignContact.find_by(campaign_id: campaign_id, contact_id: contact.id)
+    return unless campaign_contact
+
+    # Update campaign contact based on message status
+    case status[:status]
+    when 'failed'
+      # Only update if not already failed to avoid unnecessary updates
+      return if campaign_contact.failed?
+
+      error = status[:errors]&.first
+      error_message = error ? "#{error[:code]}: #{error[:title]}" : 'Unknown error'
+      campaign_contact.mark_as_failed!(error_message)
+      Rails.logger.info "Campaign message failed - Updated campaign_contact #{campaign_contact.id} for campaign #{campaign_id}: #{error_message}"
+    when 'sent', 'delivered', 'read'
+      # Ensure campaign_contact is marked as sent if it was pending
+      campaign_contact.mark_as_sent! if campaign_contact.pending?
+    end
+  rescue StandardError => e
+    Rails.logger.error "Error updating campaign contact status: #{e.class.name}: #{e.message}"
+    Rails.logger.error e.backtrace.first(3).join("\n")
   end
 
   def create_messages
@@ -138,7 +175,7 @@ class Whatsapp::IncomingMessageBaseService
                     end
     return if @conversation
 
-    @conversation = ::Conversation.create!(conversation_params)
+    @conversation = ::Conversation.create!(conversation_params.merge(additional_attributes: referral_attributes))
   end
 
   def attach_files
@@ -226,5 +263,29 @@ class Whatsapp::IncomingMessageBaseService
     phone_number = "+#{messages_data.first[:from]}"
     formatted_phone_number = TelephoneNumber.parse(phone_number).international_number
     @contact.name == phone_number || @contact.name == formatted_phone_number
+  end
+
+  def referral_attributes
+    first_message = @processed_params[:messages]&.first
+    return {} unless first_message&.dig(:referral).present?
+
+    { meta_ad_campaign: extract_referral_data(first_message) }
+  end
+
+  def extract_referral_data(message)
+    referral = message[:referral]
+    return {} unless referral.present?
+
+    {
+      source_id: referral[:source_id],
+      source_type: referral[:source_type],
+      source_url: referral[:source_url],
+      ctwa_clid: referral[:ctwa_clid],
+      headline: referral[:headline],
+      body: referral[:body],
+      media_type: referral[:media_type],
+      image_url: referral[:image_url],
+      video_url: referral[:video_url]
+    }.compact
   end
 end

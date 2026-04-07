@@ -31,6 +31,14 @@ const filterTypes = [
     attributeModel: 'standard',
   },
   {
+    attributeKey: 'conversation_type',
+    attributeI18nKey: 'CONVERSATION_TYPE',
+    inputType: 'multi_select',
+    dataType: 'text',
+    filterOperators: OPERATOR_TYPES_1,
+    attributeModel: 'standard',
+  },
+  {
     attributeKey: 'inbox_id',
     attributeI18nKey: 'INBOX_NAME',
     inputType: 'search_select',
@@ -41,6 +49,14 @@ const filterTypes = [
   {
     attributeKey: 'team_id',
     attributeI18nKey: 'TEAM_NAME',
+    inputType: 'search_select',
+    dataType: 'number',
+    filterOperators: OPERATOR_TYPES_2,
+    attributeModel: 'standard',
+  },
+  {
+    attributeKey: 'contact_id',
+    attributeI18nKey: 'CONTACT_NAME',
     inputType: 'search_select',
     dataType: 'number',
     filterOperators: OPERATOR_TYPES_2,
@@ -134,6 +150,10 @@ export const filterAttributeGroups = [
         i18nKey: 'TEAM_NAME',
       },
       {
+        key: 'contact_id',
+        i18nKey: 'CONTACT_NAME',
+      },
+      {
         key: 'display_id',
         i18nKey: 'CONVERSATION_IDENTIFIER',
       },
@@ -144,6 +164,10 @@ export const filterAttributeGroups = [
       {
         key: 'labels',
         i18nKey: 'LABELS',
+      },
+      {
+        key: 'conversation_type',
+        i18nKey: 'CONVERSATION_TYPE',
       },
       {
         key: 'created_at',

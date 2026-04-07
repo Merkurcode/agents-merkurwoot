@@ -10,6 +10,7 @@ export const generateCustomAttributesInputType = type => {
     text: 'string',
     number: 'string',
     date: 'string',
+    datetime: 'string',
     checkbox: 'multi_select',
     list: 'multi_select',
     link: 'string',
@@ -84,6 +85,7 @@ export const getValuesForFilter = (filter, params) => {
     campaigns,
     labels,
     priority,
+    conversationType,
   } = params;
   switch (attribute_key) {
     case 'status':
@@ -100,6 +102,8 @@ export const getValuesForFilter = (filter, params) => {
       return getValuesForLabels(values, labels);
     case 'priority':
       return getValuesForPriority(values, priority);
+    case 'conversation_type':
+      return getValuesForPriority(values, conversationType);
     case 'browser_language':
       return getValuesForLanguages(values, languages);
     case 'country_code':

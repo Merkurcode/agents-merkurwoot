@@ -13,6 +13,7 @@ import ContactNotes from 'dashboard/components-next/Contacts/ContactsSidebar/Con
 import ContactHistory from 'dashboard/components-next/Contacts/ContactsSidebar/ContactHistory.vue';
 import ContactMerge from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMerge.vue';
 import ContactCustomAttributes from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCustomAttributes.vue';
+import ContactSurveyAnswers from 'dashboard/components-next/Contacts/ContactsSidebar/ContactSurveyAnswers.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -21,7 +22,7 @@ const router = useRouter();
 const contact = useMapGetter('contacts/getContactById');
 const uiFlags = useMapGetter('contacts/getUIFlags');
 
-const activeTab = ref('attributes');
+const activeTab = ref('history');
 const contactMergeRef = ref(null);
 
 const isFetchingItem = computed(() => uiFlags.value.isFetchingItem);
@@ -37,9 +38,9 @@ const showSpinner = computed(
 const { t } = useI18n();
 
 const CONTACT_TABS_OPTIONS = [
-  { key: 'ATTRIBUTES', value: 'attributes' },
   { key: 'HISTORY', value: 'history' },
   { key: 'NOTES', value: 'notes' },
+  { key: 'SURVEYS', value: 'surveys' },
   { key: 'MERGE', value: 'merge' },
 ];
 
@@ -86,10 +87,6 @@ const fetchContactConversations = () => {
   if (contactId) store.dispatch('contactConversations/get', contactId);
 };
 
-const fetchAttributes = () => {
-  store.dispatch('attributes/get');
-};
-
 const toggleContactBlock = async isBlocked => {
   const ALERT_MESSAGES = {
     success: {
@@ -121,7 +118,6 @@ onMounted(() => {
   fetchActiveContact();
   fetchContactNotes();
   fetchContactConversations();
-  fetchAttributes();
 });
 </script>
 
@@ -165,12 +161,9 @@ onMounted(() => {
           <Spinner />
         </div>
         <template v-else>
-          <ContactCustomAttributes
-            v-if="activeTab === 'attributes'"
-            :selected-contact="selectedContact"
-          />
           <ContactNotes v-if="activeTab === 'notes'" />
           <ContactHistory v-if="activeTab === 'history'" />
+          <ContactSurveyAnswers v-if="activeTab === 'surveys'" />
           <ContactMerge
             v-if="activeTab === 'merge'"
             ref="contactMergeRef"

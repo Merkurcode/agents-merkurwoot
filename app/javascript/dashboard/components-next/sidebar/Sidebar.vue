@@ -170,6 +170,7 @@ useEventListener(document, 'touchend', onResizeEnd);
 const inboxes = useMapGetter('inboxes/getInboxes');
 const labels = useMapGetter('labels/getLabelsOnSidebar');
 const teams = useMapGetter('teams/getMyTeams');
+const userLocations = useMapGetter('locations/getUserLocations');
 const contactCustomViews = useMapGetter('customViews/getContactCustomViews');
 const conversationCustomViews = useMapGetter(
   'customViews/getConversationCustomViews'
@@ -178,6 +179,7 @@ const conversationCustomViews = useMapGetter(
 onMounted(() => {
   store.dispatch('labels/get');
   store.dispatch('inboxes/get');
+  store.dispatch('locations/getUserLocations');
   store.dispatch('notifications/unReadCount');
   store.dispatch('teams/get');
   store.dispatch('attributes/get');
@@ -227,6 +229,12 @@ const newReportRoutes = () => [
     to: accountScopedRoute('team_reports_index'),
     activeOn: ['team_reports_show'],
   },
+  {
+    name: 'Meta Campaigns',
+    label: t('SIDEBAR.META_CAMPAIGNS'),
+    to: accountScopedRoute('meta_campaign_reports_index'),
+    activeOn: ['meta_campaign_reports_show'],
+  },
 ];
 
 const reportRoutes = computed(() => newReportRoutes());
@@ -253,6 +261,12 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.ALL_CONVERSATIONS'),
           activeOn: ['inbox_conversation'],
           to: accountScopedRoute('home'),
+        },
+        {
+          name: 'Board',
+          label: t('SIDEBAR.CRM_LIST'),
+          activeOn: ['conversation_through_board'],
+          to: accountScopedRoute('conversation_board'),
         },
         {
           name: 'Mentions',
@@ -322,6 +336,22 @@ const menuItems = computed(() => {
               label: label.title,
             }),
           })),
+        },
+        {
+          name: 'Locations',
+          label: t('SIDEBAR.LOCATIONS'),
+          icon: 'i-lucide-map-pin',
+          activeOn: ['conversations_through_location'],
+          children: userLocations.value
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(location => ({
+              name: `${location.name}-${location.id}`,
+              label: location.name,
+              to: accountScopedRoute('location_conversations', {
+                locationId: location.id,
+              }),
+            })),
         },
       ],
     },
@@ -464,6 +494,13 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'Appointments',
+      label: t('SIDEBAR.APPOINTMENTS'),
+      icon: 'i-lucide-calendar-check',
+      to: accountScopedRoute('appointments_dashboard'),
+      activeOn: ['appointments_dashboard'],
+    },
+    {
       name: 'Companies',
       label: t('SIDEBAR.COMPANIES'),
       icon: 'i-lucide-building-2',
@@ -532,6 +569,33 @@ const menuItems = computed(() => {
           name: 'WhatsApp',
           label: t('SIDEBAR.WHATSAPP'),
           to: accountScopedRoute('campaigns_whatsapp_index'),
+        },
+        {
+          name: 'Marketing',
+          label: t('SIDEBAR.MARKETING'),
+          to: accountScopedRoute('campaigns_marketing_index'),
+        },
+      ],
+    },
+    {
+      name: 'Knowledge Base',
+      label: t('SIDEBAR.KNOWLEDGE_BASE.TITLE'),
+      icon: 'i-lucide-book-open',
+      children: [
+        {
+          name: 'Product Catalog',
+          label: t('SIDEBAR.KNOWLEDGE_BASE.PRODUCT_CATALOG'),
+          to: accountScopedRoute('knowledge_base_products'),
+        },
+        {
+          name: 'FAQs',
+          label: t('SIDEBAR.KNOWLEDGE_BASE.FAQS'),
+          to: accountScopedRoute('knowledge_base_faqs'),
+        },
+        {
+          name: 'Resources',
+          label: t('SIDEBAR.KNOWLEDGE_BASE.RESOURCES'),
+          to: accountScopedRoute('knowledge_base_resources'),
         },
       ],
     },
@@ -661,6 +725,12 @@ const menuItems = computed(() => {
           to: accountScopedRoute('labels_list'),
         },
         {
+          name: 'Settings Locations',
+          label: t('SIDEBAR.LOCATIONS'),
+          icon: 'i-lucide-map-pin',
+          to: accountScopedRoute('locations_list'),
+        },
+        {
           name: 'Settings Custom Attributes',
           label: t('SIDEBAR.CUSTOM_ATTRIBUTES'),
           icon: 'i-lucide-code',
@@ -673,10 +743,22 @@ const menuItems = computed(() => {
           to: accountScopedRoute('automation_list'),
         },
         {
+          name: 'Settings Lead Retargeting',
+          label: t('SIDEBAR.LEAD_RETARGETING'),
+          icon: 'i-lucide-target',
+          to: accountScopedRoute('copilots_list'),
+        },
+        {
           name: 'Settings Agent Bots',
           label: t('SIDEBAR.AGENT_BOTS'),
           icon: 'i-lucide-bot',
-          to: accountScopedRoute('agent_bots'),
+          to: accountScopedRoute('ai_agents'),
+        },
+        {
+          name: 'Settings Surveys',
+          label: t('SIDEBAR.SURVEYS'),
+          icon: 'i-lucide-clipboard-list',
+          to: accountScopedRoute('surveys_list'),
         },
         {
           name: 'Settings Macros',
@@ -850,6 +932,7 @@ const menuItems = computed(() => {
       <div
         class="pointer-events-none absolute inset-x-0 -top-[1.938rem] h-8 bg-gradient-to-t from-n-background to-transparent"
       />
+      <YearInReviewBanner />
       <SidebarChangelogCard
         v-if="
           isOnChatwootCloud &&

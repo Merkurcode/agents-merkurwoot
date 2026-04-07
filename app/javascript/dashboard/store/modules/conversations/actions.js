@@ -280,6 +280,35 @@ const actions = {
     }
   },
 
+  togglePipelineStatus: async (
+    { commit, state },
+    { conversationId, pipelineStatusId }
+  ) => {
+    const conversation = state.allConversations.find(
+      c => c.id === parseInt(conversationId, 10)
+    );
+    const previousPipelineStatusId = conversation?.pipeline_status_id;
+
+    commit(types.TOGGLE_SINGLE_PIPELINE_STATUS, true);
+    commit(types.CHANGE_CONVERSATION_PIPELINE_STATUS, {
+      id: parseInt(conversationId, 10),
+      pipeline_status_id: parseInt(pipelineStatusId, 10),
+    });
+
+    try {
+      await ConversationApi.update(conversationId, {
+        pipeline_status_id: pipelineStatusId,
+      });
+    } catch (error) {
+      commit(types.CHANGE_CONVERSATION_PIPELINE_STATUS, {
+        id: parseInt(conversationId, 10),
+        pipeline_status_id: previousPipelineStatusId,
+      });
+    } finally {
+      commit(types.TOGGLE_SINGLE_PIPELINE_STATUS, false);
+    }
+  },
+
   createPendingMessageAndSend: async ({ dispatch }, data) => {
     const pendingMessage = createPendingMessage(data);
     dispatch('sendMessageWithData', pendingMessage);

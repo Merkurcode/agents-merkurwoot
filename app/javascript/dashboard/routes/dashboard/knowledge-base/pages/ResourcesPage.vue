@@ -914,7 +914,7 @@ onMounted(fetchData);
             @click.self="showUploadModal = false"
           >
             <div
-              class="w-full max-w-md bg-n-alpha-3 backdrop-blur-[100px] rounded-xl border border-n-weak shadow-md flex flex-col max-h-[90vh] overflow-hidden"
+              class="w-full max-w-[95vw] sm:max-w-[40vw] sm:min-w-[500px] bg-n-alpha-3 backdrop-blur-[100px] rounded-xl border border-n-weak shadow-md flex flex-col max-h-[90vh] overflow-hidden"
               @click.stop
             >
               <div class="flex items-center justify-between p-4 sm:p-6 shrink-0">
@@ -1664,7 +1664,7 @@ onMounted(fetchData);
         @click.self="showEditModal = false"
       >
         <div
-          class="w-full max-w-md bg-n-alpha-3 backdrop-blur-[100px] rounded-xl border border-n-weak shadow-md flex flex-col max-h-[90vh] overflow-hidden"
+          class="w-full max-w-[95vw] sm:max-w-[40vw] sm:min-w-[500px] bg-n-alpha-3 backdrop-blur-[100px] rounded-xl border border-n-weak shadow-md flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <div class="flex items-center justify-between p-4 sm:p-6 shrink-0">

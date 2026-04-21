@@ -336,7 +336,7 @@
     "ALL_COMPANIES": "All Companies",
     "APPOINTMENTS": "Appointments",
     "LOCATIONS": "Locations",
-    "CAPTAIN": "Captain",
+    "CAPTAIN": "Nauto Assistant",
     "CAPTAIN_ASSISTANTS": "Assistants",
     "CAPTAIN_DOCUMENTS": "Documents",
     "CAPTAIN_RESPONSES": "FAQs",
@@ -419,7 +419,8 @@
     "DOCS": "Read docs",
     "SECURITY": "Security",
     "CRM_LIST": "Pipelines",
-    "CAPTAIN_AI": "Captain"
+    "CAPTAIN_AI": "Captain",
+    "CAPTAIN_FILTERS": "Conversation Filters"
   },
   "CAPTAIN_SETTINGS": {
     "TITLE": "Captain Settings",

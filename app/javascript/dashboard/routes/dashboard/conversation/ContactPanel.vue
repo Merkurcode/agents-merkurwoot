@@ -26,6 +26,7 @@ import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/I
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
 import ConversationSumary from './ConversationSumary.vue';
 import CopilotTimeline from './CopilotTimeline.vue';
+import CaptainTimeline from './CaptainTimeline.vue';
 import CrmSyncPanel from './CrmSyncPanel.vue';
 
 const props = defineProps({
@@ -208,6 +209,21 @@ onMounted(() => {
             </AccordionItem>
           </div>
           <div
+            v-else-if="element.name === 'captain_timeline'"
+            class="conversation--actions"
+          >
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CAPTAIN_TIMELINE')"
+              :is-open="isContactSidebarItemOpen('is_captain_timeline_open')"
+              compact
+              @toggle="
+                value => toggleSidebarUIState('is_captain_timeline_open', value)
+              "
+            >
+              <CaptainTimeline />
+            </AccordionItem>
+          </div>
+          <div
             v-else-if="element.name === 'sumary'"
             class="conversation--actions"
           >
@@ -375,6 +391,7 @@ onMounted(() => {
 
       <!-- CRM Sync (fuera del Draggable, no reordenable) -->
       <AccordionItem
+        class="mt-3"
         v-if="hasCrmIntegration"
         :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CRM_SYNC')"
         :is-open="isContactSidebarItemOpen('is_crm_sync_open')"

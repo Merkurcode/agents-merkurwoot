@@ -28,6 +28,8 @@ class Captain::Llm::AssistantChatService < Llm::BaseAiService
   private
 
   def build_tools
+    # NOTE: SearchDocumentationService not used when external_agent_url is set.
+    # nauto-assistant performs its own RAG over Pinecone.
     [
       Captain::Tools::SearchDocumentationService.new(@assistant, user: nil),
       Captain::Tools::BusinessHoursLookupTool.new(@assistant)

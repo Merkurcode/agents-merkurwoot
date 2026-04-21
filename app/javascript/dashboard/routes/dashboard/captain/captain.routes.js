@@ -12,6 +12,9 @@ import AssistantPlaygroundIndex from './assistants/playground/Index.vue';
 import AssistantGuardrailsIndex from './assistants/guardrails/Index.vue';
 import AssistantGuidelinesIndex from './assistants/guidelines/Index.vue';
 import AssistantScenariosIndex from './assistants/scenarios/Index.vue';
+import AssistantFiltersIndex from './assistants/filters/Index.vue';
+import AssistantFilterRunsIndex from './assistants/filters/RunsIndex.vue';
+import AssistantFilterRunDetail from './assistants/filters/RunDetail.vue';
 import DocumentsIndex from './documents/Index.vue';
 import ResponsesIndex from './responses/Index.vue';
 import ResponsesPendingIndex from './responses/Pending.vue';
@@ -64,6 +67,28 @@ const assistantRoutes = [
     path: frontendURL('accounts/:accountId/captain/:assistantId/inboxes'),
     component: AssistantInboxesIndex,
     name: 'captain_assistants_inboxes_index',
+    meta,
+  },
+  {
+    path: frontendURL('accounts/:accountId/captain/:assistantId/filters'),
+    component: AssistantFiltersIndex,
+    name: 'captain_assistants_filters_index',
+    meta,
+  },
+  {
+    path: frontendURL(
+      'accounts/:accountId/captain/:assistantId/filters/:filterId/runs'
+    ),
+    component: AssistantFilterRunsIndex,
+    name: 'captain_assistants_filter_runs_index',
+    meta,
+  },
+  {
+    path: frontendURL(
+      'accounts/:accountId/captain/:assistantId/filters/runs/:runId'
+    ),
+    component: AssistantFilterRunDetail,
+    name: 'captain_assistants_filter_run_detail',
     meta,
   },
   {

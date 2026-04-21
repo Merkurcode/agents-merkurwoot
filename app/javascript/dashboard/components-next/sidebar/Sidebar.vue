@@ -258,25 +258,6 @@ const menuItems = computed(() => {
       activeOn: ['captain_assistants_create_index'],
       children: [
         {
-          name: 'FAQs',
-          label: t('SIDEBAR.CAPTAIN_RESPONSES'),
-          activeOn: [
-            'captain_assistants_responses_index',
-            'captain_assistants_responses_pending',
-          ],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_responses_index',
-          }),
-        },
-        {
-          name: 'Documents',
-          label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
-          activeOn: ['captain_assistants_documents_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_documents_index',
-          }),
-        },
-        {
           name: 'Scenarios',
           label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
           activeOn: ['captain_assistants_scenarios_index'],
@@ -293,11 +274,11 @@ const menuItems = computed(() => {
           }),
         },
         {
-          name: 'Inboxes',
-          label: t('SIDEBAR.CAPTAIN_INBOXES'),
-          activeOn: ['captain_assistants_inboxes_index'],
+          name: 'Filters',
+          label: t('SIDEBAR.CAPTAIN_FILTERS'),
+          activeOn: ['captain_assistants_filters_index'],
           to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_inboxes_index',
+            navigationPath: 'captain_assistants_filters_index',
           }),
         },
         {

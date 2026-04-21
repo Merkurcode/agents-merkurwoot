@@ -68,6 +68,9 @@ Rails.application.routes.draw do
               resources :scenarios
             end
             resources :assistant_responses
+            resources :assistant_filters
+            resources :assistant_filter_runs, only: [:index, :show, :create]
+            resources :assistant_filter_run_conversations, only: [:update]
             resources :bulk_actions, only: [:create]
             resources :copilot_threads, only: [:index, :create] do
               resources :copilot_messages, only: [:index, :create]
@@ -276,6 +279,7 @@ Rails.application.routes.draw do
               get :copilot_events
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
+              get :captain_activities if ChatwootApp.enterprise?
             end
           end
 

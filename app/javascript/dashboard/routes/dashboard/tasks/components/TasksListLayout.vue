@@ -80,8 +80,8 @@ const showPagination = computed(
       </header>
 
       <!-- Main content -->
-      <main class="flex-1 overflow-y-auto">
-        <div class="w-full mx-auto max-w-[60rem]">
+      <main class="flex-1 px-6 overflow-y-auto lg:px-0">
+        <div class="w-full mx-auto max-w-[60rem] py-4">
           <slot name="default" />
         </div>
       </main>

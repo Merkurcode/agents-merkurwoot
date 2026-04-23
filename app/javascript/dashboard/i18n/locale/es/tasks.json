@@ -39,6 +39,12 @@
       "CONTACT": "Contacto",
       "APPOINTMENT": "Cita"
     },
+    "ACTION_TYPE": {
+      "GENERAL": "General",
+      "SCHEDULE_APPOINTMENT": "Programar cita",
+      "SEND_MESSAGE": "Enviar mensaje",
+      "ASSIGN_CONVERSATION": "Asignar conversación"
+    },
     "EXECUTION_CONFIG": {
       "DAYS": {
         "0": "Domingo",
@@ -52,7 +58,12 @@
     },
     "ACTIONS": {
       "EDIT": "Editar",
-      "DELETE": "Eliminar"
+      "DELETE": "Eliminar",
+      "EXECUTE": "Ejecutar ahora"
+    },
+    "EXECUTE": {
+      "SUCCESS": "Tarea ejecutada correctamente",
+      "ERROR": "Error al ejecutar la tarea"
     },
     "MODAL": {
       "CREATE_TITLE": "Crear tarea",
@@ -61,6 +72,16 @@
       "TITLE_PLACEHOLDER": "Ingresa el título de la tarea",
       "DESCRIPTION": "Descripción",
       "DESCRIPTION_PLACEHOLDER": "Agrega detalles sobre esta tarea",
+      "STATUS": "Estado",
+      "ACTION_TYPE": "Tipo de acción",
+      "SELECT_ACTION_TYPE": "Selecciona el tipo de acción",
+      "SCHEDULED_AT": "Ejecutar en",
+      "ASSIGNEE": "Agente asignado (opcional)",
+      "SELECT_ASSIGNEE": "Seleccionar agente...",
+      "MESSAGE_CONTENT": "Contenido del mensaje",
+      "MESSAGE_CONTENT_PLACEHOLDER": "Ingresa el mensaje a enviar...",
+      "APPOINTMENT_TITLE": "Título de la cita",
+      "APPOINTMENT_TITLE_PLACEHOLDER": "Ingresa el título de la cita...",
       "ENTITY_TYPE": "Tipo de entidad vinculada",
       "SELECT_ENTITY_TYPE": "Ninguna (opcional)",
       "SELECT_ENTITY": "Seleccionar {type}",
@@ -72,6 +93,9 @@
       "TIME_TO": "Hora de fin",
       "CANCEL": "Cancelar",
       "SAVE": "Guardar",
+      "CONVERSATION": "Conversación",
+      "SEARCH_CONVERSATION_BY_CONTACT": "Escribe el nombre de un contacto para buscar sus conversaciones...",
+      "ASSIGN_TO_AGENT": "Asignar a agente",
       "VALIDATION_ERROR": "El título es obligatorio"
     },
     "CREATE": {

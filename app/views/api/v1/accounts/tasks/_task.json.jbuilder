@@ -1,6 +1,6 @@
 json.id task.id
-json.title task.title
-json.description task.description
+json.title task.title.capitalize
+json.description task.description.capitalize
 json.status task.status
 json.action_type task.action_type
 json.assignee_id task.assignee_id

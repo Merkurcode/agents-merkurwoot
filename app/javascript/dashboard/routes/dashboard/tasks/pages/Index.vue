@@ -5,11 +5,10 @@ import { debounce } from '@chatwoot/utils';
 import { useMapGetter, useStore } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useUISettings } from 'dashboard/composables/useUISettings';
-import { format } from 'date-fns';
 
 import TasksListLayout from '../components/TasksListLayout.vue';
 import TaskModal from '../components/TaskModal.vue';
-import Button from 'dashboard/components-next/button/Button.vue';
+import TaskCard from '../components/TaskCard.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
@@ -51,46 +50,6 @@ const showModal = ref(false);
 const selectedTask = ref(null);
 const bulkDeleteDialogRef = ref(null);
 const taskToDelete = ref(null);
-
-const statusClasses = {
-  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400',
-  in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-  completed: 'bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400',
-  cancelled: 'bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400',
-};
-
-const actionTypeIcons = {
-  general: 'i-lucide-clipboard-list',
-  schedule_appointment: 'i-lucide-calendar-plus',
-  send_message: 'i-lucide-send',
-  assign_conversation: 'i-lucide-user-check',
-};
-
-const entityIcons = {
-  Conversation: 'i-lucide-message-square',
-  Contact: 'i-lucide-user',
-  Appointment: 'i-lucide-calendar-check',
-};
-
-const formatDate = dateString => {
-  if (!dateString) return '';
-  return format(new Date(dateString), 'MMM d, yyyy');
-};
-
-const formatSchedule = task => {
-  const config = task.execution_config || {};
-  const parts = [];
-  if (config.days_of_week?.length) {
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    parts.push(config.days_of_week.map(d => dayNames[d]).join(', '));
-  }
-  if (config.time_from && config.time_to) {
-    parts.push(`${config.time_from} – ${config.time_to}`);
-  } else if (config.time_from) {
-    parts.push(`from ${config.time_from}`);
-  }
-  return parts.join(' · ') || '–';
-};
 
 const fetchTasks = async (page = 1) => {
   await store.dispatch('tasks/get', { page, sortAttr: buildSortAttr() });
@@ -215,140 +174,23 @@ onMounted(() => fetchTasks());
       </p>
     </div>
 
-    <!-- Tasks table -->
-    <div
-      v-else
-      class="bg-white dark:bg-n-slate-1 rounded-lg border border-n-weak"
-    >
-      <table class="min-w-full divide-y divide-n-weak">
-        <tbody class="divide-y divide-n-weak">
-          <tr
-            v-for="task in tasks"
-            :key="task.id"
-            class="hover:bg-n-slate-2 transition-colors"
-          >
-            <!-- Title + description -->
-            <td class="py-4 px-4">
-              <div class="font-medium text-n-slate-12 truncate max-w-[200px]">
-                {{ task.title }}
-              </div>
-              <div
-                v-if="task.description"
-                class="text-sm text-n-slate-11 truncate max-w-[200px]"
-                :title="task.description"
-              >
-                {{ task.description }}
-              </div>
-              <div v-else class="text-sm text-n-slate-9 italic">
-                {{ $t('TASKS.NO_DESCRIPTION') }}
-              </div>
-            </td>
-
-            <!-- Status + Action type -->
-            <td class="py-4 px-4">
-              <div class="flex flex-col gap-1">
-                <span
-                  :class="statusClasses[task.status]"
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
-                >
-                  {{ $t(`TASKS.STATUS.${task.status.toUpperCase()}`) }}
-                </span>
-                <span
-                  v-if="task.action_type && task.action_type !== 'general'"
-                  class="inline-flex items-center gap-1 text-xs text-n-slate-11"
-                >
-                  <Icon
-                    :icon="actionTypeIcons[task.action_type] || 'i-lucide-clipboard-list'"
-                    class="w-3 h-3"
-                  />
-                  {{ $t(`TASKS.ACTION_TYPE.${task.action_type.toUpperCase()}`) }}
-                </span>
-              </div>
-            </td>
-
-            <!-- Scheduled at / Execution schedule -->
-            <td class="py-4 px-4">
-              <div v-if="task.scheduled_at" class="text-sm text-n-slate-11">
-                {{ format(new Date(task.scheduled_at), 'MMM d, yyyy HH:mm') }}
-              </div>
-              <div
-                v-else
-                class="text-sm text-n-slate-11 max-w-[180px] truncate"
-                :title="formatSchedule(task)"
-              >
-                {{ formatSchedule(task) }}
-              </div>
-            </td>
-
-            <!-- Assignee -->
-            <td class="py-4 px-4">
-              <div v-if="task.assignee" class="flex items-center gap-1">
-                <Icon icon="i-lucide-user" class="w-3 h-3 text-n-slate-11" />
-                <span class="text-sm text-n-slate-11 truncate max-w-[120px]">{{ task.assignee.name }}</span>
-              </div>
-              <div v-else-if="task.ai_agent" class="flex items-center gap-1">
-                <Icon icon="i-lucide-bot" class="w-3 h-3 text-woot-500" />
-                <span class="text-sm text-woot-500 truncate max-w-[120px]">{{ task.ai_agent.name }}</span>
-              </div>
-              <span v-else class="text-sm text-n-slate-9">–</span>
-            </td>
-
-            <!-- Linked entity -->
-            <td class="py-4 px-4">
-              <div v-if="task.entity_type" class="flex items-center gap-2">
-                <Icon
-                  :icon="entityIcons[task.entity_type] || 'i-lucide-link'"
-                  class="w-4 h-4 text-n-slate-11"
-                />
-                <div>
-                  <div class="text-sm font-medium text-n-slate-12">
-                    {{ $t(`TASKS.ENTITY_TYPE.${task.entity_type.toUpperCase()}`) }}
-                  </div>
-                  <div class="text-xs text-n-slate-9">#{{ task.entity_id }}</div>
-                </div>
-              </div>
-              <span v-else class="text-sm text-n-slate-9">–</span>
-            </td>
-
-            <!-- Created at -->
-            <td class="py-4 px-4">
-              <span class="text-sm text-n-slate-11">
-                {{ formatDate(task.created_at) }}
-              </span>
-            </td>
-
-            <!-- Actions -->
-            <td class="py-4 px-4">
-              <div class="flex justify-end gap-1">
-                <Button
-                  v-if="task.status === 'pending'"
-                  v-tooltip.top="$t('TASKS.ACTIONS.EXECUTE')"
-                  icon="i-lucide-play"
-                  xs
-                  faded
-                  @click="executeTask(task)"
-                />
-                <Button
-                  v-tooltip.top="$t('TASKS.ACTIONS.EDIT')"
-                  icon="i-lucide-pen"
-                  slate
-                  xs
-                  faded
-                  @click="editTask(task)"
-                />
-                <Button
-                  v-tooltip.top="$t('TASKS.ACTIONS.DELETE')"
-                  icon="i-lucide-trash-2"
-                  xs
-                  ruby
-                  faded
-                  @click="openDeleteConfirmation(task)"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Tasks list -->
+    <div v-else class="flex flex-col gap-4">
+      <TaskCard
+        v-for="task in tasks"
+        :key="task.id"
+        :title="task.title"
+        :description="task.description"
+        :status="task.status"
+        :action-type="task.action_type"
+        :scheduled-at="task.scheduled_at"
+        :execution-config="task.execution_config"
+        :assignee="task.assignee"
+        :ai-agent="task.ai_agent"
+        @execute="executeTask(task)"
+        @edit="editTask(task)"
+        @delete="openDeleteConfirmation(task)"
+      />
     </div>
   </TasksListLayout>
 

@@ -5,6 +5,8 @@ import { useStoreGetters, useStore } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { debounce } from '@chatwoot/utils';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Input from 'dashboard/components-next/input/Input.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
 import CaptainAssistantAPI from 'dashboard/api/captain/assistant';
 import ContactAPI from 'dashboard/api/contacts';
@@ -208,6 +210,22 @@ const isValidForm = computed(
   () => !!formData.value.title.trim() && !!formData.value.scheduled_at
 );
 
+const ACTION_SECTION_ICONS = {
+  schedule_appointment: 'i-lucide-calendar-plus',
+  send_message: 'i-lucide-send',
+  assign_conversation: 'i-lucide-user-check',
+};
+
+const actionSectionTitle = computed(() => {
+  const type = formData.value.action_type;
+  if (type === 'general') return null;
+  return t(`TASKS.ACTION_TYPE.${type.toUpperCase()}`);
+});
+
+const actionSectionIcon = computed(
+  () => ACTION_SECTION_ICONS[formData.value.action_type] || null
+);
+
 async function handleSubmit() {
   if (!isValidForm.value) {
     useAlert(t('TASKS.MODAL.VALIDATION_ERROR'));
@@ -269,242 +287,231 @@ async function handleSubmit() {
 <template>
   <div class="flex flex-col h-auto overflow-auto">
     <woot-modal-header
-      :header-title="
-        isEditMode
-          ? $t('TASKS.MODAL.EDIT_TITLE')
-          : $t('TASKS.MODAL.CREATE_TITLE')
-      "
+      :header-title="isEditMode ? $t('TASKS.MODAL.EDIT_TITLE') : $t('TASKS.MODAL.CREATE_TITLE')"
     />
 
     <form class="w-full" @submit.prevent="handleSubmit">
-      <div class="w-full flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+      <div class="w-full flex flex-col gap-4 max-h-[60vh] overflow-y-auto px-8 py-2">
+
         <!-- Title -->
-        <div class="w-full">
-          <label>
-            {{ $t('TASKS.MODAL.TITLE') }}
-            <span class="text-red-500">*</span>
-            <input
-              v-model="formData.title"
-              type="text"
-              :placeholder="$t('TASKS.MODAL.TITLE_PLACEHOLDER')"
-            />
-          </label>
-        </div>
+        <Input
+          v-model="formData.title"
+          :label="$t('TASKS.MODAL.TITLE')"
+          :placeholder="$t('TASKS.MODAL.TITLE_PLACEHOLDER')"
+        />
 
         <!-- Description -->
-        <div class="w-full">
-          <label>
+        <div class="flex flex-col gap-1">
+          <label class="mb-0.5 text-sm font-medium text-n-slate-12">
             {{ $t('TASKS.MODAL.DESCRIPTION') }}
-            <textarea
-              v-model="formData.description"
-              rows="3"
-              :placeholder="$t('TASKS.MODAL.DESCRIPTION_PLACEHOLDER')"
-            />
           </label>
+          <textarea
+            v-model="formData.description"
+            rows="3"
+            :placeholder="$t('TASKS.MODAL.DESCRIPTION_PLACEHOLDER')"
+            class="block w-full text-sm outline outline-1 outline-offset-[-1px] border-0 rounded-lg bg-n-alpha-black2 px-3 text-n-slate-12 placeholder:text-n-slate-10 outline-n-weak hover:outline-n-slate-6 focus:outline-n-brand transition-all duration-500 ease-in-out"
+          />
         </div>
 
         <!-- Assignee -->
-        <div class="w-full">
-          <label>
+        <div class="flex flex-col gap-1">
+          <label class="mb-0.5 text-sm font-medium text-n-slate-12">
             {{ $t('TASKS.MODAL.ASSIGNEE') }}
-            <ComboBox
-              v-model="selectedAssignee"
-              :options="combinedAssigneeOptions"
-              :placeholder="$t('TASKS.MODAL.SELECT_ASSIGNEE')"
-            />
           </label>
+          <ComboBox
+            v-model="selectedAssignee"
+            :options="combinedAssigneeOptions"
+            :placeholder="$t('TASKS.MODAL.SELECT_ASSIGNEE')"
+            class="[&>div>button]:bg-n-alpha-black2 [&>div>button:not(.focused)]:dark:outline-n-weak [&>div>button:not(.focused)]:hover:!outline-n-slate-6"
+          />
         </div>
-
 
         <!-- Scheduled at -->
-        <div class="w-full">
-          <label>
-            {{ $t('TASKS.MODAL.SCHEDULED_AT') }}
-            <span class="text-red-500">*</span>
-            <input
-              v-model="formData.scheduled_at"
-              type="datetime-local"
-            />
-          </label>
-        </div>
+        <Input
+          v-model="formData.scheduled_at"
+          type="datetime-local"
+          :label="$t('TASKS.MODAL.SCHEDULED_AT')"
+        />
 
-        <!-- Action Type (at the end) -->
-        <div class="w-full">
-          <label>
+        <!-- Action Type -->
+        <div class="flex flex-col gap-1">
+          <label class="mb-0.5 text-sm font-medium text-n-slate-12">
             {{ $t('TASKS.MODAL.ACTION_TYPE') }}
-            <select v-model="formData.action_type">
-              <option
-                v-for="opt in actionTypeOptions"
-                :key="opt.value"
-                :value="opt.value"
-              >
-                {{ opt.label }}
-              </option>
-            </select>
           </label>
+          <select
+            v-model="formData.action_type"
+            class="block w-full text-sm outline outline-1 outline-offset-[-1px] border-0 rounded-lg bg-n-alpha-black2 px-3 py-2.5 text-n-slate-12 outline-n-weak hover:outline-n-slate-6 focus:outline-n-brand transition-all duration-500 ease-in-out"
+          >
+            <option
+              v-for="opt in actionTypeOptions"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
 
-        <!-- Schedule Appointment sub-form -->
-        <template v-if="showScheduleAppointment">
-          <div class="w-full">
-            <label>
-              {{ $t('APPOINTMENTS.MODAL.CONTACT') }}
-              <span class="text-red-500">*</span>
+        <!-- Action-specific section separator + fields -->
+        <template v-if="actionSectionTitle">
+          <div class="flex items-center gap-3 pt-1">
+            <div class="h-px flex-1 bg-n-weak" />
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <Icon :icon="actionSectionIcon" class="size-3.5 text-n-slate-11" />
+              <span class="text-xs font-medium text-n-slate-11 uppercase tracking-wide">
+                {{ actionSectionTitle }}
+              </span>
+            </div>
+            <div class="h-px flex-1 bg-n-weak" />
+          </div>
+
+          <!-- Schedule Appointment fields -->
+          <template v-if="showScheduleAppointment">
+            <div class="flex flex-col gap-1">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{ $t('APPOINTMENTS.MODAL.CONTACT') }}
+                <span class="text-n-ruby-9">*</span>
+              </label>
               <ComboBox
                 v-model="formData.execution_config.appointment_data.contact_id"
                 :options="contactOptions"
                 :placeholder="$t('APPOINTMENTS.MODAL.SELECT_CONTACT')"
+                class="[&>div>button]:bg-n-alpha-black2 [&>div>button:not(.focused)]:dark:outline-n-weak [&>div>button:not(.focused)]:hover:!outline-n-slate-6"
               />
-            </label>
-          </div>
+            </div>
 
-          <div class="w-full">
-            <label>
-              {{ $t('APPOINTMENTS.MODAL.APPOINTMENT_TYPE') }}
-              <span class="text-red-500">*</span>
-              <select v-model="formData.execution_config.appointment_data.appointment_type">
-                <option
-                  v-for="opt in appointmentTypeOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <div class="w-full">
-            <label>
-              {{ $t('APPOINTMENTS.MODAL.SCHEDULED_AT') }}
-              <span class="text-red-500">*</span>
-              <input
-                v-model="formData.execution_config.appointment_data.scheduled_at"
-                type="datetime-local"
+            <div class="flex flex-col gap-1">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{ $t('APPOINTMENTS.MODAL.APPOINTMENT_TYPE') }}
+                <span class="text-n-ruby-9">*</span>
+              </label>
+              <ComboBox
+                v-model="formData.execution_config.appointment_data.appointment_type"
+                :options="appointmentTypeOptions"
+                class="[&>div>button]:bg-n-alpha-black2 [&>div>button:not(.focused)]:dark:outline-n-weak [&>div>button:not(.focused)]:hover:!outline-n-slate-6"
               />
-            </label>
-          </div>
+            </div>
 
-          <div class="w-full">
-            <label>
-              {{ $t('APPOINTMENTS.MODAL.OWNER') }}
-              <span class="text-red-500">*</span>
+            <Input
+              v-model="formData.execution_config.appointment_data.scheduled_at"
+              type="datetime-local"
+              :label="$t('APPOINTMENTS.MODAL.SCHEDULED_AT')"
+            />
+
+            <div class="flex flex-col gap-1">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{ $t('APPOINTMENTS.MODAL.OWNER') }}
+                <span class="text-n-ruby-9">*</span>
+              </label>
               <ComboBox
                 v-model="formData.execution_config.appointment_data.owner_id"
                 :options="agentOptions"
                 :placeholder="$t('APPOINTMENTS.MODAL.SELECT_OWNER')"
+                class="[&>div>button]:bg-n-alpha-black2 [&>div>button:not(.focused)]:dark:outline-n-weak [&>div>button:not(.focused)]:hover:!outline-n-slate-6"
               />
-            </label>
-          </div>
+            </div>
 
-          <div v-if="apptType === 'phone_call'" class="w-full">
-            <label>
-              {{ $t('APPOINTMENTS.MODAL.PHONE_NUMBER') }}
-              <span class="text-red-500">*</span>
-              <input
-                v-model="formData.execution_config.appointment_data.phone_number"
-                type="tel"
-                :placeholder="$t('APPOINTMENTS.MODAL.PHONE_PLACEHOLDER')"
-              />
-            </label>
-          </div>
+            <Input
+              v-if="apptType === 'phone_call'"
+              v-model="formData.execution_config.appointment_data.phone_number"
+              type="tel"
+              :label="$t('APPOINTMENTS.MODAL.PHONE_NUMBER')"
+              :placeholder="$t('APPOINTMENTS.MODAL.PHONE_PLACEHOLDER')"
+            />
 
-          <div v-if="apptType === 'digital_meeting'" class="w-full">
-            <label>
-              {{ $t('APPOINTMENTS.MODAL.MEETING_URL') }}
-              <span class="text-red-500">*</span>
-              <input
-                v-model="formData.execution_config.appointment_data.meeting_url"
-                type="url"
-                :placeholder="$t('APPOINTMENTS.MODAL.MEETING_URL_PLACEHOLDER')"
-              />
-            </label>
-          </div>
+            <Input
+              v-if="apptType === 'digital_meeting'"
+              v-model="formData.execution_config.appointment_data.meeting_url"
+              type="url"
+              :label="$t('APPOINTMENTS.MODAL.MEETING_URL')"
+              :placeholder="$t('APPOINTMENTS.MODAL.MEETING_URL_PLACEHOLDER')"
+            />
 
-          <div v-if="apptType === 'physical_visit'" class="w-full">
-            <label>
-              {{ $t('APPOINTMENTS.MODAL.LOCATION') }}
-              <span class="text-red-500">*</span>
-              <input
-                v-model="formData.execution_config.appointment_data.location"
-                type="text"
-                :placeholder="$t('APPOINTMENTS.MODAL.LOCATION_PLACEHOLDER')"
-              />
-            </label>
-          </div>
-        </template>
+            <Input
+              v-if="apptType === 'physical_visit'"
+              v-model="formData.execution_config.appointment_data.location"
+              :label="$t('APPOINTMENTS.MODAL.LOCATION')"
+              :placeholder="$t('APPOINTMENTS.MODAL.LOCATION_PLACEHOLDER')"
+            />
+          </template>
 
-        <!-- Assign Conversation sub-form -->
-        <template v-if="showAssignConversation">
-          <div class="w-full">
-            <label>
-              {{ $t('TASKS.MODAL.CONVERSATION') }}
-              <span class="text-red-500">*</span>
+          <!-- Assign Conversation fields -->
+          <template v-if="showAssignConversation">
+            <div class="flex flex-col gap-1">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{ $t('TASKS.MODAL.CONVERSATION') }}
+                <span class="text-n-ruby-9">*</span>
+              </label>
               <ComboBox
                 v-model="formData.execution_config.assign_conversation_data.conversation_id"
                 :options="conversationSearchOptions"
                 :placeholder="$t('TASKS.MODAL.SEARCH_CONVERSATION_BY_CONTACT')"
                 use-api-results
+                class="[&>div>button]:bg-n-alpha-black2 [&>div>button:not(.focused)]:dark:outline-n-weak [&>div>button:not(.focused)]:hover:!outline-n-slate-6"
                 @search="searchConversationsByContact"
               />
-            </label>
-            <p v-if="isSearchingConversations" class="text-xs text-n-slate-9 mt-1">
-              {{ $t('TASKS.MODAL.LOADING_ENTITIES') }}
-            </p>
-          </div>
+              <p v-if="isSearchingConversations" class="text-xs text-n-slate-9 mt-0.5">
+                {{ $t('TASKS.MODAL.LOADING_ENTITIES') }}
+              </p>
+            </div>
 
-          <div class="w-full">
-            <label>
-              {{ $t('TASKS.MODAL.ASSIGN_TO_AGENT') }}
-              <span class="text-red-500">*</span>
+            <div class="flex flex-col gap-1">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{ $t('TASKS.MODAL.ASSIGN_TO_AGENT') }}
+                <span class="text-n-ruby-9">*</span>
+              </label>
               <ComboBox
                 v-model="formData.execution_config.assign_conversation_data.assignee_id"
                 :options="assignConversationAgentOptions"
                 :placeholder="isLoadingAssignAgents ? $t('TASKS.MODAL.LOADING_ENTITIES') : $t('TASKS.MODAL.SELECT_ASSIGNEE')"
                 :disabled="!formData.execution_config.assign_conversation_data.conversation_id || isLoadingAssignAgents"
+                class="[&>div>button]:bg-n-alpha-black2 [&>div>button:not(.focused)]:dark:outline-n-weak [&>div>button:not(.focused)]:hover:!outline-n-slate-6"
               />
-            </label>
-          </div>
-        </template>
+            </div>
+          </template>
 
-        <!-- Send message: conversation selector -->
-        <template v-if="showSendMessageConversation">
-          <div class="w-full">
-            <label>
-              {{ $t('TASKS.MODAL.CONVERSATION') }}
-              <span class="text-red-500">*</span>
+          <!-- Send Message fields -->
+          <template v-if="showSendMessageConversation">
+            <div class="flex flex-col gap-1">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{ $t('TASKS.MODAL.CONVERSATION') }}
+                <span class="text-n-ruby-9">*</span>
+              </label>
               <ComboBox
                 v-model="sendMessageConversationId"
                 :options="conversationSearchOptions"
                 :placeholder="$t('TASKS.MODAL.SEARCH_CONVERSATION_BY_CONTACT')"
                 use-api-results
+                class="[&>div>button]:bg-n-alpha-black2 [&>div>button:not(.focused)]:dark:outline-n-weak [&>div>button:not(.focused)]:hover:!outline-n-slate-6"
                 @search="searchConversationsByContact"
               />
-            </label>
-            <p v-if="isSearchingConversations" class="text-xs text-n-slate-9 mt-1">
-              {{ $t('TASKS.MODAL.LOADING_ENTITIES') }}
-            </p>
-          </div>
+              <p v-if="isSearchingConversations" class="text-xs text-n-slate-9 mt-0.5">
+                {{ $t('TASKS.MODAL.LOADING_ENTITIES') }}
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{ $t('TASKS.MODAL.MESSAGE_CONTENT') }}
+                <span class="text-n-ruby-9">*</span>
+              </label>
+              <textarea
+                v-model="formData.execution_config.message_content"
+                rows="3"
+                :placeholder="$t('TASKS.MODAL.MESSAGE_CONTENT_PLACEHOLDER')"
+                class="block w-full text-sm outline outline-1 outline-offset-[-1px] border-0 rounded-lg bg-n-alpha-black2 px-3 py-2.5 text-n-slate-12 placeholder:text-n-slate-10 outline-n-weak hover:outline-n-slate-6 focus:outline-n-brand transition-all duration-500 ease-in-out resize-none"
+              />
+            </div>
+          </template>
         </template>
 
-        <!-- Send message -->
-        <div v-if="showMessageContent" class="w-full">
-          <label>
-            {{ $t('TASKS.MODAL.MESSAGE_CONTENT') }}
-            <textarea
-              v-model="formData.execution_config.message_content"
-              rows="3"
-              :placeholder="$t('TASKS.MODAL.MESSAGE_CONTENT_PLACEHOLDER')"
-            />
-          </label>
-        </div>
       </div>
 
       <!-- Footer -->
-      <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">
+      <div class="flex flex-row justify-end w-full gap-2 px-8 py-4">
         <Button
-          faded
-          slate
+          variant="faded"
+          color="slate"
           type="button"
           :label="$t('TASKS.MODAL.CANCEL')"
           @click="onClose"

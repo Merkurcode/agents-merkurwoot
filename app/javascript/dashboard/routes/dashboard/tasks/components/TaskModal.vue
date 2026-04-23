@@ -8,7 +8,6 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
-import CaptainAssistantAPI from 'dashboard/api/captain/assistant';
 import ContactAPI from 'dashboard/api/contacts';
 import ConversationAPI from 'dashboard/api/conversations';
 import InboxMembersAPI from 'dashboard/api/inboxMembers';
@@ -24,11 +23,10 @@ const getters = useStoreGetters();
 
 const isEditMode = computed(() => !!props.task);
 const isSubmitting = ref(false);
-const aiAgents = ref([]);
 
 const getInitialAssignee = () => {
   if (props.task?.assignee_id) return `h:${props.task.assignee_id}`;
-  if (props.task?.ai_agent_id) return `a:${props.task.ai_agent_id}`;
+  if (props.task?.agent_bot_id) return `b:${props.task.agent_bot_id}`;
   return null;
 };
 const selectedAssignee = ref(getInitialAssignee());
@@ -69,6 +67,7 @@ const searchConversationsByContact = debounce(async query => {
 }, 400);
 
 const agents = computed(() => getters['agents/getAgents'].value || []);
+const agentBots = computed(() => getters['agentBots/getBots'].value || []);
 
 const actionTypeOptions = [
   { value: 'general', label: t('TASKS.ACTION_TYPE.GENERAL') },
@@ -124,7 +123,7 @@ const formData = ref({
 
 const combinedAssigneeOptions = computed(() => [
   ...agents.value.map(a => ({ value: `h:${a.id}`, label: `${a.name} (Agent)` })),
-  ...aiAgents.value.map(a => ({ value: `a:${a.id}`, label: `${a.name} (AI)` })),
+  ...agentBots.value.map(b => ({ value: `b:${b.id}`, label: `${b.name} (Bot)` })),
 ]);
 
 const contactOptions = computed(() =>
@@ -161,9 +160,7 @@ const apptType = computed(
 
 store.dispatch('agents/get');
 store.dispatch('contacts/get');
-CaptainAssistantAPI.get().then(({ data }) => {
-  aiAgents.value = data?.payload || [];
-});
+store.dispatch('agentBots/get');
 
 
 
@@ -235,11 +232,11 @@ async function handleSubmit() {
   isSubmitting.value = true;
   try {
     let assignee_id = null;
-    let ai_agent_id = null;
+    let agent_bot_id = null;
     if (selectedAssignee.value) {
       const [type, id] = selectedAssignee.value.split(':');
       if (type === 'h') assignee_id = Number(id);
-      else ai_agent_id = Number(id);
+      else agent_bot_id = Number(id);
     }
 
     const payload = {
@@ -251,7 +248,7 @@ async function handleSubmit() {
           ? new Date(formData.value.scheduled_at).toISOString()
           : null,
         assignee_id,
-        ai_agent_id,
+        agent_bot_id,
         execution_config: formData.value.execution_config,
         ...(formData.value.action_type === 'send_message' && sendMessageConversationId.value
           ? { entity_type: 'Conversation', entity_id: sendMessageConversationId.value }

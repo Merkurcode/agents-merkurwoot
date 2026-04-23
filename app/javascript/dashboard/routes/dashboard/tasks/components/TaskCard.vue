@@ -15,7 +15,7 @@ const props = defineProps({
   scheduledAt: { type: String, default: null },
   executionConfig: { type: Object, default: null },
   assignee: { type: Object, default: null },
-  aiAgent: { type: Object, default: null },
+  agentBot: { type: Object, default: null },
 });
 
 const emit = defineEmits(['execute', 'edit', 'delete']);
@@ -52,8 +52,8 @@ const formattedDate = computed(() => {
   return parts.join(' · ') || '–';
 });
 
-const assigneeName = computed(() => props.assignee?.name || props.aiAgent?.name || null);
-const isAiAgent = computed(() => !props.assignee && !!props.aiAgent);
+const assigneeName = computed(() => props.assignee?.name || props.agentBot?.name || null);
+const isAiAgent = computed(() => !props.assignee && !!props.agentBot);
 const isPending = computed(() => props.status === 'pending');
 </script>
 

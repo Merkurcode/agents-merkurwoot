@@ -6,7 +6,7 @@ class Task < ApplicationRecord
   belongs_to :creator, class_name: 'User'
   belongs_to :entity, polymorphic: true, optional: true
   belongs_to :assignee, class_name: 'User', optional: true
-  belongs_to :ai_agent, class_name: 'Captain::Assistant', optional: true
+  belongs_to :agent_bot, class_name: 'AgentBot', optional: true
 
   # Enums
   enum status: {
@@ -23,6 +23,9 @@ class Task < ApplicationRecord
     assign_conversation: 4
   }
 
+  # Callbacks
+  after_commit :notify_agent_bot, if: :agent_bot_id?
+
   # Validations
   validates :title, presence: true
   validates :status, presence: true
@@ -36,8 +39,37 @@ class Task < ApplicationRecord
   private
 
   def only_one_agent_type
-    return unless assignee_id.present? && ai_agent_id.present?
+    return unless assignee_id.present? && agent_bot_id.present?
 
-    errors.add(:base, 'Cannot assign both a human agent and an AI agent')
+    errors.add(:base, 'Cannot assign both a human agent and an agent bot')
+  end
+
+  def notify_agent_bot
+    return if agent_bot.outgoing_url.blank?
+
+    payload = {
+      event: 'task_assigned',
+      task: {
+        id: id,
+        title: title,
+        description: description,
+        status: status,
+        action_type: action_type,
+        scheduled_at: scheduled_at,
+        execution_config: execution_config,
+        entity_type: entity_type,
+        entity_id: entity_id,
+        assignee_id: assignee_id,
+        agent_bot_id: agent_bot_id,
+        creator_id: creator_id,
+        account_id: account_id,
+        created_at: created_at,
+        updated_at: updated_at,
+        creator: creator && { id: creator.id, name: creator.name, avatar_url: creator.avatar_url },
+        assignee: assignee && { id: assignee.id, name: assignee.name, avatar_url: assignee.avatar_url },
+        agent_bot: { id: agent_bot.id, name: agent_bot.name, outgoing_url: agent_bot.outgoing_url }
+      }
+    }
+    AgentBots::WebhookJob.perform_later(agent_bot.outgoing_url, payload)
   end
 end

@@ -12,14 +12,14 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
   before_action :task, only: [:show, :update, :destroy, :execute]
 
   def index
-    @tasks = fetch_tasks(Current.account.tasks.includes(:creator, :assignee, :ai_agent))
+    @tasks = fetch_tasks(Current.account.tasks.includes(:creator, :assignee, :agent_bot))
     @tasks_count = @tasks.total_count
   end
 
   def search
     return render json: { error: 'Specify search string with parameter q' }, status: :unprocessable_entity if params[:q].blank?
 
-    tasks = Current.account.tasks.includes(:creator, :assignee, :ai_agent).where(
+    tasks = Current.account.tasks.includes(:creator, :assignee, :agent_bot).where(
       'title ILIKE :search OR description ILIKE :search',
       search: "%#{params[:q].strip}%"
     )
@@ -30,7 +30,7 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
   def filter
     status_filter = params[:status]
     entity_type_filter = params[:entity_type]
-    tasks = Current.account.tasks.includes(:creator, :assignee, :ai_agent)
+    tasks = Current.account.tasks.includes(:creator, :assignee, :agent_bot)
     tasks = tasks.by_status(status_filter) if status_filter.present?
     tasks = tasks.where(entity_type: entity_type_filter) if entity_type_filter.present?
 
@@ -91,7 +91,7 @@ class Api::V1::Accounts::TasksController < Api::V1::Accounts::BaseController
       :action_type,
       :scheduled_at,
       :assignee_id,
-      :ai_agent_id,
+      :agent_bot_id,
       :entity_type,
       :entity_id,
       execution_config: {}

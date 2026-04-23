@@ -12,7 +12,7 @@ class CreateTasks < ActiveRecord::Migration[7.1]
       t.integer :action_type, default: 0, null: false
       t.datetime :scheduled_at
       t.bigint :assignee_id
-      t.bigint :ai_agent_id
+      t.bigint :agent_bot_id
       t.references :account, null: false, foreign_key: true
       t.references :creator, null: false, foreign_key: { to_table: :users }
 
@@ -24,9 +24,9 @@ class CreateTasks < ActiveRecord::Migration[7.1]
     add_index :tasks, [:account_id, :created_at]
     add_index :tasks, [:account_id, :scheduled_at, :status]
     add_index :tasks, :assignee_id
-    add_index :tasks, :ai_agent_id
+    add_index :tasks, :agent_bot_id
 
     add_foreign_key :tasks, :users, column: :assignee_id
-    add_foreign_key :tasks, :captain_assistants, column: :ai_agent_id
+    add_foreign_key :tasks, :agent_bots, column: :agent_bot_id
   end
 end

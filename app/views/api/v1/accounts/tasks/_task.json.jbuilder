@@ -4,7 +4,7 @@ json.description task.description.capitalize
 json.status task.status
 json.action_type task.action_type
 json.assignee_id task.assignee_id
-json.ai_agent_id task.ai_agent_id
+json.agent_bot_id task.agent_bot_id
 json.execution_config task.execution_config
 json.entity_type task.entity_type
 json.entity_id task.entity_id
@@ -32,11 +32,12 @@ else
   json.assignee nil
 end
 
-if task.ai_agent.present?
-  json.ai_agent do
-    json.id task.ai_agent.id
-    json.name task.ai_agent.name
+if task.agent_bot.present?
+  json.agent_bot do
+    json.id task.agent_bot.id
+    json.name task.agent_bot.name
+    json.outgoing_url task.agent_bot.outgoing_url
   end
 else
-  json.ai_agent nil
+  json.agent_bot nil
 end

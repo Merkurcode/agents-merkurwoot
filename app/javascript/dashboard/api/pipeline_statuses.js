@@ -6,8 +6,16 @@ class PipelineStatusesAPI extends ApiClient {
     super('pipeline_statuses', { accountScoped: true });
   }
 
+  getByType(pipelineType) {
+    return axios.get(`${this.url}?pipeline_type=${pipelineType}`);
+  }
+
   reorder(orderedIds) {
     return axios.post(`${this.url}/reorder`, { ordered_ids: orderedIds });
+  }
+
+  getBoard(params = {}) {
+    return axios.post(`${this.url}/board`, params);
   }
 }
 

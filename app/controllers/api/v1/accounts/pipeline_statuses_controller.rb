@@ -4,15 +4,32 @@ class Api::V1::Accounts::PipelineStatusesController < Api::V1::Accounts::BaseCon
   before_action :set_pipeline_params, only: %i[update destroy]
 
   def index
-    @pipeline_statuses = @current_account.pipeline_statuses
+    @pipeline_statuses = @current_account.pipeline_statuses.where(pipeline_type: pipeline_type_param)
+  end
+
+  def board
+    @pipeline_type = pipeline_type_param
+    board = PipelineBoard.new(
+      account: Current.account,
+      user: Current.user,
+      account_user: Current.account_user,
+      pipeline_type: @pipeline_type,
+      params: params.permit!
+    )
+    @columns = board.columns
+  rescue CustomExceptions::CustomFilter::InvalidAttribute,
+         CustomExceptions::CustomFilter::InvalidOperator,
+         CustomExceptions::CustomFilter::InvalidQueryOperator,
+         CustomExceptions::CustomFilter::InvalidValue => e
+    render_could_not_create_error(e.message)
   end
 
   def reorder
     ordered_ids = params.require(:ordered_ids)
     ordered_ids.each_with_index do |id, index|
-      @current_account.pipeline_statuses.where(id: id).update_all(position: index + 1) # rubocop:disable Rails/SkipsModelValidations
+      @current_account.pipeline_statuses.where(id: id, pipeline_type: pipeline_type_param).update_all(position: index + 1) # rubocop:disable Rails/SkipsModelValidations
     end
-    @pipeline_statuses = @current_account.pipeline_statuses
+    @pipeline_statuses = @current_account.pipeline_statuses.where(pipeline_type: pipeline_type_param)
     render :index
   end
 
@@ -40,7 +57,11 @@ class Api::V1::Accounts::PipelineStatusesController < Api::V1::Accounts::BaseCon
     render json: { error: e.message }, status: :not_found
   end
 
+  def pipeline_type_param
+    PipelineStatus.pipeline_types.key?(params[:pipeline_type]) ? params[:pipeline_type] : 'conversation'
+  end
+
   def pipeline_params
-    params.require(:pipeline_status).permit(:id, :name)
+    params.require(:pipeline_status).permit(:id, :name, :pipeline_type)
   end
 end

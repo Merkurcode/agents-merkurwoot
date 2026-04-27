@@ -152,10 +152,12 @@ Rails.application.routes.draw do
 
             collection do
               post :bulk_upload
+              post :blueprint_upload
               post :bulk_delete
               post :export
               post :export_all
               get :download_template
+              get :download_blueprint_template
               get 'download_export/:id', action: :download_export, as: :download_export
             end
 

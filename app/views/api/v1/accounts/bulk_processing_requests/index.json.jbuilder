@@ -3,6 +3,7 @@ json.data @bulk_processing_requests do |bulk_request|
   json.status bulk_request.status
   json.entity_type bulk_request.entity_type
   json.operation_type bulk_request.operation_type
+  json.import_format bulk_request.import_format
   json.file_name bulk_request.file_name
   json.total_records bulk_request.total_records
   json.processed_records bulk_request.processed_records

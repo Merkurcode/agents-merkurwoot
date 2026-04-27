@@ -1,9 +1,11 @@
 class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseController
   include Events::Types
 
-  before_action :product_catalog, except: [:index, :create, :bulk_upload, :bulk_delete, :export, :export_all, :download_export, :download_template]
+  before_action :product_catalog,
+                except: [:index, :create, :bulk_upload, :blueprint_upload, :bulk_delete, :export, :export_all, :download_export, :download_template,
+                         :download_blueprint_template]
   before_action :check_authorization
-  before_action :check_rate_limit, only: [:bulk_upload, :export_all]
+  before_action :check_rate_limit, only: [:bulk_upload, :blueprint_upload, :export_all]
 
   def index
     page = params[:page] || 1
@@ -38,20 +40,20 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
     @product_catalog = Current.account.product_catalogs.create!(product_catalog_params.except(:kb_resource_ids))
 
     # Handle KB resource associations
-    if params[:product_catalog].key?(:kb_resource_ids)
-      kb_resource_ids = Array(params[:product_catalog][:kb_resource_ids]).map(&:to_i).uniq
-      @product_catalog.kb_resource_ids = kb_resource_ids
-    end
+    return unless params[:product_catalog].key?(:kb_resource_ids)
+
+    kb_resource_ids = Array(params[:product_catalog][:kb_resource_ids]).map(&:to_i).uniq
+    @product_catalog.kb_resource_ids = kb_resource_ids
   end
 
   def update
     @product_catalog.update!(product_catalog_params.except(:kb_resource_ids))
 
     # Handle KB resource associations if provided
-    if params[:product_catalog].key?(:kb_resource_ids)
-      kb_resource_ids = Array(params[:product_catalog][:kb_resource_ids]).map(&:to_i).uniq
-      @product_catalog.kb_resource_ids = kb_resource_ids
-    end
+    return unless params[:product_catalog].key?(:kb_resource_ids)
+
+    kb_resource_ids = Array(params[:product_catalog][:kb_resource_ids]).map(&:to_i).uniq
+    @product_catalog.kb_resource_ids = kb_resource_ids
   end
 
   def destroy
@@ -76,7 +78,7 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
   def bulk_upload
     uploaded_file = params[:file]
 
-    unless uploaded_file.present?
+    if uploaded_file.blank?
       render json: { error: 'No file provided' }, status: :unprocessable_entity
       return
     end
@@ -211,12 +213,103 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
   end
 
   def download_template
-    # Generate template Excel file
     excel_data = ProductCatalogs::ExcelTemplateService.new.generate
 
     send_data excel_data,
               filename: 'product_catalog_template.xlsx',
               type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  end
+
+  def download_blueprint_template
+    excel_data = ProductCatalogs::BlueprintExcelTemplateService.new.generate
+
+    send_data excel_data,
+              filename: 'blueprint_profiles_template.xlsx',
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  end
+
+  def blueprint_upload
+    uploaded_file = params[:file]
+
+    if uploaded_file.blank?
+      render json: { error: 'No file provided' }, status: :unprocessable_entity
+      return
+    end
+
+    unless ProductCatalogs::RateLimiterService.acquire_validation_lock(Current.account.id, 'BLUEPRINT')
+      render json: { error: 'Another upload is being validated. Please wait a moment and try again.' }, status: :too_many_requests
+      return
+    end
+
+    temp_file = nil
+    begin
+      if uploaded_file.size > 50.megabytes
+        render json: { error: 'File too large. Maximum size is 50MB.' }, status: :unprocessable_entity
+        return
+      end
+
+      allowed_content_types = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel.sheet.macroEnabled.12'
+      ]
+      file_extension = File.extname(uploaded_file.original_filename).downcase
+
+      unless file_extension == '.xlsx' && allowed_content_types.include?(uploaded_file.content_type)
+        render json: { error: 'Invalid file type. Only Excel files (.xlsx) are allowed.' }, status: :unprocessable_entity
+        return
+      end
+
+      uploaded_file.rewind
+      magic_bytes = uploaded_file.read(4)
+      uploaded_file.rewind
+      unless magic_bytes == "PK\x03\x04"
+        render json: { error: 'Invalid file format. The file does not appear to be a valid Excel file.' }, status: :unprocessable_entity
+        return
+      end
+
+      if uploaded_file.original_filename.length > 100
+        render json: { error: 'Filename too long. Maximum 100 characters allowed.' }, status: :unprocessable_entity
+        return
+      end
+
+      # Blueprint uploads have an independent active-request check (don't block SKU uploads)
+      active_blueprint_request = Current.account.bulk_processing_requests
+                                        .where(entity_type: 'ProductCatalog', import_format: 'excel_blueprint')
+                                        .where(status: %w[PENDING PROCESSING])
+                                        .first
+
+      if active_blueprint_request
+        render json: {
+          error: 'A blueprint upload is already being processed. Please wait for it to complete.',
+          active_request_id: active_blueprint_request.id
+        }, status: :unprocessable_entity
+        return
+      end
+
+      Current.account.bulk_processing_requests
+             .where(entity_type: 'ProductCatalog', import_format: 'excel_blueprint')
+             .where(dismissed_at: nil)
+             .update_all(dismissed_at: Time.current)
+
+      temp_file = save_uploaded_file(uploaded_file)
+
+      @bulk_request = Current.account.bulk_processing_requests.create!(
+        user: current_user,
+        entity_type: 'ProductCatalog',
+        import_format: 'excel_blueprint',
+        file_name: uploaded_file.original_filename,
+        status: 'PENDING'
+      )
+
+      job = ProductCatalogs::ProcessBulkUploadJob.perform_later(@bulk_request.id, temp_file)
+      @bulk_request.update!(job_id: job.provider_job_id)
+
+      render json: { bulk_request_id: @bulk_request.id }, status: :accepted
+    ensure
+      ProductCatalogs::RateLimiterService.release_validation_lock(Current.account.id, 'BLUEPRINT')
+
+      FileUtils.rm_f(temp_file) if temp_file && response.status != 202 && File.exist?(temp_file)
+    end
   end
 
   def export_all
@@ -227,9 +320,11 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
                             .first
 
     if active_request
-      error_msg = active_request.operation_type == 'EXPORT' ?
-        'An export is already being processed. Please wait for it to complete.' :
-        'An upload is already being processed. Please wait for it to complete before exporting.'
+      error_msg = if active_request.operation_type == 'EXPORT'
+                    'An export is already being processed. Please wait for it to complete.'
+                  else
+                    'An upload is already being processed. Please wait for it to complete before exporting.'
+                  end
       render json: {
         error: error_msg,
         active_request_id: active_request.id
@@ -379,33 +474,35 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
   end
 
   def save_uploaded_file(uploaded_file)
-    temp_dir = Rails.root.join('tmp', 'uploads')
+    temp_dir = Rails.root.join('tmp/uploads')
     FileUtils.mkdir_p(temp_dir)
 
     # Sanitize filename to prevent path traversal attacks
     safe_filename = File.basename(uploaded_file.original_filename)
     temp_file_path = temp_dir.join("#{SecureRandom.uuid}_#{safe_filename}")
 
-    File.open(temp_file_path, 'wb') do |file|
-      file.write(uploaded_file.read)
-    end
+    File.binwrite(temp_file_path, uploaded_file.read)
 
     temp_file_path.to_s
   end
 
   def check_rate_limit
-    operation_type = action_name == 'bulk_upload' ? 'UPLOAD' : 'EXPORT'
+    operation_type, lock_suffix = case action_name
+                                  when 'bulk_upload'      then ['UPLOAD',    nil]
+                                  when 'blueprint_upload' then %w[BLUEPRINT blueprint]
+                                  else                        ['EXPORT',     nil]
+                                  end
 
-    unless ProductCatalogs::RateLimiterService.acquire_lock(Current.account.id, operation_type)
-      lock_info = ProductCatalogs::RateLimiterService.lock_info(Current.account.id)
-      remaining = lock_info&.dig(:remaining_seconds) || ProductCatalogs::RateLimiterService::RATE_LIMIT_SECONDS
+    return if ProductCatalogs::RateLimiterService.acquire_lock(Current.account.id, operation_type, lock_suffix)
 
-      render json: {
-        error: "Rate limit exceeded. Please wait #{remaining} seconds before trying again.",
-        retry_after: remaining,
-        current_operation: lock_info&.dig(:operation_type)
-      }, status: :too_many_requests
-    end
+    lock_info = ProductCatalogs::RateLimiterService.lock_info(Current.account.id)
+    remaining = lock_info&.dig(:remaining_seconds) || ProductCatalogs::RateLimiterService::RATE_LIMIT_SECONDS
+
+    render json: {
+      error: "Rate limit exceeded. Please wait #{remaining} seconds before trying again.",
+      retry_after: remaining,
+      current_operation: lock_info&.dig(:operation_type)
+    }, status: :too_many_requests
   end
 
   def destroy_products_with_skip_callbacks(ids)

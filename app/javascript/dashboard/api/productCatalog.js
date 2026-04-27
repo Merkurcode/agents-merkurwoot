@@ -35,12 +35,6 @@ class ProductCatalogAPI extends ApiClient {
     return axios.get(`${this.url}/download_template`, { responseType: 'blob' });
   }
 
-  downloadBlueprintTemplate() {
-    return axios.get(`${this.url}/download_blueprint_template`, {
-      responseType: 'blob',
-    });
-  }
-
   blueprintUpload(file) {
     const formData = new FormData();
     formData.append('file', file);

@@ -614,7 +614,7 @@ const handleBlueprintUploadSuccess = (bulkRequestId) => {
     failed_records: 0,
     file_name: 'Processing...',
     operation_type: 'UPLOAD',
-    import_format: 'excel_blueprint'
+    import_format: 'yaml_blueprint'
   };
 
   startPolling();

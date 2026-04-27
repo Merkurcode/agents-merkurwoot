@@ -20,7 +20,6 @@
       </button>
     </div>
 
-    <!-- Incremental loading note -->
     <div class="bg-n-blue-2 border border-n-blue-6 rounded-lg p-3">
       <p class="text-xs text-n-blue-11">
         {{ $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.BLUEPRINT.UPLOAD.INCREMENTAL_NOTE') }}
@@ -28,17 +27,6 @@
     </div>
 
     <div class="flex flex-col gap-4">
-      <!-- Template download -->
-      <button
-        class="flex items-center gap-2 text-sm text-n-blue-11 hover:text-n-blue-12 w-fit"
-        :disabled="isDownloadingTemplate"
-        @click="handleDownloadTemplate"
-      >
-        <i class="i-lucide-download w-4 h-4" />
-        <span>{{ $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.BLUEPRINT.UPLOAD.DOWNLOAD_TEMPLATE') }}</span>
-        <Spinner v-if="isDownloadingTemplate" class="!w-3 !h-3" />
-      </button>
-
       <!-- File Input -->
       <div
         class="border-2 border-dashed border-n-slate-6 rounded-lg p-6 text-center cursor-pointer hover:border-n-blue-9 hover:bg-n-blue-2 transition-colors"
@@ -50,7 +38,7 @@
         <input
           ref="fileInputRef"
           type="file"
-          accept=".xlsx"
+          accept=".yaml,.yml"
           class="hidden"
           @change="handleFileSelect"
         />
@@ -61,12 +49,12 @@
             {{ $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.UPLOAD.SELECT_FILE') }}
           </p>
           <p class="text-xs text-n-slate-11">
-            {{ $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.UPLOAD.FILE_FORMAT') }}
+            {{ $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.BLUEPRINT.UPLOAD.FILE_FORMAT') }}
           </p>
         </div>
 
         <div v-else class="flex items-center gap-3 min-w-0">
-          <i class="i-lucide-file-spreadsheet w-8 h-8 text-n-green-11 flex-shrink-0" />
+          <i class="i-lucide-file-code w-8 h-8 text-n-blue-11 flex-shrink-0" />
           <div class="flex-1 text-left min-w-0">
             <p class="text-sm font-medium text-n-slate-12 truncate" :title="selectedFile.name">
               {{ selectedFile.name }}
@@ -145,8 +133,6 @@ import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { useMapGetter } from 'dashboard/composables/store';
 import Button from 'dashboard/components-next/button/Button.vue';
-import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
-import ProductCatalogAPI from 'dashboard/api/productCatalog';
 
 const emit = defineEmits(['close', 'upload-success']);
 const { t } = useI18n();
@@ -157,7 +143,6 @@ const selectedFile = ref(null);
 const uploadProgress = ref(0);
 const uploadStatus = ref(null);
 const errorMessage = ref(null);
-const isDownloadingTemplate = ref(false);
 
 const uiFlags = useMapGetter('productCatalogs/getUIFlags');
 const isUploading = computed(() => uiFlags.value.isUploading);
@@ -182,8 +167,9 @@ const handleDrop = event => {
 };
 
 const validateAndSetFile = file => {
-  if (!file.name.endsWith('.xlsx')) {
-    useAlert(t('KNOWLEDGE_BASE.PRODUCT_CATALOG.UPLOAD.ERROR'));
+  const ext = file.name.toLowerCase();
+  if (!ext.endsWith('.yaml') && !ext.endsWith('.yml')) {
+    useAlert(t('KNOWLEDGE_BASE.PRODUCT_CATALOG.BLUEPRINT.UPLOAD.INVALID_FILE'));
     return;
   }
   selectedFile.value = file;
@@ -200,25 +186,6 @@ const formatFileSize = bytes => {
   const sizes = ['Bytes', 'KB', 'MB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
-};
-
-const handleDownloadTemplate = async () => {
-  isDownloadingTemplate.value = true;
-  try {
-    const response = await ProductCatalogAPI.downloadBlueprintTemplate();
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'blueprint_profiles_template.xlsx');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch {
-    useAlert(t('KNOWLEDGE_BASE.PRODUCT_CATALOG.TEMPLATE_DOWNLOAD_ERROR'));
-  } finally {
-    isDownloadingTemplate.value = false;
-  }
 };
 
 const handleUpload = async () => {

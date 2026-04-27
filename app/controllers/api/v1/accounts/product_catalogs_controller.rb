@@ -2,8 +2,7 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
   include Events::Types
 
   before_action :product_catalog,
-                except: [:index, :create, :bulk_upload, :blueprint_upload, :bulk_delete, :export, :export_all, :download_export, :download_template,
-                         :download_blueprint_template]
+                except: [:index, :create, :bulk_upload, :blueprint_upload, :bulk_delete, :export, :export_all, :download_export, :download_template]
   before_action :check_authorization
   before_action :check_rate_limit, only: [:bulk_upload, :blueprint_upload, :export_all]
 
@@ -220,14 +219,6 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
               type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   end
 
-  def download_blueprint_template
-    excel_data = ProductCatalogs::BlueprintExcelTemplateService.new.generate
-
-    send_data excel_data,
-              filename: 'blueprint_profiles_template.xlsx',
-              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  end
-
   def blueprint_upload
     uploaded_file = params[:file]
 
@@ -243,27 +234,14 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
 
     temp_file = nil
     begin
-      if uploaded_file.size > 50.megabytes
-        render json: { error: 'File too large. Maximum size is 50MB.' }, status: :unprocessable_entity
+      if uploaded_file.size > 10.megabytes
+        render json: { error: 'File too large. Maximum size is 10MB.' }, status: :unprocessable_entity
         return
       end
 
-      allowed_content_types = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel.sheet.macroEnabled.12'
-      ]
       file_extension = File.extname(uploaded_file.original_filename).downcase
-
-      unless file_extension == '.xlsx' && allowed_content_types.include?(uploaded_file.content_type)
-        render json: { error: 'Invalid file type. Only Excel files (.xlsx) are allowed.' }, status: :unprocessable_entity
-        return
-      end
-
-      uploaded_file.rewind
-      magic_bytes = uploaded_file.read(4)
-      uploaded_file.rewind
-      unless magic_bytes == "PK\x03\x04"
-        render json: { error: 'Invalid file format. The file does not appear to be a valid Excel file.' }, status: :unprocessable_entity
+      unless %w[.yaml .yml].include?(file_extension)
+        render json: { error: 'Invalid file type. Only YAML files (.yaml, .yml) are allowed.' }, status: :unprocessable_entity
         return
       end
 
@@ -272,9 +250,8 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
         return
       end
 
-      # Blueprint uploads have an independent active-request check (don't block SKU uploads)
       active_blueprint_request = Current.account.bulk_processing_requests
-                                        .where(entity_type: 'ProductCatalog', import_format: 'excel_blueprint')
+                                        .where(entity_type: 'ProductCatalog', import_format: 'yaml_blueprint')
                                         .where(status: %w[PENDING PROCESSING])
                                         .first
 
@@ -287,7 +264,7 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
       end
 
       Current.account.bulk_processing_requests
-             .where(entity_type: 'ProductCatalog', import_format: 'excel_blueprint')
+             .where(entity_type: 'ProductCatalog', import_format: 'yaml_blueprint')
              .where(dismissed_at: nil)
              .update_all(dismissed_at: Time.current)
 
@@ -296,7 +273,7 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
       @bulk_request = Current.account.bulk_processing_requests.create!(
         user: current_user,
         entity_type: 'ProductCatalog',
-        import_format: 'excel_blueprint',
+        import_format: 'yaml_blueprint',
         file_name: uploaded_file.original_filename,
         status: 'PENDING'
       )

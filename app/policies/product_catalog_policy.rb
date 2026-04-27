@@ -47,10 +47,6 @@ class ProductCatalogPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
-  def download_blueprint_template?
-    @account_user.administrator?
-  end
-
   def toggle_visibility?
     @account_user.administrator?
   end

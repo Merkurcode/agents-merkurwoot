@@ -59,7 +59,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
   end
 
   def process_excel(file_path)
-    service_class = blueprint_import? ? ProductCatalogs::BlueprintExcelProcessorService : ProductCatalogs::ExcelProcessorService
+    service_class = blueprint_import? ? ProductCatalogs::BlueprintYamlProcessorService : ProductCatalogs::ExcelProcessorService
     service_class.new(
       file_path: file_path,
       account: @account,
@@ -69,7 +69,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
   end
 
   def blueprint_import?
-    @bulk_request.import_format == 'excel_blueprint'
+    @bulk_request.import_format == 'yaml_blueprint'
   end
 
   def create_media_entries

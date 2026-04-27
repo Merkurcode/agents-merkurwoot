@@ -126,3 +126,6 @@ BASE-DE-DATOS.md
 !docs/**/*.md
 /docs
 /.claude
+
+# Blueprint sample files (local only)
+/Blueprints/

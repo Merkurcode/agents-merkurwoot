@@ -170,6 +170,26 @@ export const actions = {
       throw new Error(error);
     }
   },
+
+  blueprintUpload: async ({ commit }, file) => {
+    commit(types.SET_PRODUCT_CATALOG_UI_FLAG, { isUploading: true });
+    try {
+      const response = await ProductCatalogAPI.blueprintUpload(file);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 429) {
+        const retryAfter = error.response?.data?.retry_after || 15;
+        const rateLimitError = new Error(`RATE_LIMITED:${retryAfter}`);
+        rateLimitError.isRateLimited = true;
+        rateLimitError.retryAfter = retryAfter;
+        throw rateLimitError;
+      }
+      const errorMessage = error.response?.data?.error || error.message || 'Upload failed';
+      throw new Error(errorMessage);
+    } finally {
+      commit(types.SET_PRODUCT_CATALOG_UI_FLAG, { isUploading: false });
+    }
+  },
 };
 
 export const mutations = {

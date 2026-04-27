@@ -152,6 +152,17 @@
         "OF": "of",
         "RESULTS": "results"
       },
+      "BLUEPRINT": {
+        "BUTTON": "Load AI Profiles",
+        "UPLOAD": {
+          "TITLE": "Load AI Profiles",
+          "DESCRIPTION": "AI profiles define how the agent presents each product: to whom, how, and what to respond to objections. This file does not replace your products — it enriches them.",
+          "INCREMENTAL_NOTE": "You don't need to fill in all sections at once. You can load only buyer persona this week and objections next — each upload accumulates without overwriting previous sections.",
+          "DOWNLOAD_TEMPLATE": "Download profile template",
+          "UPLOAD_BTN": "Upload Profiles",
+          "SUCCESS_MESSAGE": "AI profiles uploaded successfully. Products will be enriched shortly."
+        }
+      },
       "UPLOAD_HISTORY": "Upload History",
       "MEDIA_SPECS": {
         "TITLE": "Media File Requirements",

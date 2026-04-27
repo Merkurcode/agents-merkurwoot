@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_23_000001) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -169,6 +169,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.jsonb "agent_behavior_config", default: {}
     t.string "openai_api_key"
     t.string "google_api_key"
+    t.string "secret"
     t.index ["account_id"], name: "index_agent_bots_on_account_id"
   end
 
@@ -351,6 +352,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.string "job_id"
     t.datetime "dismissed_at"
     t.string "operation_type", default: "UPLOAD"
+    t.string "import_format", default: "excel_sku", null: false
     t.index ["account_id"], name: "index_bulk_processing_requests_on_account_id"
     t.index ["created_at"], name: "index_bulk_processing_requests_on_created_at"
     t.index ["operation_type"], name: "index_bulk_processing_requests_on_operation_type"
@@ -408,6 +410,46 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.text "content"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+  end
+
+  create_table "captain_assistant_filter_run_conversations", force: :cascade do |t|
+    t.bigint "filter_run_id", null: false
+    t.bigint "conversation_id", null: false
+    t.integer "status", default: 0, null: false
+    t.text "error_message"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id"], name: "idx_on_conversation_id_fdc36da5ff"
+    t.index ["filter_run_id", "conversation_id"], name: "idx_on_filter_run_id_conversation_id_b3776d59a5", unique: true
+    t.index ["filter_run_id"], name: "idx_on_filter_run_id_4c5ad2c94b"
+  end
+
+  create_table "captain_assistant_filter_runs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "assistant_filter_id", null: false
+    t.integer "triggered_by_id"
+    t.datetime "scheduled_at"
+    t.text "message"
+    t.integer "status", default: 0, null: false
+    t.integer "conversations_total", default: 0, null: false
+    t.integer "conversations_processed", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_assistant_filter_runs_on_account_id"
+    t.index ["assistant_filter_id"], name: "index_captain_assistant_filter_runs_on_assistant_filter_id"
+  end
+
+  create_table "captain_assistant_filters", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "captain_assistant_id", null: false
+    t.string "name", null: false
+    t.jsonb "filters", default: [], null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_assistant_filters_on_account_id"
+    t.index ["captain_assistant_id"], name: "index_captain_assistant_filters_on_captain_assistant_id"
   end
 
   create_table "captain_assistant_responses", force: :cascade do |t|
@@ -530,6 +572,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.string "hmac_token"
     t.boolean "hmac_mandatory", default: false
     t.jsonb "additional_attributes", default: {}
+    t.string "secret"
     t.index ["hmac_token"], name: "index_channel_api_on_hmac_token", unique: true
     t.index ["identifier"], name: "index_channel_api_on_identifier", unique: true
   end
@@ -1101,6 +1144,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.bigint "updated_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "external_id"
+    t.index ["account_id", "external_id"], name: "index_faq_items_on_account_id_and_external_id", unique: true, where: "(external_id IS NOT NULL)"
     t.index ["account_id", "faq_category_id"], name: "index_faq_items_on_account_id_and_faq_category_id"
     t.index ["account_id", "position"], name: "index_faq_items_on_account_id_and_position"
     t.index ["account_id"], name: "index_faq_items_on_account_id"
@@ -1489,6 +1534,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.bigint "account_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "position"
+    t.index ["account_id", "position"], name: "index_pipeline_statuses_on_account_id_and_position"
     t.index ["account_id"], name: "index_pipeline_statuses_on_account_id"
   end
 
@@ -1557,11 +1604,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.boolean "is_visible", default: true, null: false
     t.bigint "user_id"
     t.bigint "last_updated_by_id"
+    t.jsonb "metadata", default: {}, null: false
     t.index ["account_id", "product_id"], name: "index_product_catalogs_on_account_id_and_product_id", unique: true
     t.index ["account_id"], name: "index_product_catalogs_on_account_id"
     t.index ["bulk_processing_request_id"], name: "index_product_catalogs_on_bulk_processing_request_id"
     t.index ["created_at"], name: "index_product_catalogs_on_created_at"
     t.index ["last_updated_by_id"], name: "index_product_catalogs_on_last_updated_by_id"
+    t.index ["metadata"], name: "index_product_catalogs_on_metadata", using: :gin
     t.index ["user_id"], name: "index_product_catalogs_on_user_id"
   end
 
@@ -1616,12 +1665,29 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.datetime "event_start_time", precision: nil
     t.datetime "event_end_time", precision: nil
     t.index ["account_id", "name", "created_at"], name: "reporting_events__account_id__name__created_at"
+    t.index ["account_id", "name", "inbox_id", "created_at"], name: "index_reporting_events_for_response_distribution"
     t.index ["account_id"], name: "index_reporting_events_on_account_id"
     t.index ["conversation_id"], name: "index_reporting_events_on_conversation_id"
     t.index ["created_at"], name: "index_reporting_events_on_created_at"
     t.index ["inbox_id"], name: "index_reporting_events_on_inbox_id"
     t.index ["name"], name: "index_reporting_events_on_name"
     t.index ["user_id"], name: "index_reporting_events_on_user_id"
+  end
+
+  create_table "reporting_events_rollups", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.date "date", null: false
+    t.string "dimension_type", null: false
+    t.bigint "dimension_id", null: false
+    t.string "metric", null: false
+    t.bigint "count", default: 0, null: false
+    t.float "sum_value", default: 0.0, null: false
+    t.float "sum_value_business_hours", default: 0.0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "date", "dimension_type", "dimension_id", "metric"], name: "index_rollup_unique_key", unique: true
+    t.index ["account_id", "dimension_type", "date"], name: "index_rollup_summary"
+    t.index ["account_id", "metric", "date"], name: "index_rollup_timeseries"
   end
 
   create_table "sequence_enrollments", force: :cascade do |t|
@@ -1837,6 +1903,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.integer "webhook_type", default: 0
     t.jsonb "subscriptions", default: ["conversation_status_changed", "conversation_updated", "conversation_created", "contact_created", "contact_updated", "message_created", "message_updated", "webwidget_triggered"]
     t.string "name"
+    t.string "secret"
     t.index ["account_id", "url"], name: "index_webhooks_on_account_id_and_url", unique: true
   end
 
@@ -1873,6 +1940,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
   add_foreign_key "bulk_processing_requests", "users"
   add_foreign_key "campaign_contacts", "campaigns"
   add_foreign_key "campaign_contacts", "contacts"
+  add_foreign_key "captain_assistant_filter_run_conversations", "captain_assistant_filter_runs", column: "filter_run_id"
+  add_foreign_key "captain_assistant_filter_run_conversations", "conversations"
+  add_foreign_key "captain_assistant_filter_runs", "accounts"
+  add_foreign_key "captain_assistant_filter_runs", "captain_assistant_filters", column: "assistant_filter_id"
+  add_foreign_key "captain_assistant_filters", "accounts"
+  add_foreign_key "captain_assistant_filters", "captain_assistants"
   add_foreign_key "contact_survey_completions", "accounts"
   add_foreign_key "contact_survey_completions", "contacts"
   add_foreign_key "contact_survey_completions", "surveys"

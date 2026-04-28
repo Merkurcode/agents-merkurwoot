@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PipelineBoard
+  PAGE_SIZE = 20
+
   RESOURCE_STRATEGIES = {
     'contact' => {
       filter_service: 'Contacts::FilterService',
@@ -17,15 +19,29 @@ class PipelineBoard
     @params = params
   end
 
-  def columns
+  def columns(page: 1)
     @account.pipeline_statuses.where(pipeline_type: @pipeline_type).map do |status|
+      scope = items_scope.where(pipeline_status_id: status.id)
+      total = scope.count
       {
         id: status.id,
         name: status.name,
         position: status.position,
-        items: items_scope.where(pipeline_status_id: status.id)
+        items: scope.order(id: :desc).offset((page - 1) * PAGE_SIZE).limit(PAGE_SIZE),
+        total_count: total,
+        has_more: total > page * PAGE_SIZE
       }
     end
+  end
+
+  def column_items(column_id, page: 1)
+    scope = items_scope.where(pipeline_status_id: column_id)
+    total = scope.count
+    {
+      items: scope.order(id: :desc).offset((page - 1) * PAGE_SIZE).limit(PAGE_SIZE),
+      total_count: total,
+      has_more: total > page * PAGE_SIZE
+    }
   end
 
   private

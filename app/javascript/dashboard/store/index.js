@@ -89,6 +89,7 @@ export default createStore({
       entityType: 'contact',
       fetchAllColumns: params => PipelineStatusesAPI.getBoard({ pipeline_type: 'contact', ...params }),
       fetchColumnItems: columnId => ContactsAPI.getByPipelineStatus(columnId),
+      fetchColumnPage: params => PipelineStatusesAPI.getColumnItems({ pipeline_type: 'contact', ...params }),
       moveItem: (contactId, columnId) =>
         ContactsAPI.update(contactId, { pipeline_status_id: columnId }),
     }),

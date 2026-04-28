@@ -16,7 +16,27 @@ class Api::V1::Accounts::PipelineStatusesController < Api::V1::Accounts::BaseCon
       pipeline_type: @pipeline_type,
       params: params.permit!
     )
-    @columns = board.columns
+    @columns = board.columns(page: (params[:page] || 1).to_i)
+  rescue CustomExceptions::CustomFilter::InvalidAttribute,
+         CustomExceptions::CustomFilter::InvalidOperator,
+         CustomExceptions::CustomFilter::InvalidQueryOperator,
+         CustomExceptions::CustomFilter::InvalidValue => e
+    render_could_not_create_error(e.message)
+  end
+
+  def column_items
+    @pipeline_type = pipeline_type_param
+    board = PipelineBoard.new(
+      account: Current.account,
+      user: Current.user,
+      account_user: Current.account_user,
+      pipeline_type: @pipeline_type,
+      params: params.permit!
+    )
+    result = board.column_items(params[:column_id].to_i, page: (params[:page] || 1).to_i)
+    @items = result[:items]
+    @total_count = result[:total_count]
+    @has_more = result[:has_more]
   rescue CustomExceptions::CustomFilter::InvalidAttribute,
          CustomExceptions::CustomFilter::InvalidOperator,
          CustomExceptions::CustomFilter::InvalidQueryOperator,

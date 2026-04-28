@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, computed, onMounted } from 'vue';
+import { ref, nextTick, computed, onMounted, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
@@ -25,9 +25,16 @@ const isEditing = ref(props.column.is_new);
 const newName = ref(props.column.name);
 const inputRef = ref(null);
 const showDeleteModal = ref(false);
+const scrollContainerRef = ref(null);
+const sentinelRef = ref(null);
+let observer = null;
 
-const isLoading = computed(
-  () => store.getters[`${props.storeModule}/isColumnLoading`](props.column.id)
+const isLoading = computed(() =>
+  store.getters[`${props.storeModule}/isColumnLoading`](props.column.id)
+);
+
+const pagination = computed(() =>
+  store.getters[`${props.storeModule}/getColumnPagination`](props.column.id)
 );
 
 const localItems = computed({
@@ -35,10 +42,40 @@ const localItems = computed({
   set: () => {},
 });
 
-onMounted(() => {
+const isLoadingMore = computed(() => pagination.value.isLoadingMore ?? false);
+const hasMore = computed(() => pagination.value.hasMore ?? false);
+const displayCount = computed(
+  () => pagination.value.totalCount ?? localItems.value.length
+);
+
+const setupObserver = () => {
+  if (!sentinelRef.value) return;
+
+  observer = new IntersectionObserver(
+    entries => {
+      if (entries[0].isIntersecting && hasMore.value && !isLoadingMore.value) {
+        store.dispatch(
+          `${props.storeModule}/fetchMoreColumnItems`,
+          props.column.id
+        );
+      }
+    },
+    { root: scrollContainerRef.value, threshold: 0.1 }
+  );
+
+  observer.observe(sentinelRef.value);
+};
+
+onMounted(async () => {
   if (props.column.id && !props.column.itemsLoaded) {
     store.dispatch(`${props.storeModule}/fetchColumnItems`, props.column.id);
   }
+  await nextTick();
+  setupObserver();
+});
+
+onUnmounted(() => {
+  observer?.disconnect();
 });
 
 const saveName = async () => {
@@ -137,7 +174,7 @@ const onDragEnd = event => {
         @click="startEditing"
       >
         {{ column.name }}
-        <span>({{ localItems.length }})</span>
+        <span>({{ displayCount }})</span>
       </span>
 
       <input
@@ -153,7 +190,7 @@ const onDragEnd = event => {
       <Button slate icon="i-lucide-x" @click="openDeleteModal" />
     </div>
 
-    <div class="max-h-[84vh] overflow-auto relative">
+    <div ref="scrollContainerRef" class="max-h-[84vh] overflow-auto relative">
       <div v-if="isLoading" class="flex justify-center py-4">
         <span class="text-sm text-n-slate-11">{{ t('PIPELINE.LOADING') }}</span>
       </div>
@@ -179,7 +216,16 @@ const onDragEnd = event => {
         </template>
       </draggable>
 
-      <p class="p-4 text-center text-n-slate-11">
+      <div ref="sentinelRef" class="h-1" />
+
+      <p v-if="isLoadingMore" class="p-3 text-center text-sm text-n-slate-11">
+        {{ t('PIPELINE.LOADING') }}
+      </p>
+
+      <p
+        v-else-if="!hasMore && localItems.length > 0"
+        class="p-4 text-center text-n-slate-11"
+      >
         {{ t('PIPELINE.COLUMN.EOF') }}
       </p>
     </div>

@@ -243,6 +243,7 @@ Rails.application.routes.draw do
             collection do
               post :reorder
               post :board
+              post :column_items
             end
           end
 

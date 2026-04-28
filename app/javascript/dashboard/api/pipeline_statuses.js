@@ -17,6 +17,10 @@ class PipelineStatusesAPI extends ApiClient {
   getBoard(params = {}) {
     return axios.post(`${this.url}/board`, params);
   }
+
+  getColumnItems(params = {}) {
+    return axios.post(`${this.url}/column_items`, params);
+  }
 }
 
 export default new PipelineStatusesAPI();

@@ -152,6 +152,7 @@ Rails.application.routes.draw do
 
             collection do
               post :bulk_upload
+              post :blueprint_upload
               post :bulk_delete
               post :export
               post :export_all

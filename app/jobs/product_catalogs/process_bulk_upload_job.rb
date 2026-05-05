@@ -20,26 +20,21 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
   private
 
   def process_upload
-    # Check if request is still in a valid state to process
     current_status = @bulk_request.status.upcase
-    unless ['PENDING', 'PROCESSING'].include?(current_status)
+    unless %w[PENDING PROCESSING].include?(current_status)
       Rails.logger.info("Skipping processing for bulk request #{@bulk_request.id} - status is #{current_status}")
-      # Cleanup temp file even if we're not processing
       cleanup_temp_file
       return
     end
 
     @bulk_request.update!(status: 'PROCESSING')
 
-    # Capture existing product_ids before processing to track adds vs updates
     @existing_product_ids_before = @account.product_catalogs.pluck(:product_id).to_set
 
-    # Phase 1: Process Excel file (0-50% progress)
     excel_result = process_excel(@file_path)
 
     unless excel_result[:success]
-      # Capture detailed error message and error details from Excel processing
-      error_msg = excel_result[:error].presence || 'Excel processing failed'
+      error_msg     = excel_result[:error].presence || 'Excel processing failed'
       error_details = excel_result[:errors] || []
 
       @bulk_request.update!(
@@ -48,31 +43,33 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
         error_details: error_details
       )
 
-      # Cleanup temp file on failure
       cleanup_temp_file
       return
     end
 
-    # Phase 2: Create ProductMedia entries from URLs (50-100% progress)
-    media_result = create_media_entries
+    if blueprint_import?
+      update_final_status(excel_result, { success: true })
+    else
+      media_result = create_media_entries
+      update_final_status(excel_result, media_result)
+    end
 
-    # Update final status
-    update_final_status(excel_result, media_result)
-
-    # Cleanup temp file
     cleanup_temp_file
-
-    # Broadcast completion notification
     broadcast_completion_notification
   end
 
   def process_excel(file_path)
-    ProductCatalogs::ExcelProcessorService.new(
+    service_class = blueprint_import? ? ProductCatalogs::BlueprintYamlProcessorService : ProductCatalogs::ExcelProcessorService
+    service_class.new(
       file_path: file_path,
       account: @account,
       user: @user,
       bulk_request: @bulk_request
     ).process
+  end
+
+  def blueprint_import?
+    @bulk_request.import_format == 'yaml_blueprint'
   end
 
   def create_media_entries
@@ -89,7 +86,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
       # Check if bulk request status is still valid for processing
       @bulk_request.reload
       current_status = @bulk_request.status.upcase
-      unless ['PENDING', 'PROCESSING'].include?(current_status)
+      unless %w[PENDING PROCESSING].include?(current_status)
         Rails.logger.warn("Stopping media processing - bulk request #{@bulk_request.id} status is #{current_status}")
         break
       end
@@ -109,7 +106,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
       processed += 1
 
       # Update progress from 50% to 100% based on dynamic frequency or every 2 seconds
-      should_update = (processed % update_frequency == 0) || (Time.current - last_progress_update > 2.seconds)
+      should_update = ((processed % update_frequency).zero?) || (Time.current - last_progress_update > 2.seconds)
       if should_update
         progress = 50 + (processed.to_f / total_products * 50).round(2)
         @bulk_request.update!(
@@ -194,9 +191,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
 
     # Validate URL format
     validation_error = validate_media_url(url, media_type)
-    if validation_error
-      return { success: false, error: build_media_error(media_type, url, index, validation_error) }
-    end
+    return { success: false, error: build_media_error(media_type, url, index, validation_error) } if validation_error
 
     filename = extract_filename_from_url(url, media_type == 'photo' ? 'photo' : media_type, index)
     file_type = media_type == 'photo' ? :image : media_type.to_sym
@@ -214,9 +209,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
 
     # Upload to S3 and check result
     s3_error = upload_media_to_s3(media)
-    if s3_error
-      return { success: false, error: build_media_error(media_type, url, index, s3_error) }
-    end
+    return { success: false, error: build_media_error(media_type, url, index, s3_error) } if s3_error
 
     { success: true }
   rescue ActiveRecord::RecordInvalid => e
@@ -245,7 +238,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
     # Validate extension
     filename = File.basename(uri.path)
     if filename.include?('.')
-      extension = filename[filename.rindex('.')..-1].downcase
+      extension = filename[filename.rindex('.')..].downcase
       unless valid_extension_for_prefix?(extension, media_type == 'photo' ? 'photo' : media_type)
         valid_exts = valid_extensions_for_type(media_type)
         return "Extension '#{extension}' not supported for #{media_type_label(media_type)}. Valid extensions: #{valid_exts.join(', ')}"
@@ -293,8 +286,6 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
                       'Could not extract filename from URL'
                     when /file.?type.*blank/i
                       'Could not determine file type'
-                    else
-                      nil
                     end
     human_message ? "#{human_message} (#{error_msg})" : error_msg
   end
@@ -369,7 +360,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
 
   def cancelled?
     @bulk_request.reload
-    !%w[PENDING PROCESSING].include?(@bulk_request.status.upcase)
+    %w[PENDING PROCESSING].exclude?(@bulk_request.status.upcase)
   end
 
   def extract_filename_from_url(url, default_prefix, index)
@@ -394,9 +385,7 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
       last_dot_index = filename.rindex('.')
       extension = filename[last_dot_index..].downcase
 
-      if valid_extension_for_prefix?(extension, default_prefix)
-        return filename
-      end
+      return filename if valid_extension_for_prefix?(extension, default_prefix)
     end
 
     # Fallback to default naming
@@ -571,9 +560,9 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
   end
 
   def cleanup_temp_file
-    return unless @file_path.present?
+    return if @file_path.blank?
 
-    File.delete(@file_path) if File.exist?(@file_path)
+    FileUtils.rm_f(@file_path)
     Rails.logger.info("Cleaned up temp file: #{@file_path}")
   rescue StandardError => e
     Rails.logger.warn("Failed to cleanup temp file #{@file_path}: #{e.message}")

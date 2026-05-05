@@ -152,6 +152,18 @@
         "OF": "de",
         "RESULTS": "resultados"
       },
+      "BLUEPRINT": {
+        "BUTTON": "Cargar perfiles de IA",
+        "UPLOAD": {
+          "TITLE": "Cargar perfiles de IA",
+          "DESCRIPTION": "Los perfiles de IA definen cómo el agente presenta cada producto: a quién, cómo y qué responder ante objeciones. Sube un archivo YAML siguiendo el formato estándar de blueprint.",
+          "INCREMENTAL_NOTE": "No es necesario llenar todas las secciones a la vez. Puedes cargar solo buyer persona esta semana y las objeciones la próxima — cada carga suma sin borrar lo anterior.",
+          "FILE_FORMAT": "Formato: .yaml / .yml",
+          "INVALID_FILE": "Tipo de archivo inválido. Solo se permiten archivos YAML (.yaml, .yml).",
+          "UPLOAD_BTN": "Subir Perfiles",
+          "SUCCESS_MESSAGE": "Perfiles de IA subidos exitosamente. Los productos serán enriquecidos en breve."
+        }
+      },
       "UPLOAD_HISTORY": "Historial de Cargas",
       "MEDIA_SPECS": {
         "TITLE": "Requisitos de Archivos Multimedia",

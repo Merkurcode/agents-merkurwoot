@@ -1,0 +1,874 @@
+# Soft Restaurant® — Perfiles de Producto para Recomendación
+# Cada entrada define los criterios de selección y el contexto de venta para el agente.
+# name_match: substring que se busca en product_service_name de la DB (case-insensitive)
+# Solo planes de suscripción principal (7 productos)
+#
+# Estructura estándar de cada producto:
+#   id, nombre, name_match, is_base_plan, categoria, tipo, is_cloud, max_dispositivos,
+#   multi_sucursal, precios, perfil_producto, recommendation_rules,
+#   buyer_persona, atributos_y_beneficios, promociones, notas,
+#   manejo_de_objeciones: { es_caro, lo_pienso, competencia, ya_tenemos_sistema,
+#     vs_alternativa, no_quiero_mensualidades, miedo_tecnologia, no_me_funciona, negocio_pequeno }
+
+productos:
+
+  # ──────────────────────────────────────────────
+  # PLANES LOCAL (SR® 12)
+  # ──────────────────────────────────────────────
+
+  - id: sr12_lite
+    nombre: "Soft Restaurant® 12 Lite"
+    name_match: "12 Lite"
+    is_base_plan: true
+    categoria: "Software integral para la gestión, administración y punto de venta de restaurantes"
+    tipo: "Local"
+    descripcion_tipo: "Versión Instalada (Operación Garantizada: funciona sin internet)"
+    is_cloud: false
+    max_dispositivos: 2
+    multi_sucursal: false
+    precios:
+      mensual_mxn: 799
+      anual_mxn: 8390
+    perfil_producto:
+      usp: >
+        Centraliza, controla y optimiza toda la operación de tu restaurante desde una sola
+        plataforma, facilitando la toma de decisiones y mejorando la eficiencia del negocio.
+      unidad_de_valor: >
+        MXN / Licencias por dispositivo. Licencia de uso por una sucursal que permite operar
+        el sistema hasta en 2 dispositivos de forma simultánea, bajo un esquema de renta
+        mensual o anual.
+    recommendation_rules:
+      devices_max: 2
+      branch_count_max: 1
+      prefers_cloud: false
+    buyer_persona:
+      segmento: >
+        Dueños de restaurantes pequeños, medianos, grandes, multisucursal, cadena de
+        restaurantes o franquicias. Tan robusto que se adapta a cualquier tipo de restaurante:
+        fondas, taquerías, cafeterías, restaurantes familiares o negocios de comida rápida que
+        operan con 1 o 2 puntos de trabajo y quieren profesionalizar su operación sin inversión
+        en infraestructura compleja.
+      pain_point: >
+        Operan sin sistema o con procesos manuales: no tienen visibilidad de sus ventas, no
+        controlan su inventario, no detectan errores del personal y pierden tiempo cuadrando
+        cierres de caja a mano. Cada turno es un riesgo de descuadre o fuga de dinero.
+      gain: >
+        Tener el control total de su negocio desde un solo sistema: saber qué se vende, reportes
+        de ventas, platillos que se consumen, qué cobra cada cajero y poder tomar decisiones con
+        datos reales, sin estar físicamente en el restaurante.
+    atributos_y_beneficios:
+      - atributo: "Operación de 2 dispositivos en simultáneo"
+        beneficio: >
+          Permite tener caja y comandero activos (fijo y/o móvil) al mismo tiempo bajo una sola
+          licencia, sin pagar por dispositivo adicional. Ideal para restaurantes que están
+          estructurando su operación por primera vez. Solo necesitas un equipo principal (puede ser
+          una computadora convencional o una POS Touch), y si tu operación lo requiere, puedes
+          instalar el sistema en un segundo dispositivo para trabajar de forma simultánea.
+      - atributo: "Función de punto de venta en modalidades servicio a comedor, rápido y a domicilio"
+        beneficio: >
+          Un solo sistema cubre todas las modalidades del negocio: mesero en comedor, mostrador en
+          servicio rápido o a domicilio con sincronización de apps de delivery, sin necesidad de
+          herramientas separadas. Nuestras licencias son integrales, no tienes que pagar más o
+          comprar módulos adicionales para la operación principal de tu negocio.
+      - atributo: "Función de inventarios"
+        beneficio: >
+          Reducción de pérdidas y compras más inteligentes gracias al control de almacén en tiempo
+          real. Recibe alertas de existencia, reduce los desperdicios y gestiona los almacenes
+          (compras y proveedores) y cálculo de costos y utilidades.
+      - atributo: "Facturación electrónica"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas y roles de usuarios."
+      - atributo: "Autofactura"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas, emisión con ticket o QR y portal personalizado."
+      - atributo: "Función de reservaciones y comisionistas para gestionar reservas"
+        beneficio: "Aumento en venta promedio por ticket al incentivar a los meseros con el módulo de comisiones."
+      - atributo: "Función de monitor de Producción para agilizar la operación"
+        beneficio: "Menos errores y mejor flujo en cocina mediante comandero móvil y pantalla KDS."
+      - atributo: "Función de fidelización de clientes"
+        beneficio: >
+          Permite guardar la información de los clientes como datos de facturación, direcciones de
+          entrega, y sus pedidos anteriores para brindarles una mejor atención. Además, brindarles
+          beneficios o descuentos especiales con el objetivo de incentivar la compra y fortalecer
+          la relación con los clientes.
+      - atributo: "Alertas y reportes automáticos vía WhatsApp en tiempo real"
+        beneficio: >
+          El dueño o administrador recibe por WhatsApp los cortes de caja, alertas de antifraude y
+          productos más vendidos al instante, sin necesitar estar en el restaurante para saber qué
+          está pasando.
+    promociones:
+      - "Aplica en versiones 11 en adelante"
+      - "Renta Mensual de Analytics y Delivery Hub GRATIS"
+      - "Renta Anual de Analytics y Delivery Hub GRATIS"
+      - "Incluye 200 CFDI para Facturación electrónica en Renta Anual"
+      - >
+        20% de descuento en licencia Soft Restaurant® al activar Soft Restaurant® Payments
+        (disponible para negocios que procesen más de $100,000 al mes con tarjeta y
+        $1,200,000 al año). Aplica consultar términos y condiciones.
+    notas: >
+      En el nuevo esquema de suscripción de Soft Restaurant® 12, podrás realizar un cambio de datos
+      al año en licenciamiento mensual o anual. CFDI se adquieren por separado.
+    manejo_de_objeciones:
+      es_caro: >
+        Entendemos su preocupación, pero Soft Restaurant® es mucho más que un punto de venta.
+        Incluye facturación electrónica, control de inventarios, fidelización de clientes, reportes
+        automáticos y operación sin internet. Además, está diseñado para adaptarse a sus necesidades
+        específicas y crecer con su negocio.
+
+        Totalmente entendible, nadie quiere invertir sin estar seguro. Lo que sí te puedo asegurar
+        es que muchos restauranteros que hoy usan Soft Restaurant® tuvieron esa misma duda y hoy nos
+        dicen que no sabían cuánto estaban perdiendo sin un software: en cierres de caja, en
+        inventario y en tiempo.
+      lo_pienso: >
+        Entendemos que es una decisión importante. ¿Le gustaría agendar una demostración sin
+        compromiso para que lo vea en funcionamiento real antes de decidir?
+
+        Por supuesto. Si en algún momento quieres verlo en acción, podemos hacer una demo rápida
+        sin compromiso; nuestros clientes se sorprenden de lo sencillo que es. Cuando lo requieras,
+        aquí estamos.
+      competencia: >
+        Soft Restaurant® 12 integra lo que otros sistemas separan: ventas, inventarios, pagos,
+        delivery, facturación y analítica en un solo sistema. Ofrece hasta 30% más agilidad en
+        servicio, seguridad única con cortes antifraude en tiempo real, y la mejor relación
+        costo-beneficio del mercado. Además, cuenta con Academia gratuita para capacitar a todo
+        el staff.
+      ya_tenemos_sistema: >
+        Si ya cuentas con otro sistema, con Soft Restaurant® 12 obtienes un sistema más completo,
+        confiable y diseñado para crecer con tu restaurante. Cuenta con operación integral en un
+        solo sistema, integraciones nativas con apps de reparto y pagos con tarjeta, control y
+        seguridad avanzada con perfiles de usuario y trazabilidad, reportes en tiempo real desde
+        cualquier dispositivo, ecosistema escalable con Add-Ons, y soporte técnico de lunes a
+        sábado de 9am a 1am y domingos de 10am a 2pm.
+      vs_alternativa: >
+        Si necesitas más de 2 dispositivos activos, SR® 12 Pro te da hasta 10 por el mismo estilo
+        de instalación. Cuéntame cuántos puntos necesitas y lo afinamos.
+      no_quiero_mensualidades: >
+        Nuestro modelo de renta mensual le da acceso a actualizaciones constantes, soporte técnico
+        y mejora continua del sistema. Siempre tendrá la mejor versión sin costos ocultos por
+        mantenimiento o licencias futuras. También contamos con la modalidad de renta anual para
+        mayor comodidad.
+
+        Al tener mensualidades, tú sales ganando, ya que la suscripción incluye todas las
+        actualizaciones; ya viene todo incluido. Y si el mes a mes no te convence, el plan anual
+        es una sola vez al año y listo, te quitas ese pendiente.
+      miedo_tecnologia: >
+        Soft Restaurant® tiene una interfaz intuitiva y amigable. Incluye capacitación inicial,
+        soporte y acceso a nuestra plataforma de formación online (Academia Soft Restaurant®), para
+        que todo su equipo se adapte fácilmente.
+      no_me_funciona: >
+        Podemos agendar una sesión para hacer una demostración para que conozca el sistema antes de
+        decidir. Además, ofrecemos capacitación y soporte desde la instalación, asegurando que
+        obtenga resultados reales, no solo un software.
+      negocio_pequeno: >
+        Soft Restaurant® es escalable: puede comenzar con una versión básica e ir agregando módulos
+        conforme su negocio crece. Tener control desde el inicio le ahorrará tiempo, errores y
+        pérdidas en el futuro.
+
+        Perfecto, de hecho, tenemos Soft Restaurant® Cloud: es nuestra versión en la nube, más
+        accesible, sin servidores ni instalaciones complicadas, funciona desde cualquier dispositivo
+        con internet. Muchos restaurantes pequeños arrancan con ella y les da exactamente lo que
+        necesitan para tener control desde el primer día.
+
+  - id: sr12_pro
+    nombre: "Soft Restaurant® 12 Pro"
+    name_match: "12 Pro"
+    is_base_plan: true
+    categoria: "Software integral para la gestión, administración y punto de venta de restaurantes"
+    tipo: "Local"
+    descripcion_tipo: "Versión Instalada (Operación Garantizada: funciona sin internet)"
+    is_cloud: false
+    max_dispositivos: 10
+    multi_sucursal: false
+    precios:
+      mensual_mxn: 1099
+      anual_mxn: 11540
+    perfil_producto:
+      usp: >
+        Centraliza, controla y optimiza toda la operación de tu restaurante desde una sola
+        plataforma, facilitando la toma de decisiones y mejorando la eficiencia del negocio.
+      unidad_de_valor: >
+        MXN / Licencias por dispositivo. Licencia de uso por una sucursal que permite operar
+        el sistema hasta en 10 dispositivos de forma simultánea, bajo un esquema de renta
+        mensual o anual.
+    recommendation_rules:
+      devices_min: 3
+      devices_max: 10
+      branch_count_max: 1
+      prefers_cloud: false
+    buyer_persona:
+      segmento: >
+        Restaurantes medianos o en crecimiento con operación más compleja, como restaurantes de
+        servicio a comedor (casual dining), cafeterías de alto flujo y restaurantes híbridos
+        (comedor y delivery), con múltiples meseros, varias cajas y cocina con áreas diferenciadas,
+        que necesitan hasta 10 dispositivos conectados (tablets de comandeo, monitores de cocina
+        y puntos de venta) en una sola sucursal.
+      pain_point: >
+        Su operación ya creció, pero su sistema no: tienen cuellos de botella en cocina, los
+        meseros pierden tiempo yendo a caja, los cierres de turno son lentos y no tienen
+        visibilidad centralizada de lo que pasa en tiempo real. Un error en un turno de alta
+        demanda puede costar caro.
+      gain: >
+        Operar con la eficiencia de una cadena siendo restaurante independiente: todos los
+        dispositivos sincronizados, cierres automáticos y reportes gerenciales disponibles
+        desde cualquier dispositivo, sin depender de estar presente.
+    atributos_y_beneficios:
+      - atributo: "Operación de 10 dispositivos en simultáneo"
+        beneficio: >
+          Permite escalar la operación conectando múltiples puntos de venta, comanderos, monitores
+          de cocina y cajas bajo una sola licencia, sin fricción entre áreas durante el servicio.
+          Puedes utilizar el sistema hasta en 10 equipos al mismo tiempo con una sola licencia Pro.
+          Solo necesitas un equipo principal (puede ser una computadora convencional o una POS
+          Touch), y si tu operación lo requiere, puedes instalar el sistema en otros 9 dispositivos
+          para trabajar de forma simultánea.
+      - atributo: "Función de punto de venta en modalidades servicio a comedor, rápido y a domicilio"
+        beneficio: >
+          Podrás atender diferentes áreas como comedor, mostrador, domicilio y más al mismo tiempo
+          sin que una operación interfiera con la otra, cada área con su propio dispositivo, todos
+          sincronizados en tiempo real bajo una sola licencia. Nuestras licencias son integrales,
+          no tienes que pagar más o comprar módulos adicionales para la operación principal de tu
+          negocio.
+      - atributo: "Función de inventarios"
+        beneficio: "Reducción de pérdidas y compras más inteligentes gracias al control de almacén en tiempo real."
+      - atributo: "Facturación electrónica"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas y roles de usuarios."
+      - atributo: "Autofactura"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas, emisión con ticket o QR y portal personalizado."
+      - atributo: "Función de reservaciones y comisionistas para gestionar reservas"
+        beneficio: "Aumento en venta promedio por ticket al incentivar a los meseros con el módulo de comisiones."
+      - atributo: "Función de monitor de Producción para agilizar la operación"
+        beneficio: "Menos errores y mejor flujo en cocina mediante comandero móvil y pantalla KDS."
+      - atributo: "Función de fidelización de clientes"
+        beneficio: >
+          Permite guardar la información de los clientes como datos de facturación, direcciones de
+          entrega, y sus pedidos anteriores para brindarles una mejor atención. Además, brindarles
+          beneficios o descuentos especiales con el objetivo de incentivar la compra y fortalecer
+          la relación con los clientes.
+      - atributo: "Alertas y reportes automáticos vía WhatsApp en tiempo real"
+        beneficio: >
+          El dueño o administrador recibe cortes de caja, alertas de antifraude y reportes de ventas
+          directamente en su celular, permitiéndole supervisar la operación de forma remota en todo
+          momento.
+    promociones:
+      - "Renta Mensual de Analytics y Delivery Hub GRATIS"
+      - "Renta Anual de Analytics y Delivery Hub GRATIS"
+      - "Incluye 200 CFDI para Facturación electrónica en Renta Anual"
+      - >
+        20% de descuento en licencia Soft Restaurant® al activar Soft Restaurant® Payments
+        (disponible para negocios que procesen más de $100,000 al mes con tarjeta).
+    notas: >
+      En el nuevo esquema de suscripción de Soft Restaurant® 12, podrás realizar un cambio de datos
+      al año en licenciamiento mensual o anual. CFDI se adquieren por separado.
+    manejo_de_objeciones:
+      es_caro: >
+        Entendemos su preocupación, pero Soft Restaurant® es mucho más que un punto de venta.
+        Incluye facturación electrónica, control de inventarios, fidelización de clientes, reportes
+        automáticos y operación sin internet. Además, está diseñado para adaptarse a sus necesidades
+        específicas y crecer con su negocio.
+      lo_pienso: >
+        Entendemos que es una decisión importante. ¿Le gustaría agendar una demostración sin
+        compromiso para que lo vea en funcionamiento real antes de decidir?
+      competencia: >
+        Soft Restaurant® 12 integra lo que otros sistemas separan: ventas, inventarios, pagos,
+        delivery, facturación y analítica en un solo sistema. Ofrece hasta 30% más agilidad en
+        servicio, seguridad única con cortes antifraude en tiempo real, y la mejor relación
+        costo-beneficio del mercado. Además, cuenta con Academia gratuita para capacitar a todo
+        el staff.
+      ya_tenemos_sistema: >
+        Si ya cuentas con otro sistema, con Soft Restaurant® 12 obtienes un sistema más completo,
+        confiable y diseñado para crecer con tu restaurante. Cuenta con operación integral en un
+        solo sistema, integraciones nativas con apps de reparto y pagos con tarjeta, control y
+        seguridad avanzada con perfiles de usuario y trazabilidad, reportes en tiempo real desde
+        cualquier dispositivo, ecosistema escalable con Add-Ons, y soporte técnico de lunes a
+        sábado de 9am a 1am y domingos de 10am a 2pm.
+      vs_alternativa: >
+        Mismo que LITE, la única diferencia es la cantidad de dispositivos vinculados. Si prefieres
+        nube en lugar de instalación local, Cloud Pro te da 5 dispositivos en nube por un precio
+        similar.
+      no_quiero_mensualidades: >
+        Nuestro modelo de renta mensual le da acceso a actualizaciones constantes, soporte técnico
+        y mejora continua del sistema. Siempre tendrá la mejor versión sin costos ocultos por
+        mantenimiento o licencias futuras. También contamos con la modalidad de renta anual para
+        mayor comodidad.
+      miedo_tecnologia: >
+        Soft Restaurant® tiene una interfaz intuitiva y amigable. Incluye capacitación inicial,
+        soporte y acceso a nuestra plataforma de formación online (Academia Soft Restaurant®), para
+        que todo su equipo se adapte fácilmente.
+      no_me_funciona: >
+        Contamos con demostraciones virtuales sin compromiso para que conozca el sistema antes de
+        decidir. Además, ofrecemos capacitación y soporte desde la instalación, asegurando que
+        obtenga resultados reales, no solo un software.
+      negocio_pequeno: >
+        Soft Restaurant® es escalable: puede comenzar con una versión básica e ir agregando módulos
+        conforme su negocio crece. Tener control desde el inicio le ahorrará tiempo, errores y
+        pérdidas en el futuro.
+
+  # ──────────────────────────────────────────────
+  # PLANES CLOUD
+  # ──────────────────────────────────────────────
+
+  - id: cloud_lite
+    nombre: "Soft Restaurant® Cloud Lite"
+    name_match: "Cloud Lite"
+    is_base_plan: true
+    categoria: "Software de administración de restaurantes en la nube y punto de Venta en la nube"
+    tipo: "Cloud"
+    descripcion_tipo: "Versión en la Nube (Control Total: accede desde tu celular)"
+    is_cloud: true
+    max_dispositivos: 2
+    multi_sucursal: false
+    precios:
+      mensual_mxn: 699
+      anual_mxn: 7689
+    perfil_producto:
+      usp: >
+        Empieza hoy, sin servidores ni instalaciones complicadas. Todo tu restaurante en la nube,
+        desde cualquier lugar y dispositivo con acceso a internet.
+      unidad_de_valor: >
+        MXN / Licencias por dispositivo. Licencia de uso por una sucursal que permite operar
+        el sistema hasta en 2 dispositivos de forma simultánea, bajo un esquema de renta
+        mensual o anual.
+    recommendation_rules:
+      devices_max: 2
+      branch_count_max: 1
+      prefers_cloud: true
+    buyer_persona:
+      segmento: >
+        Emprendedores y negocios nuevos que buscan una baja inversión inicial sin
+        servidores complicados.
+      pain_point: >
+        No quieren invertir en servidores ni en infraestructura de TI. Han intentado usar hojas de
+        cálculo o sistemas genéricos que no entienden la operación de un restaurante y terminan
+        perdiendo tiempo o cometiendo errores en caja.
+      gain: >
+        Arrancar su negocio desde el primer día con un sistema profesional, accesible desde su
+        celular o tablet, que les permita ver sus ventas en tiempo real y crecer sin tener que
+        cambiar de plataforma.
+    atributos_y_beneficios:
+      - atributo: "Operación de 2 dispositivos en simultáneo"
+        beneficio: >
+          Mientras uno de tus colaboradores toma pedidos desde el comandero, el otro cobra en caja —
+          todo sincronizado en la nube, sin pisarse y sin papel de por medio. Permite utilizar una
+          misma licencia Cloud hasta en 2 dispositivos al mismo tiempo, dentro de un mismo negocio.
+          Esto facilita la atención en diferentes puntos de venta de forma simultánea, sin necesidad
+          de adquirir licencias adicionales.
+      - atributo: "Módulo de reportes Analytics"
+        beneficio: >
+          Acceso a dashboard con indicadores clave como total vendido, ticket promedio, ventas por
+          forma de pago y productos más vendidos. Incluye reportes de ventas, productos, margen,
+          descuentos, cancelaciones y turnos, con exportación a PDF y Excel.
+      - atributo: "Módulo de Delivery Hub"
+        beneficio: >
+          Centraliza los pedidos de Uber Eats, Rappi, Didi Food y channel managers como Ordatic,
+          Deliverec y Hubster en un solo punto de venta, eliminando la operación manual entre
+          plataformas.
+      - atributo: "Módulo de facturación"
+        beneficio: "Permite emitir facturas libres, facturas globales y facturas desde un sitio configurable para que el comensal se autofacture."
+      - atributo: "Integración con Soft Restaurant® Payments"
+        beneficio: >
+          Permite cobros con tarjeta presencial usando terminales P5 y T2, con reporte automático
+          de transacciones y depósitos de banco.
+      - atributo: "100 timbres incluidos en plan anual"
+        beneficio: >
+          Desde el primer día puedes emitir facturas a tus clientes sin contratar nada extra; los
+          100 timbres ya vienen incluidos en tu plan anual para que arranques sin preocuparte por eso.
+    promociones:
+      - "100 timbres incluidos en plan anual"
+      - "Renta Mensual de Analytics y Delivery Hub GRATIS"
+      - "Renta Anual de Analytics y Delivery Hub GRATIS"
+    notas: "Los servicios de instalación, capacitación y/o configuración del sistema se cotizan por separado."
+    manejo_de_objeciones:
+      es_caro: >
+        Entendemos su preocupación, pero Soft Restaurant® es mucho más que un punto de venta.
+        Incluye facturación electrónica, control de inventarios, fidelización de clientes, reportes
+        automáticos y operación sin internet. Además, está diseñado para adaptarse a sus necesidades
+        específicas y crecer con su negocio.
+      lo_pienso: >
+        Entendemos que es una decisión importante. ¿Le gustaría agendar una demostración sin
+        compromiso para que lo vea en funcionamiento real antes de decidir?
+      competencia: >
+        A diferencia de otros sistemas, Soft Restaurant® Cloud Lite le permite operar su restaurante
+        desde la nube de forma sencilla, integrando punto de venta, reportes, delivery y pagos en un
+        solo sistema, sin necesidad de infraestructura o múltiples herramientas.
+      ya_tenemos_sistema: >
+        Perfecto, muchos de nuestros clientes también tenían uno. La diferencia es que con Soft
+        Restaurant® Cloud Lite puede operar de forma más simple y accesible desde cualquier
+        dispositivo, con información en tiempo real y sin depender de instalaciones o servidores.
+      vs_alternativa: >
+        Si necesitas más de 2 dispositivos activos, Cloud Pro te da hasta 5 en nube por $999/mes.
+        Si prefieres instalación local, SR® 12 Lite cubre el mismo perfil.
+      no_quiero_mensualidades: >
+        Nuestro modelo de renta mensual le da acceso a actualizaciones constantes, soporte técnico
+        y mejora continua del sistema. Siempre tendrá la mejor versión sin costos ocultos por
+        mantenimiento o licencias futuras. También contamos con la modalidad de renta anual para
+        mayor comodidad.
+      miedo_tecnologia: >
+        Soft Restaurant® tiene una interfaz intuitiva y amigable. Incluye capacitación inicial,
+        soporte y acceso a nuestra plataforma de formación online (Academia Soft Restaurant®), para
+        que todo su equipo se adapte fácilmente.
+      no_me_funciona: >
+        Contamos con demostraciones virtuales sin compromiso para que conozca el sistema antes de
+        decidir. Además, ofrecemos capacitación y soporte desde la instalación, asegurando que
+        obtenga resultados reales, no solo un software.
+      negocio_pequeno: >
+        Soft Restaurant® es escalable: puede comenzar con una versión básica e ir agregando módulos
+        conforme su negocio crece. Tener control desde el inicio le ahorrará tiempo, errores y
+        pérdidas en el futuro.
+
+  - id: cloud_pro
+    nombre: "Soft Restaurant® Cloud Pro"
+    name_match: "Cloud Pro"
+    is_base_plan: true
+    categoria: "Software de administración de Restaurantes y Punto de Venta"
+    tipo: "Cloud"
+    descripcion_tipo: "Versión en la Nube (Control Total: accede desde tu celular)"
+    is_cloud: true
+    max_dispositivos: 5
+    multi_sucursal: false
+    precios:
+      mensual_mxn: 999
+      anual_mxn: 10989
+    perfil_producto:
+      usp: "Escala tu operación en la nube. Más dispositivos, más control, sin servidores."
+      unidad_de_valor: >
+        MXN / Licencias por dispositivo. Licencia de uso por una sucursal que permite operar
+        el sistema hasta en 5 dispositivos de forma simultánea, bajo un esquema de renta
+        mensual o anual.
+    recommendation_rules:
+      devices_min: 3
+      devices_max: 5
+      branch_count_max: 1
+      prefers_cloud: true
+    buyer_persona:
+      segmento: >
+        Emprendedores y negocios nuevos que buscan una baja inversión inicial sin
+        servidores complicados.
+      pain_point: >
+        Ya tienen un negocio funcionando con 2 o 3 personas atendiendo, pero su sistema actual
+        no aguanta el volumen: se pierden pedidos, los cierres son lentos y no tienen visibilidad
+        real de sus ventas ni de sus plataformas de delivery en un solo lugar.
+      gain: >
+        Operar hasta 5 dispositivos desde la nube con sincronización total — comandero, caja,
+        cocina — y ver el negocio completo en tiempo real desde su celular, sin depender de un
+        servidor físico ni de soporte técnico presencial.
+    atributos_y_beneficios:
+      - atributo: "Operación de 5 dispositivos en simultáneo"
+        beneficio: >
+          Permite conectar caja, comanderos y monitor de cocina desde tablets Android bajo una sola
+          suscripción cloud, escalando la operación sin inversión en infraestructura de TI. Permite
+          utilizar una misma licencia Cloud hasta en 5 dispositivos al mismo tiempo, dentro de un
+          mismo negocio. Esto facilita la atención en diferentes puntos de venta de forma simultánea,
+          sin necesidad de adquirir licencias adicionales.
+      - atributo: "Módulo de reportes Analytics"
+        beneficio: >
+          Acceso a dashboard con indicadores clave como total vendido, ticket promedio, ventas por
+          forma de pago y productos más vendidos. Incluye reportes de ventas, productos, margen,
+          descuentos, cancelaciones y turnos, con exportación a PDF y Excel.
+      - atributo: "Módulo de Delivery Hub"
+        beneficio: >
+          Centraliza los pedidos de Uber Eats, Rappi, Didi Food y channel managers como Ordatic,
+          Deliverec y Hubster en un solo punto de venta, eliminando la operación manual entre
+          plataformas.
+      - atributo: "Módulo de facturación"
+        beneficio: "Permite emitir facturas libres, facturas globales y facturas desde un sitio configurable para que el comensal se autofacture."
+      - atributo: "Integración con Soft Restaurant® Payments"
+        beneficio: >
+          Permite cobros con tarjeta presencial usando terminales P5, P5L y T2, con reporte
+          automático de transacciones y depósitos de banco.
+      - atributo: "100 timbres incluidos en plan anual"
+        beneficio: "Ahorra en emisión de facturas electrónicas desde el inicio, con timbres incluidos sin costo adicional."
+    promociones:
+      - "100 timbres incluidos en plan anual"
+      - "Renta Mensual de Analytics y Delivery Hub GRATIS"
+      - "Renta Anual de Analytics y Delivery Hub GRATIS"
+    notas: "Los servicios de instalación, capacitación y/o configuración del sistema se cotizan por separado."
+    manejo_de_objeciones:
+      es_caro: >
+        Entendemos su preocupación, pero Soft Restaurant® es mucho más que un punto de venta.
+        Incluye facturación electrónica, control de inventarios, fidelización de clientes, reportes
+        automáticos y operación sin internet. Además, está diseñado para adaptarse a sus necesidades
+        específicas y crecer con su negocio.
+      lo_pienso: >
+        Entendemos que es una decisión importante. ¿Le gustaría agendar una demostración sin
+        compromiso para que lo vea en funcionamiento real antes de decidir?
+      competencia: >
+        A diferencia de otros sistemas, Soft Restaurant® Cloud Pro integra punto de venta, reportes,
+        delivery, facturación y pagos en una sola plataforma en la nube, evitando usar múltiples
+        herramientas y permitiéndole operar su restaurante desde cualquier lugar con información en
+        tiempo real.
+      ya_tenemos_sistema: >
+        Perfecto, muchos de nuestros clientes también tenían uno. La diferencia es que con Soft
+        Restaurant® Cloud Pro puedes centralizar toda tu operación en la nube, integrar delivery y
+        pagos sin procesos manuales, y tener visibilidad en tiempo real desde cualquier lugar, algo
+        que la mayoría de sistemas actuales no ofrece de forma completa.
+      vs_alternativa: >
+        Cloud Lite te da 2 dispositivos, Cloud Pro te da 5. Si tu operación activa más de 2 puntos
+        al mismo tiempo, Pro es la opción correcta para no quedarte corto.
+      no_quiero_mensualidades: >
+        Nuestro modelo de renta mensual le da acceso a actualizaciones constantes, soporte técnico
+        y mejora continua del sistema. Siempre tendrá la mejor versión sin costos ocultos por
+        mantenimiento o licencias futuras. También contamos con la modalidad de renta anual para
+        mayor comodidad.
+      miedo_tecnologia: >
+        Soft Restaurant® tiene una interfaz intuitiva y amigable. Incluye capacitación inicial,
+        soporte y acceso a nuestra plataforma de formación online (Academia Soft Restaurant®), para
+        que todo su equipo se adapte fácilmente.
+      no_me_funciona: >
+        Contamos con demostraciones virtuales sin compromiso para que conozca el sistema antes de
+        decidir. Además, ofrecemos capacitación y soporte desde la instalación, asegurando que
+        obtenga resultados reales, no solo un software.
+      negocio_pequeno: >
+        Soft Restaurant® es escalable: puede comenzar con una versión básica e ir agregando módulos
+        conforme su negocio crece. Tener control desde el inicio le ahorrará tiempo, errores y
+        pérdidas en el futuro.
+
+  - id: cloud_enterprise
+    nombre: "Soft Restaurant® Cloud Enterprise"
+    name_match: "Cloud Enterprise"
+    is_base_plan: true
+    categoria: "Software de administración de Restaurantes y Punto de Venta para cadena de restaurantes, CEDIS, franquicias"
+    tipo: "Cloud"
+    descripcion_tipo: "Versión en la Nube (Control Total: accede desde tu celular)"
+    is_cloud: true
+    max_dispositivos: 10
+    multi_sucursal: true
+    precios:
+      mensual_mxn: 1599
+      anual_mxn: 17589
+    perfil_producto:
+      usp: >
+        Control total de todas tus sucursales desde un solo sistema en la nube. Visibilidad
+        consolidada, operación estandarizada, decisiones en tiempo real.
+      unidad_de_valor: >
+        MXN / Licencias por dispositivo. Licencia de uso por función multisucursal que permite
+        operar el sistema hasta en 10 dispositivos de forma simultánea, bajo un esquema de renta
+        mensual o anual.
+    recommendation_rules:
+      branch_count_min: 2
+      prefers_cloud: true
+    buyer_persona:
+      segmento: >
+        Negocios con múltiples sucursales de una misma empresa, negocios con múltiples sucursales
+        de diferentes empresas, o grupos operadores con múltiples marcas que requieren
+        administración centralizada.
+      pain_point: >
+        No pueden comparar el desempeño entre ubicaciones, y cada sucursal opera con sus propias
+        reglas sin estandarización.
+      gain: >
+        Gestionar todas sus sucursales desde un solo panel: ver ventas consolidadas, estandarizar
+        menús y precios, controlar inventarios por ubicación y tomar decisiones estratégicas con
+        datos reales de toda la operación, sin importar dónde se encuentre.
+    atributos_y_beneficios:
+      - atributo: "Operación de 10 dispositivos en simultáneo y vinculación multisucursal"
+        beneficio: >
+          Permite utilizar una misma licencia Cloud en hasta 10 dispositivos al mismo tiempo, ya
+          sea dentro de un mismo negocio o en diferentes sucursales de una misma empresa. Además,
+          incluye la vinculación multisucursal, lo que permite centralizar la operación y la
+          información entre distintos puntos de venta. Esto facilita la atención simultánea en
+          varias áreas o sucursales, sin necesidad de adquirir licencias adicionales.
+      - atributo: "Sucursales adicionales disponibles por separado"
+        beneficio: >
+          Pagas solo por las sucursales que tienes hoy y cuando abras una nueva, simplemente la
+          agregas al sistema que ya conoces, sin migrar datos ni aprender algo nuevo.
+      - atributo: "Módulo de reportes Analytics"
+        beneficio: >
+          Acceso a dashboard con indicadores clave como total vendido, ticket promedio, ventas por
+          forma de pago y productos más vendidos. Incluye reportes de ventas, productos, margen,
+          descuentos, cancelaciones y turnos, con exportación a PDF y Excel.
+      - atributo: "Módulo de Delivery Hub"
+        beneficio: >
+          Centraliza los pedidos de Uber Eats, Rappi, Didi Food y channel managers como Ordatic,
+          Deliverec y Hubster en un solo punto de venta, eliminando la operación manual entre
+          plataformas.
+      - atributo: "Módulo de facturación"
+        beneficio: "Permite emitir facturas libres, facturas globales y facturas desde un sitio configurable para que el comensal se autofacture."
+      - atributo: "Timbres ilimitados en plan anual"
+        beneficio: >
+          Con Cloud Enterprise tienes timbres ilimitados y ese tema desaparece de tu lista de
+          pendientes. Emite todas las facturas que necesites sin costo extra por volumen.
+      - atributo: "Integración con Soft Restaurant® Payments"
+        beneficio: >
+          Permite cobros con tarjeta presencial usando terminales P5 y T2, con reporte automático
+          de transacciones y depósitos de banco.
+    promociones:
+      - "Timbres ilimitados en plan anual"
+      - "Renta Mensual de Analytics y Delivery Hub GRATIS"
+      - "Renta Anual de Analytics y Delivery Hub GRATIS"
+      - "Sucursales adicionales disponibles por separado"
+    notas: "Los servicios de instalación, capacitación y/o configuración del sistema se cotizan por separado."
+    manejo_de_objeciones:
+      es_caro: >
+        Entendemos su preocupación, pero Soft Restaurant® es mucho más que un punto de venta.
+        Incluye facturación electrónica, control de inventarios, fidelización de clientes, reportes
+        automáticos y operación sin internet. Además, está diseñado para adaptarse a sus necesidades
+        específicas y crecer con su negocio.
+      lo_pienso: >
+        Entendemos que es una decisión importante. ¿Le gustaría agendar una demostración sin
+        compromiso para que lo vea en funcionamiento real antes de decidir?
+      competencia: >
+        A diferencia de otros sistemas, Soft Restaurant® integra en una sola plataforma ventas,
+        inventarios, facturación, delivery y control operativo, evitando el uso de múltiples
+        herramientas y reduciendo errores en la operación.
+      ya_tenemos_sistema: >
+        Perfecto, muchos de nuestros clientes también tenían uno antes. La diferencia es que Soft
+        Restaurant® le ofrece mayor control, administración centralizada y la posibilidad de escalar
+        sin limitaciones, además de integrar todo en un solo sistema.
+      vs_alternativa: >
+        Si prefieres instalación on-premise en lugar de nube, Enterprise Pro cubre hasta 10
+        dispositivos por sucursal con todas las funciones avanzadas sin depender de internet.
+      no_quiero_mensualidades: >
+        Nuestro modelo de renta mensual le da acceso a actualizaciones constantes, soporte técnico
+        y mejora continua del sistema. Siempre tendrá la mejor versión sin costos ocultos por
+        mantenimiento o licencias futuras. También contamos con la modalidad de renta anual para
+        mayor comodidad.
+      miedo_tecnologia: >
+        Soft Restaurant® tiene una interfaz intuitiva y amigable. Incluye capacitación inicial,
+        soporte y acceso a nuestra plataforma de formación online (Academia Soft Restaurant®), para
+        que todo su equipo se adapte fácilmente.
+      no_me_funciona: >
+        Contamos con demostraciones virtuales sin compromiso para que conozca el sistema antes de
+        decidir. Además, ofrecemos capacitación y soporte desde la instalación, asegurando que
+        obtenga resultados reales, no solo un software.
+      negocio_pequeno: >
+        Soft Restaurant® es escalable: puede comenzar con una versión básica e ir agregando módulos
+        conforme su negocio crece. Tener control desde el inicio le ahorrará tiempo, errores y
+        pérdidas en el futuro.
+
+  # ──────────────────────────────────────────────
+  # PLANES ENTERPRISE (Local avanzado, Multisucursal)
+  # ──────────────────────────────────────────────
+
+  - id: enterprise_lite
+    nombre: "Soft Restaurant® Enterprise Lite"
+    name_match: "Enterprise Lite"
+    is_base_plan: true
+    categoria: "Software de administración de Restaurantes y Punto de Venta"
+    tipo: "Local"
+    descripcion_tipo: "Versión Instalada (Operación Garantizada: funciona sin internet)"
+    is_cloud: false
+    max_dispositivos: 2
+    multi_sucursal: true
+    precios:
+      mensual_mxn: 1199
+      anual_mxn: 13189
+    perfil_producto:
+      usp: >
+        Control total de la operación del restaurante en una sola sucursal, con administración
+        centralizada, usuarios ilimitados y capacidad de escalar el negocio sin cambiar de sistema.
+      unidad_de_valor: >
+        MXN / Licencias por dispositivo. Licencia de uso a nivel empresa, que permite operar el
+        sistema en hasta 2 dispositivos de forma simultánea, con capacidad de gestión multisucursal
+        y centralización de la información, bajo un esquema de renta mensual o anual.
+    recommendation_rules:
+      devices_max: 2
+      branch_count_min: 1
+      prefers_cloud: false
+      needs_advanced_features: true
+    buyer_persona:
+      segmento: >
+        Restaurantes que ya tienen una operación más estructurada, que operan a nivel multisucursal.
+        Ideal para negocios en expansión que necesitan control total de varias sucursales.
+      pain_point: >
+        Falta de control centralizado sobre la operación del negocio, lo que genera errores y
+        desorganización entre áreas como caja, cocina y servicio, especialmente al trabajar con
+        procesos manuales o sistemas limitados. Además, existe dificultad para coordinar múltiples
+        usuarios, dispositivos y sucursales al mismo tiempo, lo que impacta directamente en la
+        eficiencia operativa y la calidad del servicio.
+      gain: >
+        Controlar la operación y gestión a nivel empresa (multisucursal, corporativo), con todos
+        los usuarios y áreas sincronizados desde una sola plataforma.
+    atributos_y_beneficios:
+      - atributo: "Software de administración y Punto de venta para negocios gastronómicos, con control de inventarios, licencia para una sucursal"
+        beneficio: "Reducción de pérdidas y compras más inteligentes gracias al control de almacén en tiempo real."
+      - atributo: "Operación de 2 dispositivos en simultáneo"
+        beneficio: >
+          Permite utilizar una misma licencia Enterprise hasta en 2 dispositivos al mismo tiempo, ya
+          sea dentro de un mismo negocio o en diferentes sucursales, manteniendo la información
+          centralizada. Además, incluye la vinculación multisucursal, lo que facilita la gestión y
+          el control de la operación entre distintos puntos de venta. Esto permite atender de forma
+          simultánea en diferentes áreas o sucursales sin necesidad de adquirir licencias adicionales.
+      - atributo: "Administración centralizada"
+        beneficio: "Controla la operación y gestión a nivel empresa (multisucursal, corporativo). Nuestras licencias son integrales, no tienes que pagar más o comprar módulos adicionales para la operación principal de tu negocio."
+      - atributo: "Función de punto de venta en modalidades servicio a comedor, rápido y a domicilio"
+        beneficio: "Nuestras licencias son integrales, es decir, no tienes que pagar más o comprar módulos adicionales para la operación principal de tu negocio."
+      - atributo: "Función de inventarios"
+        beneficio: "Reducción de pérdidas y compras más inteligentes gracias al control de almacén en tiempo real."
+      - atributo: "Facturación electrónica"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas y roles de usuarios."
+      - atributo: "Autofactura"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas y roles de usuarios."
+      - atributo: "Usuarios ilimitados"
+        beneficio: "Todos los miembros del equipo tienen acceso sin costo adicional por usuario."
+      - atributo: "Función de reservaciones y comisionistas para gestionar reservas"
+        beneficio: "Aumento en venta promedio por ticket al incentivar a los meseros con el módulo de comisiones."
+      - atributo: "Función de monitor de producción para agilizar la operación"
+        beneficio: "Menos errores y mejor flujo en cocina mediante comandero móvil y pantalla KDS."
+      - atributo: "Función de fidelización de clientes"
+        beneficio: >
+          Permite guardar la información de los clientes como datos de facturación, direcciones de
+          entrega, y sus pedidos anteriores para brindarles una mejor atención. Además, brindarles
+          beneficios o descuentos especiales con el objetivo de incentivar la compra y fortalecer
+          la relación con los clientes.
+    promociones:
+      - "Renta Mensual y Anual de Analytics GRATIS"
+      - "Renta Mensual y Anual de Delivery Hub GRATIS"
+    notas: "CFDI se adquieren por separado. En caso de requerir más dispositivos o suscripciones adicionales, se podrán contratar por separado."
+    manejo_de_objeciones:
+      es_caro: >
+        Entendemos su preocupación, pero Soft Restaurant® es mucho más que un punto de venta.
+        Incluye facturación electrónica, control de inventarios, fidelización de clientes, reportes
+        automáticos y operación sin internet. Además, está diseñado para adaptarse a sus necesidades
+        específicas y crecer con su negocio.
+      lo_pienso: >
+        Entendemos que es una decisión importante. ¿Le gustaría agendar una demostración sin
+        compromiso para que lo vea en funcionamiento real antes de decidir?
+      competencia: >
+        A diferencia de otros sistemas, Soft Restaurant® integra en una sola plataforma ventas,
+        inventarios, facturación, delivery y control operativo, evitando el uso de múltiples
+        herramientas y reduciendo errores en la operación.
+      ya_tenemos_sistema: >
+        Perfecto, muchos de nuestros clientes también tenían uno antes. La diferencia es que Soft
+        Restaurant® le ofrece mayor control, administración centralizada y la posibilidad de escalar
+        sin limitaciones, además de integrar todo en un solo sistema.
+      vs_alternativa: >
+        Si quieres lo mismo en la nube, Cloud Enterprise te da las mismas funciones en suscripción
+        sin servidor. Si prefieres local y necesitas más dispositivos, Enterprise Pro escala hasta 10.
+      no_quiero_mensualidades: >
+        Nuestro modelo de renta mensual le da acceso a actualizaciones constantes, soporte técnico
+        y mejora continua del sistema. Siempre tendrá la mejor versión sin costos ocultos por
+        mantenimiento o licencias futuras. También contamos con la modalidad de renta anual para
+        mayor comodidad.
+      miedo_tecnologia: >
+        Soft Restaurant® tiene una interfaz intuitiva y amigable. Incluye capacitación inicial,
+        soporte y acceso a nuestra plataforma de formación online (Academia Soft Restaurant®), para
+        que todo su equipo se adapte fácilmente.
+      no_me_funciona: >
+        Contamos con demostraciones virtuales sin compromiso para que conozca el sistema antes de
+        decidir. Además, ofrecemos capacitación y soporte desde la instalación, asegurando que
+        obtenga resultados reales, no solo un software.
+      negocio_pequeno: >
+        Soft Restaurant® es escalable: puede comenzar con una versión básica e ir agregando módulos
+        conforme su negocio crece. Tener control desde el inicio le ahorrará tiempo, errores y
+        pérdidas en el futuro.
+
+  - id: enterprise_pro
+    nombre: "Soft Restaurant® Enterprise Pro"
+    name_match: "Enterprise Pro"
+    is_base_plan: true
+    categoria: "Software de administración de Restaurantes y Punto de Venta"
+    tipo: "Local"
+    descripcion_tipo: "Versión Instalada (Operación Garantizada: funciona sin internet)"
+    is_cloud: false
+    max_dispositivos: 10
+    multi_sucursal: true
+    precios:
+      mensual_mxn: 1699
+      anual_mxn: 18689
+    perfil_producto:
+      usp: >
+        Versión avanzada del sistema Soft Restaurant, diseñada para empresas con múltiples
+        sucursales que desean integrar todas las funcionalidades del sistema base para
+        administración y centralizar la información.
+      unidad_de_valor: >
+        MXN / Licencias por dispositivo. Licencia de uso a nivel empresa, que permite operar el
+        sistema en hasta 10 dispositivos de forma simultánea, con capacidad de gestión multisucursal
+        y centralización de la información, bajo un esquema de renta mensual o anual.
+    recommendation_rules:
+      devices_min: 3
+      devices_max: 10
+      branch_count_min: 1
+      prefers_cloud: false
+    buyer_persona:
+      segmento: >
+        Para negocios gastronómicos, con control de inventarios. Versión avanzada del sistema Soft
+        Restaurant, diseñada para empresas con múltiples sucursales que desean integrar todas las
+        funcionalidades del sistema base para administración y centralizar la información.
+      pain_point: >
+        Restaurantes que ya tienen una operación más estructurada, que operan a nivel multisucursal.
+        Ideal para negocios en expansión que necesitan control total de varias sucursales.
+      gain: >
+        Falta de control centralizado sobre la operación del negocio, lo que genera errores y
+        desorganización entre áreas como caja, cocina y servicio, especialmente al trabajar con
+        procesos manuales o sistemas limitados. Además, existe dificultad para coordinar múltiples
+        usuarios, dispositivos y sucursales al mismo tiempo, lo que impacta directamente en la
+        eficiencia operativa y la calidad del servicio.
+    atributos_y_beneficios:
+      - atributo: "Software de administración y Punto de venta para negocios gastronómicos, con control de inventarios, licencia multisucursal"
+        beneficio: "Reducción de pérdidas y compras más inteligentes gracias al control de almacén en tiempo real."
+      - atributo: "Operación de 10 dispositivos en simultáneo"
+        beneficio: >
+          Permite operar múltiples áreas del restaurante al mismo tiempo (caja, meseros, cocina) sin
+          interrupciones, aumentando la velocidad de atención y mejorando la experiencia del cliente.
+          Permite utilizar una misma licencia Enterprise hasta en 10 dispositivos al mismo tiempo, ya
+          sea dentro de un mismo negocio o en diferentes sucursales, manteniendo la información
+          centralizada. Además, incluye la vinculación multisucursal, lo que facilita la gestión y
+          el control de la operación entre distintos puntos de venta. Esto permite atender de forma
+          simultánea en diferentes áreas o sucursales sin necesidad de adquirir licencias adicionales.
+      - atributo: "Administración centralizada"
+        beneficio: >
+          Facilita el control total del negocio desde un solo sistema, permitiendo gestionar usuarios,
+          ventas, inventarios y operación de forma ordenada y en tiempo real. Controla la operación y
+          gestión a nivel empresa (multisucursal, corporativo).
+      - atributo: "Función de punto de venta en modalidades servicio a comedor, rápido y a domicilio"
+        beneficio: >
+          Brinda flexibilidad para atender distintos tipos de servicio desde una sola plataforma,
+          optimizando la operación y evitando el uso de múltiples sistemas. Nuestras licencias son
+          integrales, no tienes que pagar más o comprar módulos adicionales para la operación
+          principal de tu negocio.
+      - atributo: "Función de inventarios"
+        beneficio: "Reducción de pérdidas y compras más inteligentes gracias al control de almacén en tiempo real."
+      - atributo: "Facturación electrónica"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas y roles de usuarios."
+      - atributo: "Autofactura"
+        beneficio: "Reducción de fraudes y cierre de caja preciso con conciliaciones automáticas y roles de usuarios."
+      - atributo: "Usuarios ilimitados"
+        beneficio: "Todo el equipo tiene acceso — meseros, cajeros, cocineros, gerentes — sin costo por usuario."
+      - atributo: "Función de reservaciones y comisionistas para gestionar reservas"
+        beneficio: "Aumento en venta promedio por ticket al incentivar a los meseros con el módulo de comisiones."
+      - atributo: "Función de monitor de producción para agilizar la operación"
+        beneficio: "Menos errores y mejor flujo en cocina mediante comandero móvil y pantalla KDS."
+      - atributo: "Función de fidelización de clientes"
+        beneficio: >
+          Permite guardar la información de los clientes como datos de facturación, direcciones de
+          entrega, y sus pedidos anteriores para brindarles una mejor atención. Además, brindarles
+          beneficios o descuentos especiales con el objetivo de incentivar la compra y fortalecer
+          la relación con los clientes.
+    promociones:
+      - "Renta Mensual y Anual de Analytics GRATIS"
+      - "Renta Mensual y Anual de Delivery Hub GRATIS"
+    notas: "CFDI se adquieren por separado. En caso de requerir más suscripciones adicionales, se podrán contratar por separado."
+    manejo_de_objeciones:
+      es_caro: >
+        Entendemos su preocupación, pero Soft Restaurant® es mucho más que un punto de venta.
+        Incluye facturación electrónica, control de inventarios, fidelización de clientes, reportes
+        automáticos y operación sin internet. Además, está diseñado para adaptarse a sus necesidades
+        específicas y crecer con su negocio.
+      lo_pienso: >
+        Entendemos que es una decisión importante. ¿Le gustaría agendar una demostración sin
+        compromiso para que lo vea en funcionamiento real antes de decidir?
+      competencia: >
+        A diferencia de otros sistemas, Soft Restaurant® integra en una sola plataforma ventas,
+        inventarios, facturación, delivery y control operativo, evitando el uso de múltiples
+        herramientas y reduciendo errores en la operación.
+      ya_tenemos_sistema: >
+        Perfecto, muchos de nuestros clientes también tenían uno antes. La diferencia es que Soft
+        Restaurant® le ofrece mayor control, administración centralizada y la posibilidad de escalar
+        sin limitaciones, además de integrar todo en un solo sistema.
+      vs_alternativa: >
+        Si tu operación depende de una conexión estable y prefieres que el sistema viva en tus
+        equipos, Enterprise Pro es la opción correcta. Si prefieres cero infraestructura local,
+        Cloud Enterprise cubre las mismas funciones en la nube.
+      no_quiero_mensualidades: >
+        Nuestro modelo de renta mensual le da acceso a actualizaciones constantes, soporte técnico
+        y mejora continua del sistema. Siempre tendrá la mejor versión sin costos ocultos por
+        mantenimiento o licencias futuras. También contamos con la modalidad de renta anual para
+        mayor comodidad.
+      miedo_tecnologia: >
+        Soft Restaurant® tiene una interfaz intuitiva y amigable. Incluye capacitación inicial,
+        soporte y acceso a nuestra plataforma de formación online (Academia Soft Restaurant®), para
+        que todo su equipo se adapte fácilmente.
+      no_me_funciona: >
+        Contamos con demostraciones virtuales sin compromiso para que conozca el sistema antes de
+        decidir. Además, ofrecemos capacitación y soporte desde la instalación, asegurando que
+        obtenga resultados reales, no solo un software.
+      negocio_pequeno: >
+        Soft Restaurant® es escalable: puede comenzar con una versión básica e ir agregando módulos
+        conforme su negocio crece. Tener control desde el inicio le ahorrará tiempo, errores y
+        pérdidas en el futuro.

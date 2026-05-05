@@ -34,6 +34,13 @@
           <span class="hidden sm:inline">{{ $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.DOWNLOAD_TEMPLATE') }}</span>
           <Spinner v-if="isDownloadingTemplate" class="!w-4 !h-4 flex-shrink-0" />
         </button>
+        <button
+          class="h-8 px-3 border border-n-slate-6 text-n-slate-12 rounded-lg hover:bg-n-slate-3 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="toggleBlueprintUploadDialog()"
+        >
+          <i class="i-lucide-bot w-4 h-4 flex-shrink-0" />
+          <span class="hidden sm:inline">{{ $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.BLUEPRINT.BUTTON') }}</span>
+        </button>
       </template>
 
       <template #action>
@@ -42,6 +49,11 @@
           :is-processing="isProcessing"
           @close="toggleUploadDialog(false)"
           @upload-success="handleUploadSuccess"
+        />
+        <BlueprintUploadDialog
+          v-if="showBlueprintUploadDialog"
+          @close="toggleBlueprintUploadDialog(false)"
+          @upload-success="handleBlueprintUploadSuccess"
         />
       </template>
 
@@ -278,6 +290,7 @@ import Input from 'dashboard/components-next/input/Input.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 import UploadDialog from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/UploadDialog.vue';
+import BlueprintUploadDialog from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/BlueprintUploadDialog.vue';
 import ProductTable from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/ProductTable.vue';
 import ConfirmDeleteDialog from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/ConfirmDeleteDialog.vue';
 import ProcessingStatus from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/ProcessingStatus.vue';
@@ -291,6 +304,7 @@ const store = useStore();
 const router = useRouter();
 
 const [showUploadDialog, toggleUploadDialog] = useToggle();
+const [showBlueprintUploadDialog, toggleBlueprintUploadDialog] = useToggle();
 const selectedProduct = ref(null);
 const selectedProductForMedia = ref(null);
 const selectedProductIds = ref([]);
@@ -574,7 +588,6 @@ const stopPolling = () => {
 const handleUploadSuccess = (bulkRequestId) => {
   toggleUploadDialog(false);
 
-  // Set active processing
   activeProcessing.value = {
     id: bulkRequestId,
     status: 'PENDING',
@@ -584,6 +597,24 @@ const handleUploadSuccess = (bulkRequestId) => {
     failed_records: 0,
     file_name: 'Processing...',
     operation_type: 'UPLOAD'
+  };
+
+  startPolling();
+};
+
+const handleBlueprintUploadSuccess = (bulkRequestId) => {
+  toggleBlueprintUploadDialog(false);
+
+  activeProcessing.value = {
+    id: bulkRequestId,
+    status: 'PENDING',
+    progress: 0,
+    total_records: 0,
+    processed_records: 0,
+    failed_records: 0,
+    file_name: 'Processing...',
+    operation_type: 'UPLOAD',
+    import_format: 'yaml_blueprint'
   };
 
   startPolling();

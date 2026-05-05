@@ -18,16 +18,9 @@ class ProductCatalogAPI extends ApiClient {
   bulkUpload(file) {
     const formData = new FormData();
     formData.append('file', file);
-
-    return axios.post(
-      `${this.url}/bulk_upload`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+    return axios.post(`${this.url}/bulk_upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   }
 
   bulkDelete(ids) {
@@ -35,22 +28,19 @@ class ProductCatalogAPI extends ApiClient {
   }
 
   export(ids) {
-    return axios.post(
-      `${this.url}/export`,
-      { ids },
-      {
-        responseType: 'blob',
-      }
-    );
+    return axios.post(`${this.url}/export`, { ids }, { responseType: 'blob' });
   }
 
   downloadTemplate() {
-    return axios.get(
-      `${this.url}/download_template`,
-      {
-        responseType: 'blob',
-      }
-    );
+    return axios.get(`${this.url}/download_template`, { responseType: 'blob' });
+  }
+
+  blueprintUpload(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axios.post(`${this.url}/blueprint_upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   }
 
   toggleVisibility(id) {
@@ -62,12 +52,9 @@ class ProductCatalogAPI extends ApiClient {
   }
 
   downloadExport(bulkRequestId) {
-    return axios.get(
-      `${this.url}/download_export/${bulkRequestId}`,
-      {
-        responseType: 'blob',
-      }
-    );
+    return axios.get(`${this.url}/download_export/${bulkRequestId}`, {
+      responseType: 'blob',
+    });
   }
 }
 

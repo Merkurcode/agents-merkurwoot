@@ -164,6 +164,20 @@
           "SUCCESS_MESSAGE": "AI profiles uploaded successfully. Products will be enriched shortly."
         }
       },
+      "BLUEPRINT_YAML": {
+        "BUTTON": "Load YAML Blueprints",
+        "UPLOAD": {
+          "TITLE": "Load YAML Blueprints",
+          "DESCRIPTION": "Load product blueprints from a YAML file. Each blueprint is matched to an existing product by exact name.",
+          "MATCH_NOTE": "Each entry under `productos` must have a `name` that exactly matches an existing product in the catalog. Entries without a matching product will fail and be reported in the upload errors.",
+          "DOWNLOAD_TEMPLATE": "Download YAML template",
+          "SELECT_FILE": "Select YAML File",
+          "FILE_FORMAT": "YAML files (.yaml, .yml) up to 5 MB",
+          "INVALID_FORMAT": "Invalid file. Only .yaml and .yml files are allowed.",
+          "UPLOAD_BTN": "Upload YAML",
+          "SUCCESS_MESSAGE": "YAML blueprints uploaded successfully. Products will be enriched shortly."
+        }
+      },
       "UPLOAD_HISTORY": "Upload History",
       "MEDIA_SPECS": {
         "TITLE": "Media File Requirements",

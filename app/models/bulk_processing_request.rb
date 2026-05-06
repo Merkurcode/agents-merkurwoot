@@ -37,6 +37,7 @@ class BulkProcessingRequest < ApplicationRecord
   belongs_to :account
   belongs_to :user
   has_many :product_catalogs, dependent: :nullify
+  has_many :product_blueprints, dependent: :nullify
 
   validates :account_id, presence: true
   validates :user_id, presence: true

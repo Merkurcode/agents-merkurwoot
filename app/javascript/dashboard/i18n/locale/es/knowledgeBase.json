@@ -164,6 +164,20 @@
           "SUCCESS_MESSAGE": "Perfiles de IA subidos exitosamente. Los productos serán enriquecidos en breve."
         }
       },
+      "BLUEPRINT_YAML": {
+        "BUTTON": "Cargar Blueprints YAML",
+        "UPLOAD": {
+          "TITLE": "Cargar Blueprints YAML",
+          "DESCRIPTION": "Carga blueprints de productos desde un archivo YAML. Cada blueprint se vincula a un producto existente por nombre exacto.",
+          "MATCH_NOTE": "Cada entrada en `productos` debe tener un `name` que coincida exactamente con un producto existente en el catálogo. Las entradas sin producto coincidente fallarán y se reportarán en los errores de carga.",
+          "DOWNLOAD_TEMPLATE": "Descargar plantilla YAML",
+          "SELECT_FILE": "Seleccionar archivo YAML",
+          "FILE_FORMAT": "Archivos YAML (.yaml, .yml) de hasta 5 MB",
+          "INVALID_FORMAT": "Archivo inválido. Solo se permiten archivos .yaml y .yml.",
+          "UPLOAD_BTN": "Subir YAML",
+          "SUCCESS_MESSAGE": "Blueprints YAML subidos exitosamente. Los productos serán enriquecidos en breve."
+        }
+      },
       "UPLOAD_HISTORY": "Historial de Cargas",
       "MEDIA_SPECS": {
         "TITLE": "Requisitos de Archivos Multimedia",

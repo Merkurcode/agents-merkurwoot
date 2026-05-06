@@ -166,6 +166,13 @@ Rails.application.routes.draw do
               end
             end
           end
+          resources :product_blueprints, only: [:index, :show] do
+            collection do
+              post :yaml_upload
+              get :yaml_template
+              get :by_name
+            end
+          end
           resources :bulk_processing_requests, only: [:index, :show] do
             member do
               get :download_errors

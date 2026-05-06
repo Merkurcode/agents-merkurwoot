@@ -17,6 +17,7 @@ import bulkActions from './modules/bulkActions';
 import campaigns from './modules/campaigns';
 import marketingCampaigns from './modules/marketingCampaigns';
 import productCatalogs from './modules/productCatalogs';
+import productBlueprints from './modules/productBlueprints';
 import faqCategories from './modules/faqCategories';
 import faqItems from './modules/faqItems';
 import kbResources from './modules/kbResources';
@@ -92,6 +93,7 @@ export default createStore({
     campaigns,
     marketingCampaigns,
     productCatalogs,
+    productBlueprints,
     faqCategories,
     faqItems,
     kbResources,

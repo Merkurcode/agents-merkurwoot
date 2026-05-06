@@ -29,6 +29,13 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
 
     @bulk_request.update!(status: 'PROCESSING')
 
+    if yaml_blueprint_import?
+      process_yaml_blueprint
+      cleanup_temp_file
+      broadcast_completion_notification
+      return
+    end
+
     @existing_product_ids_before = @account.product_catalogs.pluck(:product_id).to_set
 
     excel_result = process_excel(@file_path)
@@ -70,6 +77,50 @@ class ProductCatalogs::ProcessBulkUploadJob < ApplicationJob
 
   def blueprint_import?
     @bulk_request.import_format == 'excel_blueprint'
+  end
+
+  def yaml_blueprint_import?
+    @bulk_request.import_format == 'yaml_blueprint'
+  end
+
+  def process_yaml_blueprint
+    result = ProductBlueprints::YamlProcessorService.new(
+      file_path: @file_path,
+      account: @account,
+      user: @user,
+      bulk_request: @bulk_request
+    ).process
+
+    unless result[:success]
+      @bulk_request.update!(
+        status: 'FAILED',
+        error_message: result[:error].presence || 'YAML processing failed',
+        error_details: result[:errors] || []
+      )
+      return
+    end
+
+    finalize_yaml_blueprint_status(result[:errors] || [])
+  end
+
+  def finalize_yaml_blueprint_status(per_row_errors)
+    if @bulk_request.failed_records.zero? && @bulk_request.processed_records.positive?
+      @bulk_request.update!(status: 'COMPLETED', progress: 100.0, error_message: nil, error_details: [])
+    elsif @bulk_request.failed_records.positive? && @bulk_request.processed_records.positive?
+      @bulk_request.update!(
+        status: 'PARTIALLY_COMPLETED',
+        progress: 100.0,
+        error_message: "Processed #{@bulk_request.processed_records} of #{@bulk_request.total_records} blueprints. " \
+                       "#{@bulk_request.failed_records} failed.",
+        error_details: per_row_errors
+      )
+    else
+      @bulk_request.update!(
+        status: 'FAILED',
+        error_message: 'No blueprints were processed successfully',
+        error_details: per_row_errors
+      )
+    end
   end
 
   def create_media_entries

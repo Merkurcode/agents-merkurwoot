@@ -1,0 +1,10 @@
+json.id @blueprint.id
+json.name @blueprint.name
+json.external_id @blueprint.external_id
+json.product_catalog_id @product_catalog_ids[@blueprint.name]
+json.resumen_agente @blueprint.resumen_agente
+json.perfil_producto @blueprint.perfil_producto
+json.buyer_persona @blueprint.buyer_persona
+json.extra_sections @blueprint.extra_sections
+json.created_at @blueprint.created_at
+json.updated_at @blueprint.updated_at

@@ -135,6 +135,57 @@ watch(
   () => clearHeaderMediaSample()
 );
 
+// Meta requires named variable parameters to be lowercase characters, underscores and numbers.
+// To keep UX permissive we silently normalize {{Nombre}} -> {{nombre}} as the user types.
+// Only runs in 'named' mode (positional variables are digits, no-op).
+const lowercaseTemplateVariables = text => {
+  if (!text) return text;
+  return text.replace(/\{\{([^}]+)\}\}/g, (_match, varName) => `{{${varName.toLowerCase()}}}`);
+};
+
+const lowercaseExampleKeys = examples => {
+  const out = {};
+  for (const [key, value] of Object.entries(examples || {})) {
+    out[key.toLowerCase()] = value;
+  }
+  return out;
+};
+
+watch(
+  () => state.bodyText,
+  newText => {
+    if (state.parameterFormat !== 'named') return;
+    const normalized = lowercaseTemplateVariables(newText);
+    if (normalized !== newText) {
+      state.bodyText = normalized;
+      state.variableExamples = lowercaseExampleKeys(state.variableExamples);
+    }
+  }
+);
+
+watch(
+  () => state.headerText,
+  newText => {
+    if (state.parameterFormat !== 'named') return;
+    const normalized = lowercaseTemplateVariables(newText);
+    if (normalized !== newText) {
+      state.headerText = normalized;
+      state.variableExamples = lowercaseExampleKeys(state.variableExamples);
+    }
+  }
+);
+
+// When switching from positional to named, normalize whatever is already typed.
+watch(
+  () => state.parameterFormat,
+  newFormat => {
+    if (newFormat !== 'named') return;
+    state.bodyText = lowercaseTemplateVariables(state.bodyText);
+    state.headerText = lowercaseTemplateVariables(state.headerText);
+    state.variableExamples = lowercaseExampleKeys(state.variableExamples);
+  }
+);
+
 const handleMediaFileSelected = async event => {
   const file = event.target.files?.[0];
   if (!file) return;

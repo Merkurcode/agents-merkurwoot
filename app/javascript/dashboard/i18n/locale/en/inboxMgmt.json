@@ -1228,7 +1228,7 @@
           "VAR_FORMAT": "Variable format",
           "FORMAT_POSITIONAL": "Positional ({'{{'}1{'}}'}, {'{{'}2{'}}'})",
           "FORMAT_NAMED": "Named ({'{{'}variable_1{'}}'})",
-          "VAR_RULES": "Variables cannot be at the beginning or end of the message. Use letters, numbers, and underscores only inside {'{{'}  {'}}'}.",
+          "VAR_RULES": "Variables cannot be at the beginning or end of the message. Use lowercase letters, numbers, and underscores only inside {'{{'}  {'}}'} (e.g. {'{{'}customer_name{'}}'}).",
           "FORMAT_MISMATCH_POSITIONAL": "The template contains incorrectly formatted variable parameters. Positional variable parameters must be sequential numbers with two pairs of curly braces (e.g., {'{{'}1{'}}'}, {'{{'}2{'}}'}, {'{{'}3{'}}'}).",
           "FORMAT_MISMATCH_NAMED": "The template contains incorrectly formatted variable parameters. Named variable parameters must be lowercase characters, underscores, and numbers with two pairs of curly braces (e.g., {'{{'}customer_name{'}}'}, {'{{'}order_id{'}}'}).",
           "VAR_SAMPLES": {

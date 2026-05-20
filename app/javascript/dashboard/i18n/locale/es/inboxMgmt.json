@@ -1222,7 +1222,7 @@
           "VAR_FORMAT": "Formato de variable",
           "FORMAT_POSITIONAL": "Posicional ({'{{'}1{'}}'}, {'{{'}2{'}}'})",
           "FORMAT_NAMED": "Con nombre ({'{{'}variable_1{'}}'})",
-          "VAR_RULES": "Las variables no pueden estar al principio ni al final del mensaje. Usa solo letras, números y guiones bajos dentro de {'{{'}  {'}}'}.",
+          "VAR_RULES": "Las variables no pueden estar al principio ni al final del mensaje. Usa solo letras minúsculas, números y guiones bajos dentro de {'{{'}  {'}}'} (ej. {'{{'}nombre_cliente{'}}'}).",
           "FORMAT_MISMATCH_POSITIONAL": "La plantilla contiene parámetros de variables con formato incorrecto. Los parámetros de variables posicionales deben ser números secuenciales con dos pares de llaves (por ejemplo, {'{{'}1{'}}'}, {'{{'}2{'}}'}, {'{{'}3{'}}'}).",
           "FORMAT_MISMATCH_NAMED": "La plantilla contiene parámetros de variables con formato incorrecto. Los parámetros de variables con nombre deben ser caracteres en minúscula, guiones bajos y números con dos pares de llaves (por ejemplo, {'{{'}customer_name{'}}'}, {'{{'}order_id{'}}'}).",
           "VAR_SAMPLES": {

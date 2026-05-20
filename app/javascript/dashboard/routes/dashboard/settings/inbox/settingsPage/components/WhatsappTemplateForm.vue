@@ -135,18 +135,38 @@ watch(
   () => clearHeaderMediaSample()
 );
 
-// Meta requires named variable parameters to be lowercase characters, underscores and numbers.
-// To keep UX permissive we silently normalize {{Nombre}} -> {{nombre}} as the user types.
+// Meta requires named variable parameters to match [a-z0-9_]+. To keep UX permissive
+// we silently normalize the content inside {{...}} as the user types:
+//   - lowercase
+//   - strip accents (NFD decompose + remove combining marks): año -> ano, niño -> nino
+//   - replace anything outside [a-z0-9_] (spaces, punctuation, emojis) with underscores
+//   - collapse runs of underscores and trim from edges
 // Only runs in 'named' mode (positional variables are digits, no-op).
-const lowercaseTemplateVariables = text => {
-  if (!text) return text;
-  return text.replace(/\{\{([^}]+)\}\}/g, (_match, varName) => `{{${varName.toLowerCase()}}}`);
+const normalizeVariableName = name => {
+  return String(name ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
 };
 
-const lowercaseExampleKeys = examples => {
+const normalizeTemplateVariables = text => {
+  if (!text) return text;
+  return text.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
+    const normalized = normalizeVariableName(varName);
+    // If normalization wipes the name out (e.g. {{!!!}}), keep the raw input so the
+    // user can see and fix it instead of producing an empty placeholder.
+    return normalized ? `{{${normalized}}}` : match;
+  });
+};
+
+const normalizeExampleKeys = examples => {
   const out = {};
   for (const [key, value] of Object.entries(examples || {})) {
-    out[key.toLowerCase()] = value;
+    const normalizedKey = normalizeVariableName(key);
+    if (normalizedKey) out[normalizedKey] = value;
   }
   return out;
 };
@@ -155,10 +175,10 @@ watch(
   () => state.bodyText,
   newText => {
     if (state.parameterFormat !== 'named') return;
-    const normalized = lowercaseTemplateVariables(newText);
+    const normalized = normalizeTemplateVariables(newText);
     if (normalized !== newText) {
       state.bodyText = normalized;
-      state.variableExamples = lowercaseExampleKeys(state.variableExamples);
+      state.variableExamples = normalizeExampleKeys(state.variableExamples);
     }
   }
 );
@@ -167,10 +187,10 @@ watch(
   () => state.headerText,
   newText => {
     if (state.parameterFormat !== 'named') return;
-    const normalized = lowercaseTemplateVariables(newText);
+    const normalized = normalizeTemplateVariables(newText);
     if (normalized !== newText) {
       state.headerText = normalized;
-      state.variableExamples = lowercaseExampleKeys(state.variableExamples);
+      state.variableExamples = normalizeExampleKeys(state.variableExamples);
     }
   }
 );
@@ -180,9 +200,9 @@ watch(
   () => state.parameterFormat,
   newFormat => {
     if (newFormat !== 'named') return;
-    state.bodyText = lowercaseTemplateVariables(state.bodyText);
-    state.headerText = lowercaseTemplateVariables(state.headerText);
-    state.variableExamples = lowercaseExampleKeys(state.variableExamples);
+    state.bodyText = normalizeTemplateVariables(state.bodyText);
+    state.headerText = normalizeTemplateVariables(state.headerText);
+    state.variableExamples = normalizeExampleKeys(state.variableExamples);
   }
 );
 

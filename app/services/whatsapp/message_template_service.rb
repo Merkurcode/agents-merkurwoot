@@ -358,8 +358,14 @@ class Whatsapp::MessageTemplateService
       name: sanitize_template_name(params[:name]),
       language: params[:language],
       category: params[:category],
+      parameter_format: normalize_parameter_format(params[:parameter_format]),
       components: build_components(params)
     }
+  end
+
+  # Meta accepts POSITIONAL or NAMED. We default to POSITIONAL when unspecified.
+  def normalize_parameter_format(value)
+    %w[positional named].include?(value.to_s.downcase) ? value.to_s.upcase : 'POSITIONAL'
   end
 
   def sanitize_template_name(name)
@@ -369,14 +375,15 @@ class Whatsapp::MessageTemplateService
 
   def build_components(params)
     components = []
+    parameter_format = (params[:parameter_format] || 'positional').to_s.downcase
 
     # Header component (optional)
     if params[:header].present?
-      components << build_header_component(params[:header])
+      components << build_header_component(params[:header], parameter_format)
     end
 
     # Body component (required)
-    components << build_body_component(params[:body])
+    components << build_body_component(params[:body], parameter_format)
 
     # Footer component (optional)
     if params[:footer].present? && params[:footer][:text].present?
@@ -386,7 +393,7 @@ class Whatsapp::MessageTemplateService
     components.compact
   end
 
-  def build_header_component(header)
+  def build_header_component(header, parameter_format = 'positional')
     return nil if header.blank? || header[:format].blank?
 
     component = {
@@ -399,8 +406,8 @@ class Whatsapp::MessageTemplateService
       component[:text] = header[:text] if header[:text].present?
       # Add example for text with variables
       if header[:text]&.include?('{{')
-        example_values = extract_example_values_from_text(header[:text], header[:examples])
-        component[:example] = { header_text: example_values } if example_values.any?
+        example_payload = build_text_example(header[:text], header[:examples], parameter_format, :header)
+        component[:example] = example_payload if example_payload
       end
     when 'IMAGE', 'VIDEO', 'DOCUMENT'
       if header[:example_handle].present?
@@ -411,7 +418,7 @@ class Whatsapp::MessageTemplateService
     component
   end
 
-  def build_body_component(body)
+  def build_body_component(body, parameter_format = 'positional')
     component = {
       type: 'BODY',
       text: body[:text]
@@ -419,11 +426,45 @@ class Whatsapp::MessageTemplateService
 
     # Add example values for variables in body
     if body[:text]&.include?('{{')
-      example_values = extract_example_values_from_text(body[:text], body[:examples])
-      component[:example] = { body_text: [example_values] } if example_values.any?
+      example_payload = build_text_example(body[:text], body[:examples], parameter_format, :body)
+      component[:example] = example_payload if example_payload
     end
 
     component
+  end
+
+  # Build the example payload for a text component (header or body). The shape Meta expects depends
+  # on parameter_format: POSITIONAL uses an array of values, NAMED uses an array of {param_name, example}.
+  def build_text_example(text, provided_examples, parameter_format, scope)
+    return nil if text.blank?
+
+    if parameter_format == 'named'
+      named_examples = extract_named_examples_from_text(text, provided_examples)
+      return nil if named_examples.empty?
+
+      key = scope == :body ? :body_text_named_params : :header_text_named_params
+      { key => named_examples }
+    else
+      example_values = extract_example_values_from_text(text, provided_examples)
+      return nil if example_values.empty?
+
+      # Body wants [[v1, v2, ...]] (array of arrays), header just [v1].
+      scope == :body ? { body_text: [example_values] } : { header_text: example_values }
+    end
+  end
+
+  def extract_named_examples_from_text(text, provided_examples = nil)
+    variables = text.scan(/\{\{([^}]+)\}\}/).flatten.uniq
+    examples_hash = (provided_examples || {}).transform_keys(&:to_s).transform_values do |v|
+      sanitize_example_value(v)
+    end
+
+    variables.map do |var|
+      {
+        param_name: var,
+        example: examples_hash[var] || "example_#{var}"
+      }
+    end
   end
 
   def build_footer_component(footer)

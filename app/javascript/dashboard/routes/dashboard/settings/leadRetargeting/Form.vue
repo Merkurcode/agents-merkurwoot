@@ -645,8 +645,8 @@ const getTemplateParams = templateName => {
   const bodyComponent = template.components?.find(c => c.type === 'BODY');
   if (!bodyComponent || !bodyComponent.text) return [];
 
-  const matches = bodyComponent.text.match(/\{\{(\d+)\}\}/g);
-  return matches || [];
+  const matches = bodyComponent.text.match(/\{\{([^}]+)\}\}/g) || [];
+  return matches.map(m => m.slice(2, -2));
 };
 
 const getTemplateHeaderFormat = templateName => {
@@ -703,8 +703,8 @@ const onTemplateChange = (step, configPath = 'config') => {
   const params = getTemplateParams(config.template_name);
   const bodyParams = {};
 
-  params.forEach((_, idx) => {
-    bodyParams[idx + 1] = config.template_params.body?.[idx + 1] || '';
+  params.forEach(varName => {
+    bodyParams[varName] = config.template_params.body?.[varName] || '';
   });
 
   config.template_params.body = bodyParams;
@@ -2701,20 +2701,18 @@ const saveSequence = async () => {
                               {{ t('LEAD_RETARGETING.STEPS.FIRST_CONTACT.PARAMS') }}
                             </label>
                             <div
-                              v-for="(param, idx) in getTemplateParams(
+                              v-for="param in getTemplateParams(
                                 step.config.template_name
                               )"
-                              :key="idx"
+                              :key="param"
                               class="flex items-center gap-2"
                             >
-                              <span class="text-xs text-n-slate-11 w-16">{{ '{' + '{' + (idx + 1) + '}' + '}' }}:</span>
+                              <span class="text-xs text-n-slate-11 w-16">{{ '{' + '{' + param + '}' + '}' }}:</span>
                               <input
-                                v-model="
-                                  step.config.template_params.body[idx + 1]
-                                "
+                                v-model="step.config.template_params.body[param]"
                                 type="text"
                                 class="flex-1 px-2 py-1 text-sm"
-                                :placeholder="`Valor para parámetro ${idx + 1}`"
+                                :placeholder="'Valor para: ' + param"
                               />
                             </div>
                             <div
@@ -3152,21 +3150,18 @@ const saveSequence = async () => {
                               class="block text-xs font-medium text-n-slate-12 mb-2"
                               >Parámetros del Template</label>
                             <div
-                              v-for="(param, idx) in getTemplateParams(
+                              v-for="param in getTemplateParams(
                                 step.config.template_config.template_name
                               )"
-                              :key="idx"
+                              :key="param"
                               class="flex items-center gap-2"
                             >
-                              <span class="text-xs text-n-slate-11 w-16">{{ '{' + '{' + (idx + 1) + '}' + '}' }}:</span>
+                              <span class="text-xs text-n-slate-11 w-16">{{ '{' + '{' + param + '}' + '}' }}:</span>
                               <input
-                                v-model="
-                                  step.config.template_config.template_params
-                                    .body[idx + 1]
-                                "
+                                v-model="step.config.template_config.template_params.body[param]"
                                 type="text"
                                 class="flex-1 px-2 py-1 text-sm"
-                                :placeholder="`Valor para parámetro ${idx + 1}`"
+                                :placeholder="'Valor para: ' + param"
                               />
                             </div>
                             <div

@@ -306,6 +306,100 @@ RSpec.describe LeadRetargeting::SendFollowUpService do
       end
     end
 
+    describe 'send_email step variable rendering' do
+      let(:email_channel) { create(:channel_email, account: account) }
+      let(:email_inbox) { email_channel.inbox }
+      let(:agent_bot) { create(:agent_bot, outgoing_url: 'https://bot.example.com/webhook') }
+      let(:contact) do
+        create(:contact, account: account,
+                         name: 'Ana López',
+                         email: 'ana@example.com',
+                         phone_number: '+521234567890',
+                         custom_attributes: { 'ciudad' => 'Monterrey', 'producto' => 'Premium' })
+      end
+      let(:conversation) { create(:conversation, account: account, inbox: email_inbox, contact: contact) }
+
+      before do
+        create(:agent_bot_inbox, inbox: email_inbox, agent_bot: agent_bot)
+        sequence.update!(steps: [email_step])
+      end
+
+      let(:email_step) do
+        {
+          'id' => 'step_email',
+          'type' => 'send_email',
+          'enabled' => true,
+          'config' => {
+            'email_inbox_id' => email_inbox.id,
+            'sender_email' => 'soporte@empresa.com',
+            'subject' => 'Hola {{contact.name}}, tu ciudad es {{custom_attr.ciudad}}',
+            'content' => 'Tu producto {{custom_attr.producto}} está listo. Contáctanos al {{contact.phone_number}}.'
+          }
+        }
+      end
+
+      it 'resuelve variables de contacto en subject y content antes de enviar el webhook' do
+        expect(AgentBots::WebhookJob).to receive(:perform_later) do |url, payload, *|
+          expect(url).to eq('https://bot.example.com/webhook')
+          variables = payload.dig(:follow_up_data, :variables)
+          expect(variables[:subject]).to eq('Hola Ana López, tu ciudad es Monterrey')
+          expect(variables[:content]).to eq('Tu producto Premium está listo. Contáctanos al +521234567890.')
+        end
+
+        service.execute
+      end
+
+      it 'resuelve atributos personalizados (custom_attr) en subject' do
+        expect(AgentBots::WebhookJob).to receive(:perform_later) do |_url, payload, *|
+          subject_value = payload.dig(:follow_up_data, :variables, :subject)
+          expect(subject_value).to include('Monterrey')
+          expect(subject_value).not_to include('{{custom_attr.ciudad}}')
+        end
+
+        service.execute
+      end
+
+      it 'incluye sender_email en las variables del webhook' do
+        expect(AgentBots::WebhookJob).to receive(:perform_later) do |_url, payload, *|
+          expect(payload.dig(:follow_up_data, :variables, :sender_email)).to eq('soporte@empresa.com')
+        end
+
+        service.execute
+      end
+
+      it 'falla con éxito si el contacto no tiene email' do
+        contact.update!(email: nil)
+        result = service.send(:execute_email_step, email_step)
+        expect(result[:success]).to be false
+        expect(result[:error]).to eq('Contact has no email address')
+      end
+
+      context 'cuando subject y content están vacíos (la IA los genera)' do
+        let(:email_step) do
+          {
+            'id' => 'step_email_empty',
+            'type' => 'send_email',
+            'enabled' => true,
+            'config' => {
+              'email_inbox_id' => email_inbox.id,
+              'subject' => '',
+              'content' => ''
+            }
+          }
+        end
+
+        it 'envía strings vacíos sin errores de resolución' do
+          expect(AgentBots::WebhookJob).to receive(:perform_later) do |_url, payload, *|
+            variables = payload.dig(:follow_up_data, :variables)
+            expect(variables[:subject]).to eq('')
+            expect(variables[:content]).to eq('')
+          end
+
+          service.execute
+        end
+      end
+    end
+
     describe '#within_messaging_window?' do
       it 'calls MessageWindowService' do
         window_service = instance_double(Conversations::MessageWindowService)

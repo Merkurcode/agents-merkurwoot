@@ -17,17 +17,19 @@ FactoryBot.define do
           }
         },
         {
-          'id' => 'template_1',
-          'type' => 'send_template',
+          'id' => 'message_1',
+          'type' => 'send_message',
           'enabled' => true,
           'config' => {
-            'template_name' => 'follow_up_message',
-            'language' => 'en',
-            'template_params' => {
-              'body' => {
-                '1' => '{{contact.name}}'
-              }
-            }
+            'closed_window_action' => 'send_template',
+            'ai_config' => { 'enabled' => false, 'context' => '', 'variables' => {} },
+            'template_config' => {
+              'template_name' => 'follow_up_message',
+              'language' => 'en',
+              'template_params' => { 'body' => { '1' => '{{contact.name}}' } }
+            },
+            'sms_config' => { 'context' => '', 'variables' => {} },
+            'email_config' => { 'context' => '', 'variables' => {} }
           }
         }
       ]

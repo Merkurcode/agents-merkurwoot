@@ -707,27 +707,24 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     agent_bot = conversation.inbox.agent_bot
     raise "No agent bot configured for inbox #{conversation.inbox.id}" unless agent_bot
 
-    # Construir contexto con variables de Notion
-    context = build_context_with_notion_variables(config['sms_context'] || '', record, sequence)
+    contact = conversation.contact
+    step = sequence.steps.find { |s| s['type'] == 'first_contact' }
 
-    payload = {
-      event: 'lead_followup.first_contact_request',
-      conversation_id: conversation.id,
-      agent_bot_id: agent_bot.id,
+    rendered_context = render_param_value(config['sms_context'] || '', contact, record, sequence)
+
+    payload = build_first_contact_payload(
+      sequence: sequence,
+      conversation: conversation,
+      contact: contact,
+      step: step,
+      record: record,
       channel: 'whatsapp',
-      context: context,
-      notion_data: extract_notion_data(record, sequence)
-    }
+      reply_inbox: conversation.inbox,
+      context: rendered_context,
+      variables: {}
+    )
 
-    # Enviar webhook al agent bot
-    webhook_url = agent_bot.outgoing_url
-    HTTParty.post(webhook_url, {
-      body: payload.to_json,
-      headers: { 'Content-Type' => 'application/json' },
-      timeout: 30
-    })
-
-    Rails.logger.info "Sent AI first contact request for conversation #{conversation.id}"
+    post_first_contact_webhook(agent_bot, payload, 'whatsapp', conversation.id)
   rescue StandardError => e
     Rails.logger.error "Failed to send AI first contact: #{e.message}"
     raise
@@ -737,25 +734,24 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     agent_bot = conversation.inbox.agent_bot
     raise "No agent bot configured for inbox #{conversation.inbox.id}" unless agent_bot
 
-    context = build_context_with_notion_variables(config['sms_context'] || '', record, sequence)
+    contact = conversation.contact
+    step = sequence.steps.find { |s| s['type'] == 'first_contact' }
 
-    payload = {
-      event: 'lead_followup.first_contact_request',
-      conversation_id: conversation.id,
-      agent_bot_id: agent_bot.id,
+    rendered_context = render_param_value(config['sms_context'] || '', contact, record, sequence)
+
+    payload = build_first_contact_payload(
+      sequence: sequence,
+      conversation: conversation,
+      contact: contact,
+      step: step,
+      record: record,
       channel: 'sms',
-      context: context,
-      notion_data: extract_notion_data(record, sequence)
-    }
+      reply_inbox: conversation.inbox,
+      context: rendered_context,
+      variables: {}
+    )
 
-    webhook_url = agent_bot.outgoing_url
-    HTTParty.post(webhook_url, {
-      body: payload.to_json,
-      headers: { 'Content-Type' => 'application/json' },
-      timeout: 30
-    })
-
-    Rails.logger.info "Sent SMS first contact request for conversation #{conversation.id}"
+    post_first_contact_webhook(agent_bot, payload, 'sms', conversation.id)
   rescue StandardError => e
     Rails.logger.error "Failed to send SMS first contact: #{e.message}"
     raise
@@ -768,34 +764,84 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     agent_bot = inbox.agent_bot
     raise "No agent bot configured for email inbox #{inbox.id}" unless agent_bot
 
-    context = build_context_with_notion_variables(config['email_context'] || '', record, sequence)
+    step = sequence.steps.find { |s| s['type'] == 'first_contact' }
+
+    rendered_context = render_param_value(config['email_context'] || '', contact, record, sequence)
+    rendered_subject = render_param_value(config['subject'] || '', contact, record, sequence)
+    rendered_content = render_param_value(config['content'] || '', contact, record, sequence)
     sender_email = config['sender_email'].presence || sequence.account.support_email
 
-    payload = {
-      event: 'lead_followup.first_contact_request',
-      conversation_id: conversation.id,
-      agent_bot_id: agent_bot.id,
+    payload = build_first_contact_payload(
+      sequence: sequence,
+      conversation: conversation,
+      contact: contact,
+      step: step,
+      record: record,
       channel: 'email',
-      context: context,
+      reply_inbox: inbox,
+      context: rendered_context,
       variables: {
         to_email: contact.email,
         sender_email: sender_email,
-        subject: config['subject'],
-        content: config['content']
-      },
-      notion_data: extract_notion_data(record, sequence)
-    }
+        subject: rendered_subject,
+        content: rendered_content
+      }
+    )
 
+    post_first_contact_webhook(agent_bot, payload, 'email', conversation.id)
+  rescue StandardError => e
+    Rails.logger.error "Failed to send email first contact: #{e.message}"
+    raise
+  end
+
+  def build_first_contact_payload(sequence:, conversation:, contact:, step:, record:, channel:, reply_inbox:, context:, variables:)
+    last_message = conversation.messages.where.not(message_type: :activity).order(created_at: :desc).first
+    last_message_timestamp = last_message&.created_at&.to_i
+
+    {
+      event: 'lead_followup.first_contact_request',
+      idempotency_key: generate_first_contact_idempotency_key(sequence: sequence, record: record, step: step),
+      account: sequence.account.webhook_data,
+      inbox: conversation.inbox.webhook_data,
+      conversation: conversation.webhook_data.merge(
+        last_activity_at: conversation.last_activity_at.to_i,
+        last_message_at: last_message_timestamp
+      ),
+      contact: contact.push_event_data,
+      follow_up_data: {
+        sequence_id: sequence.id,
+        sequence_name: sequence.name,
+        step_id: step&.dig('id'),
+        step_name: step&.dig('name'),
+        current_step: 0,
+        message_channel: channel,
+        reply_inbox: {
+          id: reply_inbox.id,
+          name: reply_inbox.name,
+          channel_type: reply_inbox.channel_type,
+          phone_number: reply_inbox.channel&.try(:phone_number),
+          email: reply_inbox.channel&.try(:email)
+        },
+        context: context,
+        variables: variables,
+        notion_data: extract_notion_data(record, sequence)
+      }
+    }
+  end
+
+  def generate_first_contact_idempotency_key(sequence:, record:, step:)
+    base = "first_contact-#{sequence.id}-#{record[:id]}-#{step&.dig('id')}"
+    Digest::SHA256.hexdigest(base)
+  end
+
+  def post_first_contact_webhook(agent_bot, payload, channel, conversation_id)
     HTTParty.post(agent_bot.outgoing_url, {
       body: payload.to_json,
       headers: { 'Content-Type' => 'application/json' },
       timeout: 30
     })
 
-    Rails.logger.info "Sent email first contact request for conversation #{conversation.id}"
-  rescue StandardError => e
-    Rails.logger.error "Failed to send email first contact: #{e.message}"
-    raise
+    Rails.logger.info "Sent #{channel} first contact request for conversation #{conversation_id}"
   end
 
   def build_context_with_notion_variables(context, record, sequence)

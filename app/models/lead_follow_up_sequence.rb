@@ -575,6 +575,8 @@ class LeadFollowUpSequence < ApplicationRecord
     }
   end
 
+  public
+
   # Determine if manual update is needed (usually no, if using counter_culture correctly)
   # Keeping this method signature to avoid breaking callers, but it simply returns current stats
   def update_stats!
@@ -583,6 +585,8 @@ class LeadFollowUpSequence < ApplicationRecord
     # rely on the consumer to use the new columns + calculate_stats.
     update_column(:stats, calculate_stats)
   end
+
+  private
 
   def notion_database?
     source_type == 'notion_database'

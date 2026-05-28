@@ -1228,7 +1228,7 @@
         "EMAIL_INBOX": "Email Inbox (optional)",
         "SELECT_EMAIL_INBOX": "Use conversation inbox (default)...",
         "SENDER_EMAIL": "Sender Email (optional)",
-        "SENDER_EMAIL_PLACEHOLDER": "e.g., support@yourcompany.com",
+        "SENDER_EMAIL_PLACEHOLDER": "e.g., support{'@'}yourcompany.com",
         "SUBJECT": "Email Subject (optional)",
         "SUBJECT_PLACEHOLDER": "If left blank, AI will generate the subject...",
         "CONTENT": "Email Content (optional)",

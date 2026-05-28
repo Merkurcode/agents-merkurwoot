@@ -693,6 +693,13 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     result.gsub!('{{contact.phone_number}}', contact.phone_number.to_s)
     result.gsub!('{{contact.email}}', contact.email.to_s)
 
+    # Replace custom attribute variables: {{custom_attr.key}}
+    result.scan(/\{\{custom_attr\.([^}]+)\}\}/).each do |match|
+      attr_key = match[0]
+      attr_value = contact.custom_attributes&.dig(attr_key)
+      result.gsub!("{{custom_attr.#{attr_key}}}", attr_value.to_s)
+    end
+
     # Replace Notion field variables
     result.scan(/\{\{notion\.([^}]+)\}\}/).each do |match|
       field_name = match[0]

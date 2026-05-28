@@ -38,6 +38,34 @@ const labels = computed(() => getters['labels/getLabels'].value);
 const pipelineStatuses = computed(
   () => getters['pipelineStatuses/getPipelineStatuses'].value
 );
+const contactCustomAttributes = computed(
+  () => getters['attributes/getContactAttributes'].value || []
+);
+
+const STANDARD_CONTACT_VARS = [
+  { label: 'Nombre', value: '{{contact.name}}' },
+  { label: 'Teléfono', value: '{{contact.phone_number}}' },
+  { label: 'Email', value: '{{contact.email}}' },
+  { label: 'Ciudad', value: '{{contact.city}}' },
+];
+
+const allAiVariables = computed(() => [
+  ...STANDARD_CONTACT_VARS,
+  ...contactCustomAttributes.value.map(attr => ({
+    label: attr.attributeDisplayName,
+    value: `{{custom_attr.${attr.attributeKey}}}`,
+  })),
+]);
+
+const isAiVariableSelected = (variablesObj, label) => !!variablesObj?.[label];
+
+const toggleAiVariable = (variablesObj, label, value) => {
+  if (variablesObj[label]) {
+    delete variablesObj[label];
+  } else {
+    variablesObj[label] = value;
+  }
+};
 
 // Transform data for TagMultiSelectComboBox
 const labelOptions = computed(() => {
@@ -205,6 +233,7 @@ onMounted(async () => {
     store.dispatch('teams/get'),
     store.dispatch('labels/get'),
     store.dispatch('pipelineStatuses/get'),
+    store.dispatch('attributes/get'),
   ]);
 
   if (isEdit.value) {
@@ -478,6 +507,7 @@ const addStep = type => {
           variables: {},
         },
         email_config: {
+          context: '',
           variables: {},
         },
       },
@@ -2733,6 +2763,15 @@ const saveSequence = async () => {
                                 >
                                   {{ '{' + '{' + variable + '}' + '}' }}
                                 </code>
+                                <code
+                                  v-for="attr in contactCustomAttributes"
+                                  :key="attr.attributeKey"
+                                  class="px-2 py-0.5 bg-white dark:bg-n-slate-3 border border-n-iris-6 rounded cursor-pointer hover:bg-n-iris-4 text-n-slate-12"
+                                  :title="attr.attributeDisplayName"
+                                  @click="copyToClipboard(`{{custom_attr.${attr.attributeKey}}}`)"
+                                >
+                                  {{ '{' + '{' + 'custom_attr.' + attr.attributeKey + '}' + '}' }}
+                                </code>
                               </div>
                             </div>
                           </div>
@@ -3183,6 +3222,15 @@ const saveSequence = async () => {
                                 >
                                   {{ '{' + '{' + variable + '}' + '}' }}
                                 </code>
+                                <code
+                                  v-for="attr in contactCustomAttributes"
+                                  :key="attr.attributeKey"
+                                  class="px-2 py-0.5 bg-white dark:bg-n-slate-3 border border-n-iris-6 rounded cursor-pointer hover:bg-n-iris-4 text-n-slate-12"
+                                  :title="attr.attributeDisplayName"
+                                  @click="copyToClipboard(`{{custom_attr.${attr.attributeKey}}}`)"
+                                >
+                                  {{ '{' + '{' + 'custom_attr.' + attr.attributeKey + '}' + '}' }}
+                                </code>
                               </div>
                             </div>
                           </div>
@@ -3258,7 +3306,7 @@ const saveSequence = async () => {
                         <!-- SMS Config (if send_sms) -->
                         <div
                           v-if="step.config.closed_window_action === 'send_sms'"
-                          class="space-y-2 mt-3 pt-3 border-t border-n-amber-6"
+                          class="space-y-3 mt-3 pt-3 border-t border-n-amber-6"
                         >
                           <!-- SMS Inbox selector -->
                           <div>
@@ -3282,46 +3330,67 @@ const saveSequence = async () => {
                             </select>
                           </div>
 
-                          <!-- SMS Context (Optional) -->
+                          <!-- SMS Context -->
                           <div>
-                            <label
-                              class="block text-xs font-medium text-n-slate-12 mb-1"
-                            >
-                              {{
-                                t(
-                                  'LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.CONTEXT'
-                                )
-                              }}
-                              <span class="text-n-slate-11 font-normal">({{
-                                  t(
-                                    'LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.OPTIONAL'
-                                  )
-                                }})</span>
+                            <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                              {{ t('LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.CONTEXT') }}
+                              <span class="text-n-slate-11 font-normal">({{ t('LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.OPTIONAL') }})</span>
                             </label>
                             <textarea
                               v-model="step.config.sms_config.context"
                               rows="3"
                               class="w-full text-sm"
-                              :placeholder="
-                                t(
-                                  'LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.CONTEXT_PLACEHOLDER'
-                                )
-                              "
+                              :placeholder="t('LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.CONTEXT_PLACEHOLDER')"
                             />
                             <p class="text-xs text-n-slate-11 mt-1">
-                              {{
-                                t(
-                                  'LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.CONTEXT_HELP'
-                                )
-                              }}
+                              {{ t('LEAD_RETARGETING.STEPS.SEND_MESSAGE.SMS_CONFIG.CONTEXT_HELP') }}
                             </p>
+                          </div>
+
+                          <!-- Variables de personalización SMS -->
+                          <div class="p-3 bg-n-slate-2 dark:bg-n-slate-3 rounded-lg space-y-2">
+                            <p class="text-xs font-medium text-n-slate-12">
+                              Datos del contacto para personalizar el mensaje
+                            </p>
+                            <p class="text-xs text-n-slate-11">
+                              El agente de IA recibirá estos valores con el nombre del campo para generar un mensaje personalizado.
+                            </p>
+                            <div class="grid grid-cols-2 gap-1.5 mt-2">
+                              <label
+                                v-for="variable in allAiVariables"
+                                :key="variable.label"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded border cursor-pointer transition-colors"
+                                :class="isAiVariableSelected(step.config.sms_config.variables, variable.label)
+                                  ? 'border-n-blue-7 bg-n-blue-3 dark:bg-n-blue-4'
+                                  : 'border-n-weak/60 hover:border-n-blue-6 hover:bg-n-weak/30'"
+                              >
+                                <input
+                                  type="checkbox"
+                                  class="rounded text-n-blue-9 flex-shrink-0"
+                                  :checked="isAiVariableSelected(step.config.sms_config.variables, variable.label)"
+                                  @change="toggleAiVariable(step.config.sms_config.variables, variable.label, variable.value)"
+                                />
+                                <span class="text-xs text-n-slate-12 truncate">{{ variable.label }}</span>
+                              </label>
+                            </div>
+                            <div
+                              v-if="Object.keys(step.config.sms_config.variables || {}).length > 0"
+                              class="mt-2 p-2 bg-n-blue-2 dark:bg-n-blue-3 rounded text-xs text-n-slate-11"
+                            >
+                              El agente recibirá:
+                              <span
+                                v-for="(val, key) in step.config.sms_config.variables"
+                                :key="key"
+                                class="inline-block ml-1 font-medium text-n-slate-12"
+                              >{{ key }},</span>
+                            </div>
                           </div>
                         </div>
 
                         <!-- Email Config (if send_email) -->
                         <div
                           v-if="step.config.closed_window_action === 'send_email'"
-                          class="space-y-2 mt-3 pt-3 border-t border-n-amber-6"
+                          class="space-y-3 mt-3 pt-3 border-t border-n-amber-6"
                         >
                           <!-- Email Inbox selector -->
                           <div>
@@ -3345,6 +3414,61 @@ const saveSequence = async () => {
                             </select>
                           </div>
 
+                          <!-- Email Context -->
+                          <div>
+                            <label class="block text-xs font-medium text-n-slate-12 mb-1">
+                              Contexto para el agente de IA
+                              <span class="text-n-slate-11 font-normal">(opcional)</span>
+                            </label>
+                            <textarea
+                              v-model="step.config.email_config.context"
+                              rows="3"
+                              class="w-full text-sm"
+                              placeholder="Ej: Envía un correo recordándole al cliente sobre su cita pendiente, con tono profesional y amable."
+                            />
+                            <p class="text-xs text-n-slate-11 mt-1">
+                              Instrucciones que guiarán al agente para redactar el correo.
+                            </p>
+                          </div>
+
+                          <!-- Variables de personalización Email -->
+                          <div class="p-3 bg-n-slate-2 dark:bg-n-slate-3 rounded-lg space-y-2">
+                            <p class="text-xs font-medium text-n-slate-12">
+                              Datos del contacto para personalizar el correo
+                            </p>
+                            <p class="text-xs text-n-slate-11">
+                              El agente de IA recibirá estos valores con el nombre del campo para generar un correo personalizado.
+                            </p>
+                            <div class="grid grid-cols-2 gap-1.5 mt-2">
+                              <label
+                                v-for="variable in allAiVariables"
+                                :key="variable.label"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded border cursor-pointer transition-colors"
+                                :class="isAiVariableSelected(step.config.email_config.variables, variable.label)
+                                  ? 'border-n-blue-7 bg-n-blue-3 dark:bg-n-blue-4'
+                                  : 'border-n-weak/60 hover:border-n-blue-6 hover:bg-n-weak/30'"
+                              >
+                                <input
+                                  type="checkbox"
+                                  class="rounded text-n-blue-9 flex-shrink-0"
+                                  :checked="isAiVariableSelected(step.config.email_config.variables, variable.label)"
+                                  @change="toggleAiVariable(step.config.email_config.variables, variable.label, variable.value)"
+                                />
+                                <span class="text-xs text-n-slate-12 truncate">{{ variable.label }}</span>
+                              </label>
+                            </div>
+                            <div
+                              v-if="Object.keys(step.config.email_config.variables || {}).length > 0"
+                              class="mt-2 p-2 bg-n-blue-2 dark:bg-n-blue-3 rounded text-xs text-n-slate-11"
+                            >
+                              El agente recibirá:
+                              <span
+                                v-for="(val, key) in step.config.email_config.variables"
+                                :key="key"
+                                class="inline-block ml-1 font-medium text-n-slate-12"
+                              >{{ key }},</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -3436,11 +3560,23 @@ const saveSequence = async () => {
                               )
                             "
                           />
-                          <p class="text-xs text-n-slate-11 mt-1">
-                            {{
-                              t('LEAD_RETARGETING.STEPS.SEND_EMAIL.VARIABLES_HINT')
-                            }}
-                          </p>
+                          <!-- Variables disponibles -->
+                          <div class="mt-2 p-2 bg-n-blue-2 dark:bg-n-blue-3 rounded text-xs">
+                            <p class="font-medium text-n-slate-12 mb-1.5">
+                              Variables disponibles (clic para copiar):
+                            </p>
+                            <div class="flex flex-wrap gap-1.5">
+                              <code
+                                v-for="variable in allAiVariables"
+                                :key="variable.label"
+                                class="px-2 py-0.5 bg-white dark:bg-n-slate-3 border border-n-weak/60 rounded cursor-pointer hover:bg-n-blue-4 text-n-slate-12"
+                                :title="variable.value"
+                                @click="copyToClipboard(variable.value)"
+                              >
+                                {{ variable.value }}
+                              </code>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

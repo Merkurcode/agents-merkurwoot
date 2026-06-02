@@ -35,6 +35,7 @@ class AccountDashboard < Administrate::BaseDashboard
     status: Field::Select.with_options(collection: [%w[Active active], %w[Suspended suspended]]),
     pinecone_index: Field::String,
     pinecone_api_key: Field::String,
+    eleven_labs_agent_id: Field::String,
     account_users: Field::HasMany,
     account_addresses: AccountAddressesField,
     custom_attributes: Field::String
@@ -73,6 +74,7 @@ class AccountDashboard < Administrate::BaseDashboard
     status
     pinecone_index
     pinecone_api_key
+    eleven_labs_agent_id
     conversations
     account_users
     account_addresses
@@ -95,6 +97,7 @@ class AccountDashboard < Administrate::BaseDashboard
     status
     pinecone_index
     pinecone_api_key
+    eleven_labs_agent_id
     account_addresses
   ] + enterprise_form_attributes).freeze
 

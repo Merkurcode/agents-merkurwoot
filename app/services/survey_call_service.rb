@@ -45,6 +45,7 @@ class SurveyCallService
       customer_phone: @contact.phone_number,
       surveyId: @survey.id,
       accountId: @contact.account_id,
+      accountName: @contact.account.name,
       contactId: @contact.id
     }
   end

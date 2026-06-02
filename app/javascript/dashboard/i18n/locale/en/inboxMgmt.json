@@ -1106,7 +1106,8 @@
       "API": "API Channel",
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
-      "VOICE": "Voice"
+      "VOICE": "Voice",
+      "VOICE_AGENT": "Voice Agent"
     },
     "WHATSAPP_TEMPLATES": {
       "TITLE": "WhatsApp Templates",

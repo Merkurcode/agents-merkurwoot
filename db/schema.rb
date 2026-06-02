@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -107,6 +107,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.bigint "feature_flags_2", default: 0, null: false
     t.bigint "product_catalog_version", default: 0, null: false
     t.string "pinecone_api_key"
+    t.string "eleven_labs_agent_id"
+    t.index ["eleven_labs_agent_id"], name: "index_accounts_on_eleven_labs_agent_id", unique: true
     t.index ["status"], name: "index_accounts_on_status"
   end
 
@@ -169,6 +171,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.jsonb "agent_behavior_config", default: {}
     t.string "openai_api_key"
     t.string "google_api_key"
+    t.string "secret"
     t.index ["account_id"], name: "index_agent_bots_on_account_id"
   end
 
@@ -351,6 +354,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.string "job_id"
     t.datetime "dismissed_at"
     t.string "operation_type", default: "UPLOAD"
+    t.string "import_format", default: "excel_sku", null: false
     t.index ["account_id"], name: "index_bulk_processing_requests_on_account_id"
     t.index ["created_at"], name: "index_bulk_processing_requests_on_created_at"
     t.index ["operation_type"], name: "index_bulk_processing_requests_on_operation_type"
@@ -666,6 +670,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.index ["phone_number"], name: "index_channel_voice_on_phone_number", unique: true
   end
 
+  create_table "channel_voice_agents", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_channel_voice_agents_on_account_id", unique: true
+  end
+
   create_table "channel_web_widgets", id: :serial, force: :cascade do |t|
     t.string "website_url"
     t.integer "account_id"
@@ -871,6 +882,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.integer "source_type", default: 0, null: false
     t.jsonb "source_metadata", default: {}
     t.datetime "discarded_at"
+    t.string "eleven_labs_conversation_id"
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
@@ -881,6 +893,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.index ["contact_inbox_id"], name: "index_conversations_on_contact_inbox_id"
     t.index ["conversation_type"], name: "index_conversations_on_conversation_type"
     t.index ["discarded_at"], name: "index_conversations_on_discarded_at"
+    t.index ["eleven_labs_conversation_id"], name: "index_conversations_on_eleven_labs_conversation_id", unique: true, where: "(eleven_labs_conversation_id IS NOT NULL)"
     t.index ["first_reply_created_at"], name: "index_conversations_on_first_reply_created_at"
     t.index ["identifier", "account_id"], name: "index_conversations_on_identifier_and_account_id"
     t.index ["inbox_id"], name: "index_conversations_on_inbox_id"
@@ -1489,6 +1502,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.bigint "account_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "position"
+    t.string "pipeline_type", default: "conversation", null: false
+    t.index ["account_id", "pipeline_type"], name: "index_pipeline_statuses_on_account_id_and_pipeline_type"
+    t.index ["account_id", "position"], name: "index_pipeline_statuses_on_account_id_and_position"
     t.index ["account_id"], name: "index_pipeline_statuses_on_account_id"
   end
 
@@ -1557,11 +1574,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.boolean "is_visible", default: true, null: false
     t.bigint "user_id"
     t.bigint "last_updated_by_id"
+    t.jsonb "metadata", default: {}, null: false
     t.index ["account_id", "product_id"], name: "index_product_catalogs_on_account_id_and_product_id", unique: true
     t.index ["account_id"], name: "index_product_catalogs_on_account_id"
     t.index ["bulk_processing_request_id"], name: "index_product_catalogs_on_bulk_processing_request_id"
     t.index ["created_at"], name: "index_product_catalogs_on_created_at"
     t.index ["last_updated_by_id"], name: "index_product_catalogs_on_last_updated_by_id"
+    t.index ["metadata"], name: "index_product_catalogs_on_metadata", using: :gin
     t.index ["user_id"], name: "index_product_catalogs_on_user_id"
   end
 
@@ -1594,6 +1613,29 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.index ["user_id"], name: "index_product_media_on_user_id"
   end
 
+  create_table "product_profiles", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "product_catalog_id"
+    t.string "product_id", null: false
+    t.string "display_name"
+    t.jsonb "perfil_producto"
+    t.jsonb "buyer_persona"
+    t.jsonb "atributos_y_beneficios"
+    t.jsonb "flujo_de_calificacion"
+    t.jsonb "manejo_de_objeciones"
+    t.jsonb "promociones"
+    t.text "notas"
+    t.jsonb "extensions", default: {}, null: false
+    t.string "source_file"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "product_id"], name: "uq_product_profiles_account_product", unique: true
+    t.index ["account_id"], name: "index_product_profiles_on_account_id"
+    t.index ["extensions"], name: "idx_product_profiles_extensions_gin", using: :gin
+    t.index ["product_catalog_id"], name: "index_product_profiles_on_product_catalog_id"
+  end
+
   create_table "related_categories", force: :cascade do |t|
     t.bigint "category_id"
     t.bigint "related_category_id"
@@ -1616,12 +1658,29 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.datetime "event_start_time", precision: nil
     t.datetime "event_end_time", precision: nil
     t.index ["account_id", "name", "created_at"], name: "reporting_events__account_id__name__created_at"
+    t.index ["account_id", "name", "inbox_id", "created_at"], name: "index_reporting_events_for_response_distribution"
     t.index ["account_id"], name: "index_reporting_events_on_account_id"
     t.index ["conversation_id"], name: "index_reporting_events_on_conversation_id"
     t.index ["created_at"], name: "index_reporting_events_on_created_at"
     t.index ["inbox_id"], name: "index_reporting_events_on_inbox_id"
     t.index ["name"], name: "index_reporting_events_on_name"
     t.index ["user_id"], name: "index_reporting_events_on_user_id"
+  end
+
+  create_table "reporting_events_rollups", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.date "date", null: false
+    t.string "dimension_type", null: false
+    t.bigint "dimension_id", null: false
+    t.string "metric", null: false
+    t.bigint "count", default: 0, null: false
+    t.float "sum_value", default: 0.0, null: false
+    t.float "sum_value_business_hours", default: 0.0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "date", "dimension_type", "dimension_id", "metric"], name: "index_rollup_unique_key", unique: true
+    t.index ["account_id", "dimension_type", "date"], name: "index_rollup_summary"
+    t.index ["account_id", "metric", "date"], name: "index_rollup_timeseries"
   end
 
   create_table "sequence_enrollments", force: :cascade do |t|
@@ -1749,6 +1808,31 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
+  create_table "tasks", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "description"
+    t.jsonb "execution_config", default: {}
+    t.string "entity_type"
+    t.bigint "entity_id"
+    t.integer "status", default: 0, null: false
+    t.integer "action_type", default: 0, null: false
+    t.datetime "scheduled_at"
+    t.bigint "assignee_id"
+    t.bigint "ai_agent_id"
+    t.bigint "account_id", null: false
+    t.bigint "creator_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_tasks_on_account_id_and_created_at"
+    t.index ["account_id", "scheduled_at", "status"], name: "index_tasks_on_account_id_and_scheduled_at_and_status"
+    t.index ["account_id", "status"], name: "index_tasks_on_account_id_and_status"
+    t.index ["account_id"], name: "index_tasks_on_account_id"
+    t.index ["ai_agent_id"], name: "index_tasks_on_ai_agent_id"
+    t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
+    t.index ["creator_id"], name: "index_tasks_on_creator_id"
+    t.index ["entity_type", "entity_id"], name: "index_tasks_on_entity_type_and_entity_id"
+  end
+
   create_table "team_members", force: :cascade do |t|
     t.bigint "team_id", null: false
     t.bigint "user_id", null: false
@@ -1837,6 +1921,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
     t.integer "webhook_type", default: 0
     t.jsonb "subscriptions", default: ["conversation_status_changed", "conversation_updated", "conversation_created", "contact_created", "contact_updated", "message_created", "message_updated", "webwidget_triggered"]
     t.string "name"
+    t.string "secret"
     t.index ["account_id", "url"], name: "index_webhooks_on_account_id_and_url", unique: true
   end
 
@@ -1860,6 +1945,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
   end
 
   add_foreign_key "account_addresses", "accounts"
+  add_foreign_key "account_profile_contexts", "accounts"
+  add_foreign_key "account_profile_contexts", "users", column: "updated_by_id"
   add_foreign_key "account_users", "account_users", column: "responsible_id"
   add_foreign_key "account_users", "locations"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -1873,9 +1960,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
   add_foreign_key "bulk_processing_requests", "users"
   add_foreign_key "campaign_contacts", "campaigns"
   add_foreign_key "campaign_contacts", "contacts"
+  add_foreign_key "captain_assistant_filter_run_conversations", "captain_assistant_filter_runs", column: "filter_run_id"
+  add_foreign_key "captain_assistant_filter_run_conversations", "conversations"
+  add_foreign_key "captain_assistant_filter_runs", "accounts"
+  add_foreign_key "captain_assistant_filter_runs", "captain_assistant_filters", column: "assistant_filter_id"
+  add_foreign_key "captain_assistant_filters", "accounts"
+  add_foreign_key "captain_assistant_filters", "captain_assistants"
   add_foreign_key "contact_survey_completions", "accounts"
   add_foreign_key "contact_survey_completions", "contacts"
   add_foreign_key "contact_survey_completions", "surveys"
+  add_foreign_key "contacts", "pipeline_statuses"
   add_foreign_key "conversation_follow_ups", "conversations"
   add_foreign_key "conversation_follow_ups", "lead_follow_up_sequences"
   add_foreign_key "conversation_follow_ups", "sequence_enrollments"
@@ -1927,6 +2021,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
   add_foreign_key "product_media", "product_catalogs"
   add_foreign_key "product_media", "users"
   add_foreign_key "product_media", "users", column: "last_updated_by_id"
+  add_foreign_key "product_profiles", "accounts"
+  add_foreign_key "product_profiles", "product_catalogs"
+  add_foreign_key "product_profiles", "users", column: "updated_by_id"
   add_foreign_key "sequence_enrollments", "conversations"
   add_foreign_key "sequence_enrollments", "lead_follow_up_sequences"
   add_foreign_key "survey_answers", "accounts"
@@ -1936,6 +2033,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_09_191725) do
   add_foreign_key "survey_question_options", "survey_questions"
   add_foreign_key "survey_questions", "surveys"
   add_foreign_key "surveys", "accounts"
+  add_foreign_key "tasks", "accounts"
+  add_foreign_key "tasks", "captain_assistants", column: "ai_agent_id"
+  add_foreign_key "tasks", "users", column: "assignee_id"
+  add_foreign_key "tasks", "users", column: "creator_id"
   add_foreign_key "tickets", "accounts"
   add_foreign_key "tickets", "contacts"
   add_foreign_key "tickets", "conversations"

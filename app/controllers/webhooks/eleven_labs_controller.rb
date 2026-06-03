@@ -30,6 +30,7 @@ class Webhooks::ElevenLabsController < ActionController::API
         conversation_id: conversation.id.to_s,
         display_id: conversation.display_id.to_s,
         account_name: @account.name,
+        inbox_id: inbox.id.to_s,
         received_survey_id: inbox.survey_id.to_s
       }
     }, status: :ok

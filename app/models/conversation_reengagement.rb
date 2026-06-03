@@ -59,6 +59,21 @@ class ConversationReengagement < ApplicationRecord
     update_column(:processing_started_at, nil)
   end
 
+  def attempt_retry_count
+    metadata&.dig('attempt_retry_count').to_i
+  end
+
+  def increment_attempt_retries!
+    update!(metadata: (metadata || {}).merge('attempt_retry_count' => attempt_retry_count + 1))
+  end
+
+  # Skip the current attempt due to repeated failures and advance to the next one.
+  # Resets the per-attempt retry counter so the next attempt starts clean.
+  def skip_attempt!
+    update!(metadata: (metadata || {}).merge('attempt_retry_count' => 0))
+    advance!
+  end
+
   # Advance to next attempt after firing. Returns true if completed.
   def advance!
     config = reengagement_config

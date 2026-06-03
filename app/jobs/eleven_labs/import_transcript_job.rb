@@ -18,8 +18,12 @@ module ElevenLabs
           timestamp = call_start + turn['time_in_call_secs'].to_i.seconds
           last_timestamp = timestamp
 
-          create_message(conversation, turn, contact, timestamp) if turn['message'].present?
-          create_tool_call_activities(conversation, turn, timestamp)
+          ActiveRecord::Base.transaction(requires_new: true) do
+            create_message(conversation, turn, contact, timestamp) if turn['message'].present?
+            create_tool_call_activities(conversation, turn, timestamp)
+          end
+        rescue StandardError => e
+          Rails.logger.error("[ElevenLabs][ImportTranscript] turn skipped — conversation=#{conversation_id} time=#{turn['time_in_call_secs']} #{e.class}: #{e.message}")
         end
 
         conversation.update!(
@@ -117,8 +121,6 @@ module ElevenLabs
       Array(turn['tool_results']).each do |tool_result|
         next if tool_result['tool_name'].blank?
 
-        parsed_result = parse_json_safely(tool_result['result_value'])
-
         content = if tool_result['is_error']
                     "Tool #{tool_result['tool_name']} failed"
                   else
@@ -130,10 +132,8 @@ module ElevenLabs
           'tool_name' => tool_result['tool_name'],
           'is_error' => tool_result['is_error'],
           'error_type' => tool_result['error_type'],
-          'response' => parsed_result,
           'raw_error' => parse_json_safely(tool_result['raw_error_message']),
           'tool_latency_secs' => tool_result['tool_latency_secs'],
-          'dynamic_variable_updates' => tool_result['dynamic_variable_updates'].presence,
           'is_blocked' => tool_result['is_blocked']
         }.compact_blank
 

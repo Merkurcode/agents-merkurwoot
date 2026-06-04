@@ -54,6 +54,7 @@ Rails.application.routes.draw do
           resource :bulk_actions, only: [:create]
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
+            resources :schedule_blocks, only: [:index, :create, :update, :destroy]
           end
           namespace :captain do
             resource :preferences, only: [:show, :update]
@@ -221,6 +222,7 @@ Rails.application.routes.draw do
               post :filter
               post :validate_appointment_token
               get :available_types
+              post :available_slots
             end
 
             member do

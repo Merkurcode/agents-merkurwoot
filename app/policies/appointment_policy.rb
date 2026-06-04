@@ -46,4 +46,8 @@ class AppointmentPolicy < ApplicationPolicy
   def available_types?
     @account_user.administrator? || @account_user.supervisor? || @account_user.agent?
   end
+
+  def available_slots?
+    @account_user.administrator? || @account_user.supervisor? || @account_user.agent?
+  end
 end

@@ -16,6 +16,21 @@ class Api::V1::Accounts::AppointmentsController < Api::V1::Accounts::BaseControl
   before_action :set_current_page, only: [:index, :search, :filter]
   before_action :appointment, only: [:show, :update, :destroy, :start, :complete, :cancel, :mark_no_show]
 
+  # POST /api/v1/accounts/:account_id/appointments/available_slots
+  def available_slots
+    result = Appointments::AvailableSlotsService.new(
+      account:               Current.account,
+      owner_ids:             params[:owner_ids],
+      start_date:            Date.parse(params[:start_date].to_s),
+      end_date:              Date.parse(params[:end_date].to_s),
+      slot_duration_minutes: params[:slot_duration_minutes]
+    ).call
+
+    render json: result
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   # GET /api/v1/accounts/:account_id/appointments/available_types
   # Returns the appointment types enabled for this account
   def available_types

@@ -8,12 +8,18 @@ module ElevenLabs
 
       return unless conversation && blob
 
+      last_message_at = conversation.messages.maximum(:created_at) || conversation.created_at
+      audio_timestamp = last_message_at + 1.second
+
       message = conversation.messages.build(
         account_id: conversation.account_id,
         inbox_id: conversation.inbox_id,
         message_type: :incoming,
         content_type: :text,
-        sender: conversation.contact
+        content: 'Voice call recording',
+        sender: conversation.contact,
+        status: :read,
+        created_at: audio_timestamp
       )
 
       message.attachments.build(

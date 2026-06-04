@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_04_000001) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -47,6 +47,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
     t.bigint "addressable_id", null: false
     t.index ["account_id"], name: "index_account_addresses_on_account_id"
     t.index ["addressable_type", "addressable_id"], name: "index_account_addresses_on_addressable"
+  end
+
+  create_table "account_profile_contexts", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.jsonb "context", default: {}, null: false
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_account_profile_contexts_on_account_id", unique: true
+    t.index ["context"], name: "idx_account_profile_contexts_context_gin", using: :gin
   end
 
   create_table "account_saml_settings", force: :cascade do |t|
@@ -414,6 +424,46 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
     t.datetime "updated_at", precision: nil, null: false
   end
 
+  create_table "captain_assistant_filter_run_conversations", force: :cascade do |t|
+    t.bigint "filter_run_id", null: false
+    t.bigint "conversation_id", null: false
+    t.integer "status", default: 0, null: false
+    t.text "error_message"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id"], name: "idx_on_conversation_id_fdc36da5ff"
+    t.index ["filter_run_id", "conversation_id"], name: "idx_on_filter_run_id_conversation_id_b3776d59a5", unique: true
+    t.index ["filter_run_id"], name: "idx_on_filter_run_id_4c5ad2c94b"
+  end
+
+  create_table "captain_assistant_filter_runs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "assistant_filter_id", null: false
+    t.integer "triggered_by_id"
+    t.datetime "scheduled_at"
+    t.text "message"
+    t.integer "status", default: 0, null: false
+    t.integer "conversations_total", default: 0, null: false
+    t.integer "conversations_processed", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_assistant_filter_runs_on_account_id"
+    t.index ["assistant_filter_id"], name: "index_captain_assistant_filter_runs_on_assistant_filter_id"
+  end
+
+  create_table "captain_assistant_filters", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "captain_assistant_id", null: false
+    t.string "name", null: false
+    t.jsonb "filters", default: [], null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_assistant_filters_on_account_id"
+    t.index ["captain_assistant_id"], name: "index_captain_assistant_filters_on_captain_assistant_id"
+  end
+
   create_table "captain_assistant_responses", force: :cascade do |t|
     t.string "question", null: false
     t.text "answer", null: false
@@ -534,6 +584,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
     t.string "hmac_token"
     t.boolean "hmac_mandatory", default: false
     t.jsonb "additional_attributes", default: {}
+    t.string "secret"
     t.index ["hmac_token"], name: "index_channel_api_on_hmac_token", unique: true
     t.index ["identifier"], name: "index_channel_api_on_identifier", unique: true
   end
@@ -776,6 +827,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
     t.integer "source_type", default: 0, null: false
     t.jsonb "source_metadata", default: {}
     t.datetime "discarded_at"
+    t.bigint "pipeline_status_id"
     t.index "lower((email)::text), account_id", name: "index_contacts_on_lower_email_account_id"
     t.index ["account_id", "contact_type"], name: "index_contacts_on_account_id_and_contact_type"
     t.index ["account_id", "email", "phone_number", "identifier"], name: "index_contacts_on_nonempty_fields", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
@@ -789,6 +841,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
     t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true
     t.index ["name", "email", "phone_number", "identifier"], name: "index_contacts_on_name_email_phone_number_identifier", opclass: :gin_trgm_ops, using: :gin
     t.index ["phone_number", "account_id"], name: "index_contacts_on_phone_number_and_account_id"
+    t.index ["pipeline_status_id"], name: "index_contacts_on_pipeline_status_id"
     t.index ["source_metadata"], name: "index_contacts_on_source_metadata", using: :gin
     t.index ["source_type"], name: "index_contacts_on_source_type"
   end
@@ -1114,6 +1167,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
     t.bigint "updated_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "external_id"
+    t.index ["account_id", "external_id"], name: "index_faq_items_on_account_id_and_external_id", unique: true, where: "(external_id IS NOT NULL)"
     t.index ["account_id", "faq_category_id"], name: "index_faq_items_on_account_id_and_faq_category_id"
     t.index ["account_id", "position"], name: "index_faq_items_on_account_id_and_position"
     t.index ["account_id"], name: "index_faq_items_on_account_id"
@@ -1683,6 +1738,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
     t.index ["account_id", "metric", "date"], name: "index_rollup_timeseries"
   end
 
+  create_table "schedule_blocks", force: :cascade do |t|
+    t.bigint "account_user_id", null: false
+    t.bigint "account_id", null: false
+    t.integer "day_of_week", null: false
+    t.integer "start_hour", null: false
+    t.integer "start_minutes", default: 0, null: false
+    t.integer "end_hour", null: false
+    t.integer "end_minutes", default: 0, null: false
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_schedule_blocks_on_account_id"
+    t.index ["account_user_id", "day_of_week", "start_hour", "start_minutes"], name: "index_schedule_blocks_on_owner_dow_start", unique: true
+    t.index ["account_user_id", "day_of_week"], name: "index_schedule_blocks_on_account_user_id_and_day_of_week"
+    t.index ["account_user_id"], name: "index_schedule_blocks_on_account_user_id"
+  end
+
   create_table "sequence_enrollments", force: :cascade do |t|
     t.bigint "conversation_id", null: false
     t.bigint "lead_follow_up_sequence_id", null: false
@@ -2024,6 +2096,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_28_000002) do
   add_foreign_key "product_profiles", "accounts"
   add_foreign_key "product_profiles", "product_catalogs"
   add_foreign_key "product_profiles", "users", column: "updated_by_id"
+  add_foreign_key "schedule_blocks", "account_users"
   add_foreign_key "sequence_enrollments", "conversations"
   add_foreign_key "sequence_enrollments", "lead_follow_up_sequences"
   add_foreign_key "survey_answers", "accounts"

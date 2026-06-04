@@ -121,27 +121,34 @@ RSpec.describe Appointments::AvailableSlotsService do
       expect(result[:agents][user.id][:timezone]).to eq('UTC')
     end
 
-    it 'expone el timezone de respuesta de la cuenta' do
+    it 'popula by_datetime con UTC como clave' do
       result = call
-      expect(result[:timezone]).to eq('UTC')
+      expect(result[:by_datetime]).to have_key('2026-06-08T09:00:00Z')
+      expect(result[:by_datetime]['2026-06-08T09:00:00Z']).to include(user.id)
     end
 
-    it 'popula by_datetime con los owner_ids usando el formato local' do
-      result = call
-      first_slot = result[:agents][user.id][:available_slots][monday.iso8601].first
-      expect(result[:by_datetime][first_slot]).to include(user.id)
-    end
-
-    it 'devuelve slots en timezone de la cuenta cuando está configurado' do
-      account.update!(settings: { 'business_hours_timezone' => 'America/Mexico_City' })
+    it 'los slots en available_slots están en el timezone del agente' do
+      account_user.update!(timezone: 'America/Hermosillo') # UTC-7
       result = call
       slots = result[:agents][user.id][:available_slots][monday.iso8601]
 
-      # México en junio = UTC-6 → 9:00 UTC = 03:00 local, pero el horario
-      # del agente es 9-17 en su tz (UTC), así que los slots son 9:00 UTC
-      # formateados como -06:00
-      expect(result[:timezone]).to eq('America/Mexico_City')
-      expect(slots.first).to include('-06:00')
+      # El agente trabaja 9am-5pm en su tz (America/Hermosillo, UTC-7)
+      # → los slots deben aparecer como 09:00:00-07:00, no como UTC
+      expect(slots.first).to include('-07:00')
+      expect(slots.first).to start_with('2026-06-08T09:00:00')
+    end
+
+    it 'by_datetime usa UTC aunque el agente tenga timezone distinto' do
+      account_user.update!(timezone: 'America/Hermosillo') # UTC-7
+      result = call
+      # 9am Hermosillo = 16:00 UTC
+      expect(result[:by_datetime]).to have_key('2026-06-08T16:00:00Z')
+      expect(result[:by_datetime]['2026-06-08T16:00:00Z']).to include(user.id)
+    end
+
+    it 'no expone timezone de cuenta en la raíz' do
+      result = call
+      expect(result).not_to have_key(:timezone)
     end
   end
 end

@@ -40,7 +40,7 @@ RSpec.describe 'Api::V1::Accounts::Appointments#available_slots', type: :request
 
         expect(slots.first).to match(/^2026-06-08T09:00:00/)
         expect(slots.last).to match(/^2026-06-08T16:30:00/)
-        expect(slots).not_to include('2026-06-08T17:00:00Z')
+        expect(slots.map { _1.slice(0, 19) }).not_to include('2026-06-08T17:00:00')
       end
     end
 

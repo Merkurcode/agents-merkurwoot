@@ -190,6 +190,17 @@
           "SUCCESS": "Tipos de citas actualizados correctamente",
           "ERROR": "Error al actualizar los tipos de citas"
         }
+      },
+      "APPOINTMENT_SLOT_DURATION": {
+        "TITLE": "Duración del turno de cita",
+        "NOTE": "Duración predeterminada (en minutos) de cada turno al mostrar horarios disponibles. Los agentes de IA usan este valor al consultar disponibilidad.",
+        "MINUTES_LABEL": "minutos",
+        "UPDATE_BUTTON": "Guardar",
+        "VALIDATION_ERROR": "La duración debe estar entre 15 y 480 minutos.",
+        "API": {
+          "SUCCESS": "Duración del turno actualizada correctamente",
+          "ERROR": "Error al actualizar la duración del turno"
+        }
       }
     },
     "UPDATE_CHATWOOT": "Hay una actualización {latestChatwootVersion} para Nauto Console disponible. Por favor, actualiza tu instancia.",

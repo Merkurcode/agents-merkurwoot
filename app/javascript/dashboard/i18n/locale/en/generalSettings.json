@@ -190,6 +190,17 @@
           "SUCCESS": "Appointment types updated successfully",
           "ERROR": "Failed to update appointment types"
         }
+      },
+      "APPOINTMENT_SLOT_DURATION": {
+        "TITLE": "Appointment slot duration",
+        "NOTE": "Default time slot duration (in minutes) used when showing available times. AI agents use this value when querying available slots.",
+        "MINUTES_LABEL": "minutes",
+        "UPDATE_BUTTON": "Save",
+        "VALIDATION_ERROR": "Duration must be between 15 and 480 minutes.",
+        "API": {
+          "SUCCESS": "Slot duration updated successfully",
+          "ERROR": "Failed to update slot duration"
+        }
       }
     },
     "UPDATE_CHATWOOT": "An update {latestChatwootVersion} for Nauto Console is available. Please update your instance.",

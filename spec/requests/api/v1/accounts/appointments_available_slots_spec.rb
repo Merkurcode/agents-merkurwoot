@@ -38,8 +38,8 @@ RSpec.describe 'Api::V1::Accounts::Appointments#available_slots', type: :request
         agent_key = agent_user.id.to_s
         slots = body['agents'][agent_key]['available_slots']['2026-06-08']
 
-        expect(slots).to include('2026-06-08T09:00:00Z')
-        expect(slots).to include('2026-06-08T16:30:00Z')
+        expect(slots.first).to match(/^2026-06-08T09:00:00/)
+        expect(slots.last).to match(/^2026-06-08T16:30:00/)
         expect(slots).not_to include('2026-06-08T17:00:00Z')
       end
     end

@@ -11,6 +11,7 @@ module Appointments
       @start_date            = start_date
       @end_date              = end_date
       @slot_duration_minutes = slot_duration_minutes&.to_i || account.default_slot_duration
+      @response_tz           = account.business_hours_timezone.presence || 'UTC'
     end
 
     def call
@@ -64,7 +65,7 @@ module Appointments
         }
       end
 
-      { agents: agents_result, by_datetime: by_datetime }
+      { agents: agents_result, by_datetime: by_datetime, timezone: @response_tz }
     end
 
     private
@@ -110,7 +111,7 @@ module Appointments
         )
 
         if resolver.available? && !overlaps_appointment?(slot_utc, existing_appts)
-          slots << slot_utc.iso8601
+          slots << slot_utc.in_time_zone(@response_tz).iso8601
         end
 
         cursor += @slot_duration_minutes

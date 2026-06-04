@@ -11,12 +11,11 @@ RSpec.describe Appointments::AvailableSlotsService do
     au
   end
 
-  # AccountUser auto-recibe: Lun–Vie 9-17, Sáb-Dom cerrados
-  # Lunes 2026-06-08, Domingo 2026-06-07
-  let(:monday)  { Date.new(2026, 6, 8) }
-  let(:sunday)  { Date.new(2026, 6, 7) }
+  # El account de test no tiene business_hours_timezone → fallback 'UTC'
+  # Ruby devuelve "+00:00" al usar in_time_zone('UTC').iso8601 (no "Z")
+  let(:monday) { Date.new(2026, 6, 8) }
+  let(:sunday) { Date.new(2026, 6, 7) }
 
-  # Acceder a account_user para que se configure la timezone antes de llamar al servicio
   before { account_user }
 
   def call(owner_ids: [user.id], start_date: monday, end_date: monday, slot_duration_minutes: 30)
@@ -27,6 +26,11 @@ RSpec.describe Appointments::AvailableSlotsService do
       end_date:              end_date,
       slot_duration_minutes: slot_duration_minutes
     ).call
+  end
+
+  # Convierte un string UTC "HH:MM" al formato ISO8601 local que el servicio produce
+  def slot(date, time)
+    Time.zone.parse("#{date} #{time} UTC").in_time_zone('UTC').iso8601
   end
 
   describe 'validaciones de límites' do
@@ -48,18 +52,18 @@ RSpec.describe Appointments::AvailableSlotsService do
       result = call
       slots = result[:agents][user.id][:available_slots][monday.iso8601]
 
-      expect(slots).to include('2026-06-08T09:00:00Z')
-      expect(slots).to include('2026-06-08T16:30:00Z')
-      expect(slots).not_to include('2026-06-08T17:00:00Z')
+      expect(slots).to include(slot('2026-06-08', '09:00:00'))
+      expect(slots).to include(slot('2026-06-08', '16:30:00'))
+      expect(slots).not_to include(slot('2026-06-08', '17:00:00'))
     end
 
     it 'retorna slots de 60 minutos correctamente' do
       result = call(slot_duration_minutes: 60)
       slots = result[:agents][user.id][:available_slots][monday.iso8601]
 
-      expect(slots).to include('2026-06-08T09:00:00Z')
-      expect(slots).to include('2026-06-08T16:00:00Z')
-      expect(slots).not_to include('2026-06-08T16:30:00Z')
+      expect(slots).to include(slot('2026-06-08', '09:00:00'))
+      expect(slots).to include(slot('2026-06-08', '16:00:00'))
+      expect(slots).not_to include(slot('2026-06-08', '16:30:00'))
     end
 
     it 'excluye slots dentro de un schedule_block' do
@@ -70,10 +74,10 @@ RSpec.describe Appointments::AvailableSlotsService do
       result = call
       slots = result[:agents][user.id][:available_slots][monday.iso8601]
 
-      expect(slots).not_to include('2026-06-08T12:00:00Z')
-      expect(slots).not_to include('2026-06-08T12:30:00Z')
-      expect(slots).to include('2026-06-08T13:00:00Z')
-      expect(slots).to include('2026-06-08T11:30:00Z')
+      expect(slots).not_to include(slot('2026-06-08', '12:00:00'))
+      expect(slots).not_to include(slot('2026-06-08', '12:30:00'))
+      expect(slots).to include(slot('2026-06-08', '13:00:00'))
+      expect(slots).to include(slot('2026-06-08', '11:30:00'))
     end
 
     it 'excluye slots que solapan citas existentes' do
@@ -91,16 +95,14 @@ RSpec.describe Appointments::AvailableSlotsService do
       result = call
       slots = result[:agents][user.id][:available_slots][monday.iso8601]
 
-      expect(slots).not_to include('2026-06-08T10:00:00Z')
-      expect(slots).to include('2026-06-08T09:30:00Z')
-      expect(slots).to include('2026-06-08T10:30:00Z')
+      expect(slots).not_to include(slot('2026-06-08', '10:00:00'))
+      expect(slots).to include(slot('2026-06-08', '09:30:00'))
+      expect(slots).to include(slot('2026-06-08', '10:30:00'))
     end
 
     it 'no devuelve slots para días cerrados (domingo cerrado por defecto)' do
       result = call(start_date: sunday, end_date: sunday)
-      agent_data = result[:agents][user.id]
-
-      expect(agent_data[:available_slots]).not_to have_key(sunday.iso8601)
+      expect(result[:agents][user.id][:available_slots]).not_to have_key(sunday.iso8601)
     end
 
     it 'filtra silenciosamente owner_ids de otras cuentas' do
@@ -115,17 +117,31 @@ RSpec.describe Appointments::AvailableSlotsService do
   describe 'estructura de respuesta' do
     it 'incluye name y timezone del agente' do
       result = call
-      agent_data = result[:agents][user.id]
-
-      expect(agent_data[:name]).to eq(user.name)
-      expect(agent_data[:timezone]).to eq('UTC')
+      expect(result[:agents][user.id][:name]).to eq(user.name)
+      expect(result[:agents][user.id][:timezone]).to eq('UTC')
     end
 
-    it 'popula by_datetime con los owner_ids' do
+    it 'expone el timezone de respuesta de la cuenta' do
       result = call
-      slot_utc = '2026-06-08T09:00:00Z'
+      expect(result[:timezone]).to eq('UTC')
+    end
 
-      expect(result[:by_datetime][slot_utc]).to include(user.id)
+    it 'popula by_datetime con los owner_ids usando el formato local' do
+      result = call
+      first_slot = result[:agents][user.id][:available_slots][monday.iso8601].first
+      expect(result[:by_datetime][first_slot]).to include(user.id)
+    end
+
+    it 'devuelve slots en timezone de la cuenta cuando está configurado' do
+      account.update!(settings: { 'business_hours_timezone' => 'America/Mexico_City' })
+      result = call
+      slots = result[:agents][user.id][:available_slots][monday.iso8601]
+
+      # México en junio = UTC-6 → 9:00 UTC = 03:00 local, pero el horario
+      # del agente es 9-17 en su tz (UTC), así que los slots son 9:00 UTC
+      # formateados como -06:00
+      expect(result[:timezone]).to eq('America/Mexico_City')
+      expect(slots.first).to include('-06:00')
     end
   end
 end

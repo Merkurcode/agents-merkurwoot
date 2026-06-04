@@ -95,7 +95,10 @@
       "STATUS": "Estado",
       "CANCEL": "Cancelar",
       "SAVE": "Guardar",
-      "VALIDATION_ERROR": "Por favor completa todos los campos requeridos"
+      "VALIDATION_ERROR": "Por favor completa todos los campos requeridos",
+      "SELECT_SLOT": "Selecciona un horario disponible",
+      "LOADING_SLOTS": "Cargando horarios disponibles...",
+      "NO_SLOTS": "No hay horarios disponibles para la fecha seleccionada."
     },
     "CREATE": {
       "SUCCESS": "Cita creada exitosamente",

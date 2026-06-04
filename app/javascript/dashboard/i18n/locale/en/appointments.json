@@ -95,7 +95,10 @@
       "STATUS": "Status",
       "CANCEL": "Cancel",
       "SAVE": "Save",
-      "VALIDATION_ERROR": "Please fill in all required fields"
+      "VALIDATION_ERROR": "Please fill in all required fields",
+      "SELECT_SLOT": "Select an available time slot",
+      "LOADING_SLOTS": "Loading available slots...",
+      "NO_SLOTS": "No available slots for the selected date."
     },
     "CREATE": {
       "SUCCESS": "Appointment created successfully",

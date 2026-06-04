@@ -6,6 +6,7 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import appointmentsAPI from 'dashboard/api/appointments';
 
 const props = defineProps({
   appointment: { type: Object, default: null },
@@ -18,6 +19,11 @@ const getters = useStoreGetters();
 
 const isEditMode = computed(() => !!props.appointment);
 const isSubmitting = ref(false);
+
+// Slots disponibles (solo modo creación)
+const selectedDate = ref('');
+const availableSlots = ref([]);
+const isLoadingSlots = ref(false);
 
 // Helper para convertir UTC a datetime-local format (zona horaria local)
 const toLocalDatetimeString = utcDateString => {
@@ -139,9 +145,9 @@ const statusOptions = [
 
 // Validación de campos requeridos según tipo
 const isValidForm = computed(() => {
-  if (!formData.value.contact_id || !formData.value.scheduled_at || !formData.value.owner_id) {
-    return false;
-  }
+  if (!formData.value.contact_id || !formData.value.owner_id) return false;
+  if (!isEditMode.value && !formData.value.scheduled_at) return false;
+  if (isEditMode.value && !formData.value.scheduled_at) return false;
 
   // Validar campos específicos por tipo
   if (formData.value.appointment_type === 'phone_call' && !formData.value.phone_number) {
@@ -156,6 +162,35 @@ const isValidForm = computed(() => {
 
   return true;
 });
+
+const slotDuration = computed(
+  () => currentAccount.value.settings?.appointment_slot_duration_minutes || null
+);
+
+const fetchAvailableSlots = async () => {
+  if (!formData.value.owner_id || !selectedDate.value || isEditMode.value) return;
+
+  isLoadingSlots.value = true;
+  availableSlots.value = [];
+  formData.value.scheduled_at = '';
+
+  try {
+    const { data } = await appointmentsAPI.availableSlots({
+      ownerIds: [formData.value.owner_id],
+      startDate: selectedDate.value,
+      endDate: selectedDate.value,
+      slotDurationMinutes: slotDuration.value,
+    });
+    const agentData = data.agents?.[formData.value.owner_id];
+    availableSlots.value = agentData?.available_slots?.[selectedDate.value] || [];
+  } catch {
+    availableSlots.value = [];
+  } finally {
+    isLoadingSlots.value = false;
+  }
+};
+
+watch(() => [formData.value.owner_id, selectedDate.value], fetchAvailableSlots);
 
 // Autocompletar phone_number cuando se selecciona un contacto
 watch(
@@ -291,15 +326,6 @@ async function handleSubmit() {
           </p>
         </div>
 
-        <!-- Fecha y Hora Programada -->
-        <div class="w-full">
-          <label>
-            {{ $t('APPOINTMENTS.MODAL.SCHEDULED_AT') }}
-            <span class="text-red-500">*</span>
-            <input v-model="formData.scheduled_at" type="datetime-local" />
-          </label>
-        </div>
-
         <!-- Agente Responsable -->
         <div class="w-full">
           <label>
@@ -310,6 +336,54 @@ async function handleSubmit() {
               :options="agentOptions"
               :placeholder="$t('APPOINTMENTS.MODAL.SELECT_OWNER')"
             />
+          </label>
+        </div>
+
+        <!-- Selector de fecha + slots (solo creación) -->
+        <template v-if="!isEditMode">
+          <div class="w-full">
+            <label>
+              {{ $t('APPOINTMENTS.MODAL.SCHEDULED_AT') }}
+              <span class="text-red-500">*</span>
+              <input v-model="selectedDate" type="date" />
+            </label>
+          </div>
+
+          <div v-if="selectedDate && formData.owner_id" class="w-full">
+            <p class="text-sm font-medium text-slate-700 mb-2">
+              {{ $t('APPOINTMENTS.MODAL.SELECT_SLOT') }}
+            </p>
+            <div v-if="isLoadingSlots" class="text-sm text-slate-500">
+              {{ $t('APPOINTMENTS.MODAL.LOADING_SLOTS') }}
+            </div>
+            <div v-else-if="availableSlots.length === 0" class="text-sm text-slate-500">
+              {{ $t('APPOINTMENTS.MODAL.NO_SLOTS') }}
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <button
+                v-for="slot in availableSlots"
+                :key="slot"
+                type="button"
+                :class="[
+                  'rounded border px-3 py-1 text-sm transition-colors',
+                  formData.scheduled_at === slot
+                    ? 'border-woot-500 bg-woot-50 text-woot-700 font-medium'
+                    : 'border-slate-300 text-slate-700 hover:border-woot-400',
+                ]"
+                @click="formData.scheduled_at = slot"
+              >
+                {{ new Date(slot).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <!-- Fecha y hora libre (solo edición) -->
+        <div v-else class="w-full">
+          <label>
+            {{ $t('APPOINTMENTS.MODAL.SCHEDULED_AT') }}
+            <span class="text-red-500">*</span>
+            <input v-model="formData.scheduled_at" type="datetime-local" />
           </label>
         </div>
 

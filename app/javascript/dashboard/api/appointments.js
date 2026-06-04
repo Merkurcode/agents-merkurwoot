@@ -35,6 +35,15 @@ class AppointmentsAPI extends ApiClient {
   validateAppointmentToken(token) {
     return axios.post(`${this.url}/validate_appointment_token`, { token });
   }
+
+  availableSlots({ ownerIds, startDate, endDate, slotDurationMinutes }) {
+    return axios.post(`${this.url}/available_slots`, {
+      owner_ids: ownerIds,
+      start_date: startDate,
+      end_date: endDate,
+      slot_duration_minutes: slotDurationMinutes,
+    });
+  }
 }
 
 export default new AppointmentsAPI();

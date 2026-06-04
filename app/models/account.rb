@@ -52,6 +52,7 @@ class Account < ApplicationRecord
             'enum': %w[physical_visit digital_meeting phone_call]
           }
         },
+        'appointment_slot_duration_minutes': { 'type': %w[integer null], 'minimum': 15, 'maximum': 480 },
         'captain_models': {
           'type': %w[object null],
           'properties': {
@@ -98,6 +99,7 @@ class Account < ApplicationRecord
   store_accessor :settings, :captain_models, :captain_features
   store_accessor :settings, :business_hours_enabled, :business_hours_timezone
   store_accessor :settings, :enabled_appointment_types
+  store_accessor :settings, :appointment_slot_duration_minutes
 
   has_many :account_users, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
@@ -261,6 +263,10 @@ class Account < ApplicationRecord
 
   def appointment_type_enabled?(type)
     available_appointment_types.include?(type.to_s)
+  end
+
+  def default_slot_duration
+    appointment_slot_duration_minutes&.to_i || ENV.fetch('DEFAULT_SLOT_DURATION_MINUTES', 30).to_i
   end
 
   def increment_product_catalog_version!

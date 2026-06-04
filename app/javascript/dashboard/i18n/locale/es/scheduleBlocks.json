@@ -1,0 +1,34 @@
+{
+  "SCHEDULE_BLOCKS": {
+    "TITLE": "Bloques de descanso",
+    "DESCRIPTION": "Configura bloques de tiempo recurrentes en los que no estás disponible (ej. almuerzos, reuniones de equipo).",
+    "ADD": "Agregar bloque",
+    "SAVE": "Guardar bloque",
+    "DELETE": "Eliminar",
+    "CANCEL": "Cancelar",
+    "DAY": "Día",
+    "START": "Inicio (h / min)",
+    "END": "Fin (h / min)",
+    "REASON": "Motivo",
+    "REASON_PLACEHOLDER": "ej. Almuerzo",
+    "EMPTY": "No hay bloques configurados.",
+    "DAYS": {
+      "SUNDAY": "Domingo",
+      "MONDAY": "Lunes",
+      "TUESDAY": "Martes",
+      "WEDNESDAY": "Miércoles",
+      "THURSDAY": "Jueves",
+      "FRIDAY": "Viernes",
+      "SATURDAY": "Sábado"
+    },
+    "SUCCESS": {
+      "CREATED": "Bloque agregado correctamente.",
+      "DELETED": "Bloque eliminado."
+    },
+    "ERRORS": {
+      "FETCH": "No se pudieron cargar los bloques de descanso.",
+      "CREATE": "No se pudo guardar el bloque. Verifica los valores.",
+      "DELETE": "No se pudo eliminar el bloque."
+    }
+  }
+}

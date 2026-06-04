@@ -42,6 +42,7 @@ import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import crmFlows from './crmFlows.json';
 import tasks from './tasks.json';
+import scheduleBlocks from './scheduleBlocks.json';
 
 export default {
   ...advancedFilters,
@@ -88,4 +89,5 @@ export default {
   ...whatsappTemplates,
   ...crmFlows,
   ...tasks,
+  ...scheduleBlocks,
 };

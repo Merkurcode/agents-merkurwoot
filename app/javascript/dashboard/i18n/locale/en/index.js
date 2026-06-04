@@ -47,6 +47,7 @@ import customerMgmt from './customerMgmt.json';
 import knowledgeBase from './knowledgeBase.json';
 import yearInReview from './yearInReview.json';
 import crmFlows from './crmFlows.json';
+import scheduleBlocks from './scheduleBlocks.json';
 
 export default {
   ...advancedFilters,
@@ -98,4 +99,5 @@ export default {
   ...knowledgeBase,
   ...yearInReview,
   ...crmFlows,
+  ...scheduleBlocks,
 };

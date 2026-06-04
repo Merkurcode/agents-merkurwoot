@@ -22,6 +22,7 @@ import AccessToken from './AccessToken.vue';
 import MfaSettingsCard from './MfaSettingsCard.vue';
 import Policy from 'dashboard/components/policy.vue';
 import UserWorkingHours from './UserWorkingHours.vue';
+import UserScheduleBlocks from './UserScheduleBlocks.vue';
 
 import {
   ROLES,
@@ -44,6 +45,7 @@ export default {
     AccessToken,
     MfaSettingsCard,
     UserWorkingHours,
+    UserScheduleBlocks,
   },
   setup() {
     const { isEditorHotKeyEnabled, updateUISettings } = useUISettings();
@@ -310,6 +312,13 @@ export default {
       :description="$t('PROFILE_SETTINGS.FORM.WORKING_HOURS_SECTION.NOTE')"
     >
       <UserWorkingHours :user="currentUser" />
+    </FormSection>
+
+    <FormSection
+      :title="$t('SCHEDULE_BLOCKS.TITLE')"
+      :description="$t('SCHEDULE_BLOCKS.DESCRIPTION')"
+    >
+      <UserScheduleBlocks :agent-id="currentUserId" />
     </FormSection>
 
     <Policy :permissions="audioNotificationPermissions">

@@ -1,0 +1,34 @@
+{
+  "SCHEDULE_BLOCKS": {
+    "TITLE": "Break & rest blocks",
+    "DESCRIPTION": "Configure recurring time blocks when you are unavailable (e.g. lunch breaks, team meetings).",
+    "ADD": "Add block",
+    "SAVE": "Save block",
+    "DELETE": "Remove",
+    "CANCEL": "Cancel",
+    "DAY": "Day",
+    "START": "Start (h / min)",
+    "END": "End (h / min)",
+    "REASON": "Reason",
+    "REASON_PLACEHOLDER": "e.g. Lunch break",
+    "EMPTY": "No blocks configured.",
+    "DAYS": {
+      "SUNDAY": "Sunday",
+      "MONDAY": "Monday",
+      "TUESDAY": "Tuesday",
+      "WEDNESDAY": "Wednesday",
+      "THURSDAY": "Thursday",
+      "FRIDAY": "Friday",
+      "SATURDAY": "Saturday"
+    },
+    "SUCCESS": {
+      "CREATED": "Block added successfully.",
+      "DELETED": "Block removed."
+    },
+    "ERRORS": {
+      "FETCH": "Could not load schedule blocks.",
+      "CREATE": "Could not save block. Please check the values.",
+      "DELETE": "Could not remove block."
+    }
+  }
+}

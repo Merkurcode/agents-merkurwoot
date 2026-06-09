@@ -28,6 +28,49 @@ RSpec.describe LeadFollowUpSequence do
       end
     end
 
+    context 'when source_type is notion_database' do
+      # Use widget inbox to avoid WhatsApp sync_templates side-effect;
+      # notion_database source skips the top-level inbox channel validation.
+      let(:widget_channel) { create(:channel_widget, account: account) }
+      let(:widget_inbox) { create(:inbox, channel: widget_channel, account: account) }
+
+      def build_notion_sequence(field_mappings)
+        build(:lead_follow_up_sequence,
+              account: account,
+              inbox: widget_inbox,
+              source_type: 'notion_database',
+              source_config: {
+                'notion_database_id' => 'db-123',
+                'field_mappings' => field_mappings
+              },
+              steps: [])
+      end
+
+      it 'is valid when only phone_number is mapped' do
+        seq = build_notion_sequence({ 'phone_number' => 'Phone' })
+        seq.valid?
+        expect(seq.errors[:source_config]).not_to include('must have at least phone_number or email field mapping')
+      end
+
+      it 'is valid when only email is mapped' do
+        seq = build_notion_sequence({ 'email' => 'Email' })
+        seq.valid?
+        expect(seq.errors[:source_config]).not_to include('must have at least phone_number or email field mapping')
+      end
+
+      it 'is valid when both phone_number and email are mapped' do
+        seq = build_notion_sequence({ 'phone_number' => 'Phone', 'email' => 'Email' })
+        seq.valid?
+        expect(seq.errors[:source_config]).not_to include('must have at least phone_number or email field mapping')
+      end
+
+      it 'is invalid when neither phone_number nor email is mapped' do
+        seq = build_notion_sequence({ 'name' => 'Name' })
+        seq.valid?
+        expect(seq.errors[:source_config]).to include('must have at least phone_number or email field mapping')
+      end
+    end
+
     context 'when steps is not an array' do
       let(:sequence) do
         build(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox,

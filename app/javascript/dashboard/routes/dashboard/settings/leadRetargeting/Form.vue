@@ -1152,8 +1152,8 @@ const saveSequence = async () => {
       return;
     }
 
-    if (!sequence.value.source_config.field_mappings.phone_number) {
-      useAlert('El campo de Teléfono es obligatorio');
+    if (!sequence.value.source_config.field_mappings.phone_number && !sequence.value.source_config.field_mappings.email) {
+      useAlert('Debes mapear al menos Teléfono o Email');
       return;
     }
   }
@@ -1537,16 +1537,11 @@ const saveSequence = async () => {
                     <i class="i-lucide-phone text-n-slate-11" />
                     <span class="text-sm font-medium text-n-slate-12">
                       Teléfono
-                      <span class="text-n-red-10">*</span>
                     </span>
                   </div>
                   <select
                     v-model="sequence.source_config.field_mappings.phone_number"
                     class="w-full text-sm"
-                    :class="{
-                      'border-n-red-6':
-                        !sequence.source_config.field_mappings.phone_number,
-                    }"
                   >
                     <option value="">Selecciona un campo</option>
                     <option

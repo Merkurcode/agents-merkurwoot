@@ -81,17 +81,13 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     phone_number = extract_field_value(record, mappings['phone_number'])
     Rails.logger.info "Extracted phone number: #{phone_number.inspect}"
 
-    unless phone_number
-      Rails.logger.warn "No phone number found in record"
-      return nil
-    end
-
-    # Clean and validate phone number
-    cleaned_phone = clean_phone_number(phone_number)
+    cleaned_phone = phone_number.present? ? clean_phone_number(phone_number) : nil
     Rails.logger.info "Cleaned phone number: #{cleaned_phone.inspect}"
 
-    unless cleaned_phone
-      Rails.logger.warn "Phone number cleaning failed"
+    contact_email = extract_field_value(record, mappings['email'])
+
+    unless cleaned_phone || contact_email.present?
+      Rails.logger.warn "No phone or email found in record, skipping"
       return nil
     end
 
@@ -105,15 +101,13 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     end
 
     contact_name = extract_field_value(record, mappings['name']) || 'Unknown'
-    contact_email = extract_field_value(record, mappings['email'])
     custom_attrs = extract_custom_attributes(record, mappings)
 
     Rails.logger.info "Contact attributes - name: #{contact_name}, phone: #{cleaned_phone}, email: #{contact_email}"
 
-    # Find existing contact or create new one
-    existing_contact = Contact.find_by(account: sequence.account, phone_number: cleaned_phone)
+    # Find existing contact: by phone first, then email
+    existing_contact = cleaned_phone.present? ? Contact.find_by(account: sequence.account, phone_number: cleaned_phone) : nil
 
-    # Fallback: search by email if phone lookup failed and email is present
     if existing_contact.nil? && contact_email.present?
       existing_contact = Contact.find_by(account: sequence.account, email: contact_email)
 
@@ -174,7 +168,6 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     # Create new contact and contact inbox
     contact_attributes = {
       name: contact_name,
-      phone_number: cleaned_phone,
       contact_type: 'lead',
       source_type: 'notion_import',
       custom_attributes: custom_attrs.merge(
@@ -187,7 +180,7 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
       )
     }
 
-    # Add email if provided
+    contact_attributes[:phone_number] = cleaned_phone if cleaned_phone.present?
     contact_attributes[:email] = contact_email if contact_email.present?
 
     contact_inbox = ContactInboxWithContactBuilder.new(
@@ -655,13 +648,13 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
   def generate_source_id_for_inbox(phone_number, inbox, email: nil)
     case inbox.channel_type
     when 'Channel::Whatsapp'
-      phone_number.delete('+')
+      phone_number&.delete('+') || email
     when 'Channel::TwilioSms'
-      phone_number
+      phone_number || email
     when 'Channel::Email'
       email || phone_number
     else
-      phone_number
+      phone_number || email
     end
   end
 

@@ -472,9 +472,11 @@ class LeadFollowUpSequence < ApplicationRecord
       return
     end
 
-    # Phone number is required
-    if source_config.dig('field_mappings', 'phone_number').blank?
-      errors.add(:source_config, 'must have phone_number field mapping')
+    # At least phone or email must be mapped
+    phone_mapped = source_config.dig('field_mappings', 'phone_number').present?
+    email_mapped = source_config.dig('field_mappings', 'email').present?
+    unless phone_mapped || email_mapped
+      errors.add(:source_config, 'must have at least phone_number or email field mapping')
     end
   end
 

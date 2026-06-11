@@ -17,6 +17,10 @@ class ConversationApi extends ApiClient {
   getCopilotEvents(conversationId) {
     return axios.get(`${this.url}/${conversationId}/copilot_events`);
   }
+
+  getAiUsage(conversationId) {
+    return axios.get(`${this.url}/${conversationId}/ai_usage`);
+  }
 }
 
 export default new ConversationApi();

@@ -290,6 +290,7 @@ Rails.application.routes.draw do
               get :attachments
               get :copilot_events
               get :inbox_assistant
+              get :ai_usage
               get :reporting_events if ChatwootApp.enterprise?
             end
           end

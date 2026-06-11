@@ -362,6 +362,9 @@
     "RESUME": {
       "TITLE": "Resumen de conversación"
     },
+    "SUMMARY": {
+      "TITLE": "Resumen de conversación"
+    },
     "ACCORDION": {
       "CONTACT_DETAILS": "Detalles de contacto",
       "CONVERSATION_ACTIONS": "Acciones de conversación",
@@ -375,7 +378,22 @@
       "LINEAR_ISSUES": "Problemas lineales vinculados",
       "SHOPIFY_ORDERS": "Shopify Orders",
       "SURVEY_RESPONSES": "Respuestas de Encuesta",
-      "CRM_SYNC": "Sincronización CRM"
+      "CRM_SYNC": "Sincronización CRM",
+      "AI_USAGE": "Uso de IA"
+    },
+    "AI_USAGE": {
+      "NO_DATA": "No hay datos de uso de IA para esta conversación.",
+      "COST": "Costo (USD)",
+      "INPUT_TOKENS": "Tokens de entrada",
+      "OUTPUT_TOKENS": "Tokens de salida",
+      "LLM_CALLS": "Llamadas al LLM",
+      "GRAPH_INVOCATIONS": "Invocaciones del grafo",
+      "AVG_LATENCY": "Latencia promedio",
+      "P95_LATENCY": "Latencia P95",
+      "ERRORS": "Errores",
+      "DURATION": "Duración",
+      "MODELS_USED": "Modelos usados",
+      "COST_BY_MODEL": "Costo por modelo (USD)"
     },
     "SHOPIFY": {
       "ORDER_ID": "Order #{id}",

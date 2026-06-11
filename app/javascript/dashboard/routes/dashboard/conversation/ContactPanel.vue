@@ -6,6 +6,7 @@ import {
   useStore,
 } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
@@ -24,6 +25,7 @@ import ShopifyOrdersList from 'dashboard/components/widgets/conversation/Shopify
 import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
+import ConversationAiUsage from './ConversationAiUsage.vue';
 import ConversationSumary from './ConversationSumary.vue';
 import CopilotTimeline from './CopilotTimeline.vue';
 import CrmSyncPanel from './CrmSyncPanel.vue';
@@ -49,6 +51,8 @@ const {
   conversationSidebarItemsOrder,
   toggleSidebarUIState,
 } = useUISettings();
+
+const { isAdmin } = useAdmin();
 
 const dragging = ref(false);
 const conversationSidebarItems = ref([]);
@@ -370,19 +374,34 @@ onMounted(() => {
               <ContactNotes :contact-id="contactId" />
             </AccordionItem>
           </div>
+          <div
+            v-else-if="element.name === 'crm_sync' && hasCrmIntegration"
+          >
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CRM_SYNC')"
+              :is-open="isContactSidebarItemOpen('is_crm_sync_open')"
+              compact
+              @toggle="
+                value => toggleSidebarUIState('is_crm_sync_open', value)
+              "
+            >
+              <CrmSyncPanel :conversation-id="conversationId" />
+            </AccordionItem>
+          </div>
+          <div v-else-if="element.name === 'ai_usage' && isAdmin">
+            <AccordionItem
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.AI_USAGE')"
+              :is-open="isContactSidebarItemOpen('is_ai_usage_open')"
+              compact
+              @toggle="
+                value => toggleSidebarUIState('is_ai_usage_open', value)
+              "
+            >
+              <ConversationAiUsage :conversation-id="conversationId" />
+            </AccordionItem>
+          </div>
         </template>
       </Draggable>
-
-      <!-- CRM Sync (fuera del Draggable, no reordenable) -->
-      <AccordionItem
-        v-if="hasCrmIntegration"
-        :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CRM_SYNC')"
-        :is-open="isContactSidebarItemOpen('is_crm_sync_open')"
-        compact
-        @toggle="value => toggleSidebarUIState('is_crm_sync_open', value)"
-      >
-        <CrmSyncPanel :conversation-id="conversationId" />
-      </AccordionItem>
     </div>
   </div>
 </template>

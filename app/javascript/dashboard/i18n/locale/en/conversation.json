@@ -379,7 +379,22 @@
       "LINEAR_ISSUES": "Linked Linear Issues",
       "SHOPIFY_ORDERS": "Shopify Orders",
       "SURVEY_RESPONSES": "Survey Responses",
-      "CRM_SYNC": "CRM Sync"
+      "CRM_SYNC": "CRM Sync",
+      "AI_USAGE": "AI Usage"
+    },
+    "AI_USAGE": {
+      "NO_DATA": "No AI usage data available for this conversation.",
+      "COST": "Cost (USD)",
+      "INPUT_TOKENS": "Input tokens",
+      "OUTPUT_TOKENS": "Output tokens",
+      "LLM_CALLS": "LLM calls",
+      "GRAPH_INVOCATIONS": "Graph invocations",
+      "AVG_LATENCY": "Avg latency",
+      "P95_LATENCY": "P95 latency",
+      "ERRORS": "Errors",
+      "DURATION": "Duration",
+      "MODELS_USED": "Models used",
+      "COST_BY_MODEL": "Cost by model (USD)"
     },
     "SHOPIFY": {
       "ORDER_ID": "Order #{id}",

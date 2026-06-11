@@ -637,6 +637,8 @@ Rails.application.routes.draw do
       resources :conversations, only: [] do
         resource :reengagement, only: [:destroy],
                                 controller: 'conversation_reengagements'
+        resource :ai_usage, only: [:create],
+                            controller: 'conversation_ai_usages'
       end
     end
   end

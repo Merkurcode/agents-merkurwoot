@@ -140,6 +140,7 @@ class Conversation < ApplicationRecord
   has_many :sequence_enrollments, dependent: :destroy
   has_many :enrollment_events, dependent: :destroy
   has_one :meta_campaign_interaction, dependent: :destroy
+  has_one :conversation_ai_usage, dependent: :destroy
 
   before_save :ensure_snooze_until_reset
   before_create :determine_conversation_status
@@ -153,6 +154,10 @@ class Conversation < ApplicationRecord
   after_discard :dispatch_discard_event
 
   delegate :auto_resolve_after, to: :account
+
+  def ai_thread_id
+    "#{account_id}_customer_#{display_id}_#{contact_id}"
+  end
 
   def can_reply?
     Conversations::MessageWindowService.new(self).can_reply?

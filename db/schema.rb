@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_04_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_11_000001) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -844,6 +844,30 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_04_000001) do
     t.index ["pipeline_status_id"], name: "index_contacts_on_pipeline_status_id"
     t.index ["source_metadata"], name: "index_contacts_on_source_metadata", using: :gin
     t.index ["source_type"], name: "index_contacts_on_source_type"
+  end
+
+  create_table "conversation_ai_usages", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.bigint "account_id", null: false
+    t.string "thread_id", null: false
+    t.decimal "ai_cost_usd", precision: 10, scale: 6
+    t.integer "ai_input_tokens", default: 0
+    t.integer "ai_output_tokens", default: 0
+    t.integer "ai_llm_calls", default: 0
+    t.integer "ai_graph_invocations", default: 0
+    t.float "ai_avg_latency_ms"
+    t.float "ai_p95_latency_ms"
+    t.integer "ai_error_count", default: 0
+    t.float "ai_duration_seconds"
+    t.datetime "ai_started_at"
+    t.string "ai_models_used"
+    t.jsonb "ai_cost_by_model", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_conversation_ai_usages_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_conversation_ai_usages_on_account_id"
+    t.index ["conversation_id"], name: "index_conversation_ai_usages_on_conversation_id", unique: true
+    t.index ["thread_id"], name: "index_conversation_ai_usages_on_thread_id"
   end
 
   create_table "conversation_follow_ups", force: :cascade do |t|

@@ -41,6 +41,11 @@ const formattedP95Latency = computed(() => {
   return `${Math.round(usage.value.ai_p95_latency_ms)} ms`;
 });
 
+const formattedLastUpdated = computed(() => {
+  if (!usage.value?.updated_at) return '—';
+  return new Date(usage.value.updated_at).toLocaleString();
+});
+
 const costByModelEntries = computed(() => {
   const byModel = usage.value?.ai_cost_by_model;
   if (!byModel || typeof byModel !== 'object') return [];
@@ -179,7 +184,10 @@ const costByModelEntries = computed(() => {
       </div>
 
       <!-- Costo por modelo -->
-      <div v-if="costByModelEntries.length" class="px-4 py-2">
+      <div
+        v-if="costByModelEntries.length"
+        class="px-4 py-2 border-b border-n-weak"
+      >
         <span class="text-xs text-n-slate-11 block mb-1.5">
           {{ $t('CONVERSATION_SIDEBAR.AI_USAGE.COST_BY_MODEL') }}
         </span>
@@ -195,6 +203,16 @@ const costByModelEntries = computed(() => {
             {{ entry.cost }}
           </span>
         </div>
+      </div>
+
+      <!-- Última actualización -->
+      <div class="flex items-center justify-between px-4 py-2">
+        <span class="text-xs text-n-slate-11">
+          {{ $t('CONVERSATION_SIDEBAR.AI_USAGE.LAST_UPDATED') }}
+        </span>
+        <span class="text-xs text-n-slate-11">
+          {{ formattedLastUpdated }}
+        </span>
       </div>
     </div>
   </div>

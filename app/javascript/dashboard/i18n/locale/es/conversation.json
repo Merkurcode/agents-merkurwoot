@@ -393,7 +393,8 @@
       "ERRORS": "Errores",
       "DURATION": "Duración",
       "MODELS_USED": "Modelos usados",
-      "COST_BY_MODEL": "Costo por modelo (USD)"
+      "COST_BY_MODEL": "Costo por modelo (USD)",
+      "LAST_UPDATED": "Última actualización"
     },
     "SHOPIFY": {
       "ORDER_ID": "Order #{id}",

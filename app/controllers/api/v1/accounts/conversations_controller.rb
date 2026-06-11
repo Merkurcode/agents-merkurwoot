@@ -70,7 +70,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     render json: usage&.as_json(
       only: %i[ai_cost_usd ai_input_tokens ai_output_tokens ai_llm_calls ai_graph_invocations
                ai_avg_latency_ms ai_p95_latency_ms ai_error_count ai_duration_seconds
-               ai_started_at ai_models_used ai_cost_by_model]
+               ai_started_at ai_models_used ai_cost_by_model updated_at]
     )
   end
 

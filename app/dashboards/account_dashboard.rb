@@ -36,6 +36,8 @@ class AccountDashboard < Administrate::BaseDashboard
     pinecone_index: Field::String,
     pinecone_api_key: Field::String,
     eleven_labs_agent_id: Field::String,
+    customer_tagging_enabled: Field::Boolean,
+    customer_tagging_cooldown_seconds: Field::Number,
     account_users: Field::HasMany,
     account_addresses: AccountAddressesField,
     custom_attributes: Field::String
@@ -75,6 +77,8 @@ class AccountDashboard < Administrate::BaseDashboard
     pinecone_index
     pinecone_api_key
     eleven_labs_agent_id
+    customer_tagging_enabled
+    customer_tagging_cooldown_seconds
     conversations
     account_users
     account_addresses
@@ -98,6 +102,8 @@ class AccountDashboard < Administrate::BaseDashboard
     pinecone_index
     pinecone_api_key
     eleven_labs_agent_id
+    customer_tagging_enabled
+    customer_tagging_cooldown_seconds
     account_addresses
   ] + enterprise_form_attributes).freeze
 

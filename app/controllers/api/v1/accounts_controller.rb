@@ -98,6 +98,7 @@ class Api::V1::AccountsController < Api::BaseController
   def settings_params
     params.permit(:auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting, :audio_transcriptions, :auto_resolve_label,
                   :business_hours_enabled, :business_hours_timezone, :appointment_slot_duration_minutes,
+                  :customer_tagging_enabled, :customer_tagging_cooldown_seconds,
                   conversation_required_attributes: [], enabled_appointment_types: [])
   end
 

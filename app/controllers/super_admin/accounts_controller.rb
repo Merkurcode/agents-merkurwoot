@@ -36,6 +36,8 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   def resource_params
     permitted_params = super
     permitted_params[:limits] = permitted_params[:limits].to_h.compact
+    permitted_params[:customer_tagging_enabled] = ActiveModel::Type::Boolean.new.cast(permitted_params[:customer_tagging_enabled])
+    permitted_params[:customer_tagging_cooldown_seconds] = permitted_params[:customer_tagging_cooldown_seconds].presence&.to_i
 
     # Split feature flags between the two columns
     if params[:enabled_features].present?

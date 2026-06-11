@@ -76,7 +76,9 @@ class Account < ApplicationRecord
             'help_center_search': { 'type': %w[boolean null] }
           },
           'additionalProperties': false
-        }
+        },
+        'customer_tagging_enabled': { 'type': %w[boolean null] },
+        'customer_tagging_cooldown_seconds': { 'type': %w[integer null], 'minimum': 60 }
       },
     'required': [],
     'additionalProperties': true
@@ -100,6 +102,7 @@ class Account < ApplicationRecord
   store_accessor :settings, :business_hours_enabled, :business_hours_timezone
   store_accessor :settings, :enabled_appointment_types
   store_accessor :settings, :appointment_slot_duration_minutes
+  store_accessor :settings, :customer_tagging_enabled, :customer_tagging_cooldown_seconds
 
   has_many :account_users, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
@@ -267,6 +270,10 @@ class Account < ApplicationRecord
 
   def default_slot_duration
     appointment_slot_duration_minutes&.to_i || ENV.fetch('DEFAULT_SLOT_DURATION_MINUTES', 30).to_i
+  end
+
+  def customer_tagging_cooldown_seconds
+    settings['customer_tagging_cooldown_seconds'] || 600
   end
 
   def increment_product_catalog_version!

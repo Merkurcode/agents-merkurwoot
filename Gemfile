@@ -46,6 +46,8 @@ gem 'gmail_xoauth'
 gem 'net-smtp',  '~> 0.3.4'
 # Prevent CSV injection
 gem 'csv-safe'
+# Resend inbound webhook signature verification
+gem 'svix'
 # QR code generation
 gem 'rqrcode'
 # Excel file processing

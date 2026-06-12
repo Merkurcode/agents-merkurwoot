@@ -693,5 +693,56 @@ RSpec.describe ConversationReplyMailer do
         expect(mail.in_reply_to).to eq("account/#{conversation.account.id}/conversation/#{conversation.uuid}@#{domain}")
       end
     end
+
+    context 'with resend channel' do
+      let!(:resend_account) { create(:account) }
+      let!(:resend_channel) do
+        Channel::Email.create!(
+          account: resend_account,
+          email: 'replies@notification.merkur.la',
+          provider: 'resend'
+        )
+      end
+      let!(:resend_inbox) { create(:inbox, channel: resend_channel, account: resend_account) }
+      let(:resend_conversation) { create(:conversation, inbox: resend_inbox, account: resend_account) }
+      let(:resend_message) do
+        create(:message,
+               conversation: resend_conversation,
+               account: resend_account,
+               message_type: 'outgoing',
+               content: 'Hola desde Resend')
+      end
+      let(:mail) { described_class.email_reply(resend_message).message }
+
+      it 'sets reply_to to plus-addressed alias on the channel email domain' do
+        expected = "reply+#{resend_conversation.uuid}@notification.merkur.la"
+        expect(mail.reply_to).to include(expected)
+      end
+
+      it 'uses the channel email as the From address' do
+        expect(mail.from).to include('replies@notification.merkur.la')
+      end
+
+      it 'uses Resend SMTP delivery settings' do
+        with_modified_env RESEND_API_KEY: 're_test_secret' do
+          delivery = described_class.email_reply(resend_message)
+          delivery.message # trigger lazy build of mail options
+          expect(delivery.message.delivery_method.settings[:address]).to eq('smtp.resend.com')
+          expect(delivery.message.delivery_method.settings[:port]).to eq(587)
+          expect(delivery.message.delivery_method.settings[:user_name]).to eq('resend')
+          expect(delivery.message.delivery_method.settings[:password]).to eq('re_test_secret')
+        end
+      end
+
+      it 'includes List-Unsubscribe and List-Unsubscribe-Post headers' do
+        unsubscribe_header = mail.header['List-Unsubscribe']&.value
+        post_header = mail.header['List-Unsubscribe-Post']&.value
+
+        expect(unsubscribe_header).to be_present
+        expect(unsubscribe_header).to include('/unsubscribe?token=')
+        expect(unsubscribe_header).to include('mailto:unsubscribe@notification.merkur.la')
+        expect(post_header).to eq('List-Unsubscribe=One-Click')
+      end
+    end
   end
 end

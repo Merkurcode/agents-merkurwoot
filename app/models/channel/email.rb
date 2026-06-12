@@ -55,6 +55,7 @@ class Channel::Email < ApplicationRecord
   validates :forward_to_email, uniqueness: true
 
   before_validation :ensure_forward_to_email, on: :create
+  before_validation :apply_resend_smtp_defaults, on: :create
 
   def name
     'Email'
@@ -68,13 +69,44 @@ class Channel::Email < ApplicationRecord
     provider == 'google'
   end
 
+  def resend?
+    provider == 'resend'
+  end
+
   def legacy_google?
     imap_enabled && imap_address == 'imap.gmail.com'
+  end
+
+  def smtp_password
+    return ENV.fetch('RESEND_API_KEY', '') if resend?
+
+    self[:smtp_password]
+  end
+
+  def smtp_domain
+    return email.to_s.split('@').last.presence || 'smtp.resend.com' if resend?
+
+    self[:smtp_domain]
   end
 
   private
 
   def ensure_forward_to_email
     self.forward_to_email ||= "#{SecureRandom.hex}@#{account.inbound_email_domain}"
+  end
+
+  def apply_resend_smtp_defaults
+    return unless resend?
+
+    self.smtp_enabled = true
+    self.imap_enabled = false
+    self.smtp_address = 'smtp.resend.com'
+    self.smtp_port = 587
+    self.smtp_login = 'resend'
+    self.smtp_domain = ''
+    self.smtp_enable_starttls_auto = true
+    self.smtp_enable_ssl_tls = false
+    self.smtp_openssl_verify_mode = 'none'
+    self.smtp_authentication = 'plain'
   end
 end

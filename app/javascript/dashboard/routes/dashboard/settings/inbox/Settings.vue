@@ -169,7 +169,7 @@ export default {
         this.isALineChannel ||
         this.isAPIInbox ||
         this.isAVoiceChannel ||
-        (this.isAnEmailChannel && !this.inbox.provider) ||
+        (this.isAnEmailChannel && (!this.inbox.provider || this.isAResendInbox)) ||
         this.shouldShowWhatsAppConfiguration ||
         this.isAWebWidgetInbox
       ) {

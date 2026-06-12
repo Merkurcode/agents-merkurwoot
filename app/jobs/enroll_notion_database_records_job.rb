@@ -758,6 +758,11 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
   end
 
   def send_email_first_contact(sequence, conversation, contact, config, record)
+    if contact.custom_attributes['email_opted_out'] == true
+      Rails.logger.info "Skipping email to opted-out contact #{contact.id}"
+      return
+    end
+
     inbox = sequence.account.inboxes.find_by(id: config['inbox_id'])
     raise "Email inbox #{config['inbox_id']} not found" unless inbox
 
@@ -770,6 +775,12 @@ class EnrollNotionDatabaseRecordsJob < ApplicationJob
     rendered_subject = render_param_value(config['subject'] || '', contact, record, sequence)
     rendered_content = render_param_value(config['content'] || '', contact, record, sequence)
     sender_email = config['sender_email'].presence || sequence.account.support_email
+
+    if rendered_subject.present?
+      conversation.update!(
+        additional_attributes: conversation.additional_attributes.merge('mail_subject' => rendered_subject)
+      )
+    end
 
     payload = build_first_contact_payload(
       sequence: sequence,

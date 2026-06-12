@@ -41,6 +41,9 @@ export default {
     isAGoogleInbox() {
       return this.isAnEmailChannel && this.inbox.provider === 'google';
     },
+    isAResendInbox() {
+      return this.isAnEmailChannel && this.inbox.provider === 'resend';
+    },
     isAPIInbox() {
       return this.channelType === INBOX_TYPES.API;
     },

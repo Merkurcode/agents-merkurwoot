@@ -1102,6 +1102,10 @@
         "ENROLLED": "Enrolled",
         "SELECTED_COUNT": "{count} selected",
         "CANCEL_SELECTED": "Cancel Selected",
+        "CANCEL": "Cancel",
+        "CANCEL_CONFIRM": "Are you sure you want to cancel this enrollment?",
+        "CANCEL_SUCCESS": "Enrollment cancelled successfully",
+        "CANCEL_ERROR": "Error cancelling enrollment",
         "CLEAR_FILTER": "Clear filter",
         "NO_CONVERSATIONS_FOUND": "No conversations found with this status",
         "NO_CONVERSATIONS_ENROLLED": "No conversations enrolled yet"

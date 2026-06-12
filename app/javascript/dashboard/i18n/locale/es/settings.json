@@ -1048,6 +1048,10 @@
         "ENROLLED": "Enrolado",
         "SELECTED_COUNT": "{count} seleccionado(s)",
         "CANCEL_SELECTED": "Cancelar Seleccionados",
+        "CANCEL": "Cancelar",
+        "CANCEL_CONFIRM": "¿Estás seguro de que deseas cancelar este enrolamiento?",
+        "CANCEL_SUCCESS": "Enrolamiento cancelado exitosamente",
+        "CANCEL_ERROR": "Error al cancelar el enrolamiento",
         "CLEAR_FILTER": "Limpiar filtro",
         "NO_CONVERSATIONS_FOUND": "No hay conversaciones con este estado",
         "NO_CONVERSATIONS_ENROLLED": "No hay conversaciones enrolladas"

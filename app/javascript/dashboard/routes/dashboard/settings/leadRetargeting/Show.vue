@@ -256,6 +256,26 @@ const cancelSelectedFollowUps = async () => {
   }
 };
 
+const cancellingRowId = ref(null);
+
+const cancelSingleFollowUp = async enrollmentId => {
+  if (!confirm(t('LEAD_RETARGETING.SHOW.ENROLLED_TABLE.CANCEL_CONFIRM'))) return;
+
+  try {
+    cancellingRowId.value = enrollmentId;
+    await leadFollowUpSequencesAPI.cancelFollowUps(route.params.sequenceId, [
+      enrollmentId,
+    ]);
+    useAlert(t('LEAD_RETARGETING.SHOW.ENROLLED_TABLE.CANCEL_SUCCESS'));
+    await fetchEnrolledConversations();
+  } catch (error) {
+    console.error('Error cancelling follow-up:', error);
+    useAlert(t('LEAD_RETARGETING.SHOW.ENROLLED_TABLE.CANCEL_ERROR'));
+  } finally {
+    cancellingRowId.value = null;
+  }
+};
+
 const resetData = () => {
   sequence.value = null;
   enrolledConversations.value = [];
@@ -541,6 +561,7 @@ onBeforeUnmount(() => {
                   >
                     {{ t('LEAD_RETARGETING.SHOW.ENROLLED_TABLE.ENROLLED') }}
                   </th>
+                  <th class="px-4 py-3 w-16" />
                 </tr>
               </thead>
               <tbody class="divide-y divide-n-weak/60">
@@ -665,6 +686,18 @@ onBeforeUnmount(() => {
                     <p class="text-xs text-n-slate-11">
                       {{ formatDate(item.created_at) }}
                     </p>
+                  </td>
+                  <td class="px-4 py-3">
+                    <Button
+                      v-if="item.status === 'active'"
+                      ruby
+                      faded
+                      xs
+                      icon="i-lucide-x-circle"
+                      :label="t('LEAD_RETARGETING.SHOW.ENROLLED_TABLE.CANCEL')"
+                      :loading="cancellingRowId === item.id"
+                      @click="cancelSingleFollowUp(item.id)"
+                    />
                   </td>
                 </tr>
               </tbody>

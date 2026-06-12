@@ -521,6 +521,7 @@ class LeadRetargeting::SendFollowUpService
         advance_to_next_step
       when 'stop_sequence'
         Rails.logger.error "Step failed, stopping sequence: #{error}"
+        @follow_up.cancel_job!
         @follow_up.update!(
           status: 'failed',
           metadata: (@follow_up.metadata || {}).merge(
@@ -528,6 +529,11 @@ class LeadRetargeting::SendFollowUpService
             failed_step_id: step['id']
           )
         )
+        if (enrollment = resolve_enrollment)
+          enrollment.update!(current_step: @follow_up.current_step)
+          enrollment.fail!(error)
+        end
+        update_sequence_stats
       end
     end
   end
@@ -577,10 +583,9 @@ class LeadRetargeting::SendFollowUpService
     @follow_up.cancel_job!
     @follow_up.mark_as_completed!(reason)
 
-    # Update enrollment if exists
-    if @enrollment
-      @enrollment.update!(current_step: @follow_up.current_step)
-      @enrollment.complete!(reason)
+    if (enrollment = resolve_enrollment)
+      enrollment.update!(current_step: @follow_up.current_step)
+      enrollment.complete!(reason)
     end
 
     update_sequence_stats
@@ -593,15 +598,18 @@ class LeadRetargeting::SendFollowUpService
     @follow_up.cancel_job!
     @follow_up.mark_as_cancelled!(reason)
 
-    # Update enrollment if exists
-    if @enrollment
-      @enrollment.update!(current_step: @follow_up.current_step)
-      @enrollment.cancel!(reason)
+    if (enrollment = resolve_enrollment)
+      enrollment.update!(current_step: @follow_up.current_step)
+      enrollment.cancel!(reason)
     end
 
     update_sequence_stats
 
     Rails.logger.info "Cancelled follow-up #{@follow_up.id}: #{reason}"
+  end
+
+  def resolve_enrollment
+    @enrollment || @conversation.sequence_enrollments.active.find_by(lead_follow_up_sequence: @sequence)
   end
 
   def update_sequence_stats

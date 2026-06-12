@@ -104,7 +104,8 @@ class LeadFollowUpSequence < ApplicationRecord
     matches_date_filter?(conversation) &&
       matches_label_filter?(conversation) &&
       matches_status_filter?(conversation) &&
-      matches_pipeline_status_filter?(conversation)
+      matches_pipeline_status_filter?(conversation) &&
+      matches_custom_attribute_filters?(conversation)
   end
 
   def matches_date_filter?(conversation)
@@ -165,6 +166,16 @@ class LeadFollowUpSequence < ApplicationRecord
 
     # Check if conversation pipeline_status_id is in the selected pipeline status IDs
     filter['pipeline_status_ids'].include?(conversation.pipeline_status_id)
+  end
+
+  def matches_custom_attribute_filters?(conversation)
+    filters = trigger_conditions['custom_attribute_filters']
+    return true if filters.blank?
+    return true unless source_type == 'existing_conversations'
+
+    LeadRetargeting::CustomAttributeFilterApplier
+      .call(Conversation.where(id: conversation.id), filters)
+      .exists?
   end
 
   def render_param_value(value, context)
@@ -389,6 +400,10 @@ class LeadFollowUpSequence < ApplicationRecord
     validate_status_filter_structure if trigger_conditions['status_filter'].present?
     validate_pipeline_status_filter_structure if trigger_conditions['pipeline_status_filter'].present?
     validate_enrollment_filter_structure if trigger_conditions['enrollment_filter'].present?
+
+    return unless source_type == 'existing_conversations' && trigger_conditions['custom_attribute_filters'].present?
+
+    validate_custom_attribute_filters
   end
 
   def validate_date_filter_structure
@@ -453,6 +468,45 @@ class LeadFollowUpSequence < ApplicationRecord
     unless [true, false].include?(filter['include_completed'])
       errors.add(:trigger_conditions, 'Enrollment filter include_completed must be a boolean')
     end
+  end
+
+  def validate_custom_attribute_filters
+    filters = trigger_conditions['custom_attribute_filters']
+
+    unless filters.is_a?(Array)
+      errors.add(:trigger_conditions, 'custom_attribute_filters must be an array')
+      return
+    end
+
+    if filters.size > LeadRetargeting::CustomAttributeFilterApplier::MAX_FILTERS
+      errors.add(:trigger_conditions,
+                 "cannot have more than #{LeadRetargeting::CustomAttributeFilterApplier::MAX_FILTERS} custom attribute filters")
+      return
+    end
+
+    filters.each_with_index { |filter, index| validate_single_custom_filter(filter, index) }
+  end
+
+  def validate_single_custom_filter(filter, index)
+    unless filter['entity'].in?(%w[contact conversation])
+      errors.add(:trigger_conditions, "custom_attribute_filter at #{index} has invalid entity")
+      return
+    end
+
+    attr_model = filter['entity'] == 'contact' ? :contact_attribute : :conversation_attribute
+
+    unless account.custom_attribute_definitions.exists?(attribute_model: attr_model, attribute_key: filter['attribute_key'])
+      errors.add(:trigger_conditions,
+                 "custom_attribute_filter at #{index}: attribute '#{filter['attribute_key']}' not found for this account")
+      return
+    end
+
+    attr_type = filter['attribute_display_type']
+    valid_ops = LeadRetargeting::CustomAttributeFilterApplier::OPERATORS_BY_TYPE[attr_type] || []
+    return if valid_ops.include?(filter['operator'])
+
+    errors.add(:trigger_conditions,
+               "custom_attribute_filter at #{index}: invalid operator '#{filter['operator']}' for type '#{attr_type}'")
   end
 
   def validate_source_config

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_11_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_12_180000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -836,6 +836,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000001) do
     t.index ["account_id"], name: "index_resolved_contact_account_id", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["blocked"], name: "index_contacts_on_blocked"
     t.index ["company_id"], name: "index_contacts_on_company_id"
+    t.index ["custom_attributes"], name: "index_contacts_on_custom_attributes_gin", using: :gin
     t.index ["discarded_at"], name: "index_contacts_on_discarded_at"
     t.index ["email", "account_id"], name: "uniq_email_per_account_contact", unique: true
     t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true
@@ -969,6 +970,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000001) do
     t.index ["contact_id"], name: "index_conversations_on_contact_id"
     t.index ["contact_inbox_id"], name: "index_conversations_on_contact_inbox_id"
     t.index ["conversation_type"], name: "index_conversations_on_conversation_type"
+    t.index ["custom_attributes"], name: "index_conversations_on_custom_attributes_gin", using: :gin
     t.index ["discarded_at"], name: "index_conversations_on_discarded_at"
     t.index ["eleven_labs_conversation_id"], name: "index_conversations_on_eleven_labs_conversation_id", unique: true, where: "(eleven_labs_conversation_id IS NOT NULL)"
     t.index ["first_reply_created_at"], name: "index_conversations_on_first_reply_created_at"

@@ -12,6 +12,7 @@ import Modal from 'dashboard/components/Modal.vue';
 import SettingIntroBanner from 'dashboard/components/widgets/SettingIntroBanner.vue';
 import SettingsSection from 'dashboard/components/SettingsSection.vue';
 import TagMultiSelectComboBox from 'dashboard/components-next/combobox/TagMultiSelectComboBox.vue';
+import CustomAttributeFiltersSection from './CustomAttributeFiltersSection.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -40,6 +41,9 @@ const pipelineStatuses = computed(
 );
 const contactCustomAttributes = computed(
   () => getters['attributes/getContactAttributes'].value || []
+);
+const conversationCustomAttributes = computed(
+  () => getters['attributes/getConversationAttributes'].value || []
 );
 
 const STANDARD_CONTACT_VARS = [
@@ -184,6 +188,7 @@ const defaultSequence = {
     enrollment_filter: {
       include_completed: true,
     },
+    custom_attribute_filters: [],
   },
   settings: {
     stop_on_contact_reply: true,
@@ -279,6 +284,9 @@ const fetchSequence = async () => {
           ...defaultSequence.trigger_conditions.enrollment_filter,
           ...(data.trigger_conditions?.enrollment_filter || {}),
         },
+        custom_attribute_filters:
+          data.trigger_conditions?.custom_attribute_filters ||
+          defaultSequence.trigger_conditions.custom_attribute_filters,
       },
       settings: {
         ...defaultSequence.settings,
@@ -2392,6 +2400,15 @@ const saveSequence = async () => {
                 {{ t('LEAD_RETARGETING.FORM.INCLUDE_COMPLETED_COPILOTS_HELP') }}
               </div>
             </div>
+
+            <!-- Custom Attribute Filters -->
+            <CustomAttributeFiltersSection
+              v-model:filters="
+                sequence.trigger_conditions.custom_attribute_filters
+              "
+              :contact-attributes="contactCustomAttributes"
+              :conversation-attributes="conversationCustomAttributes"
+            />
           </div>
 
           <!-- Eligible Conversations Preview -->

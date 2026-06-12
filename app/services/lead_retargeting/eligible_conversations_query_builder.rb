@@ -36,6 +36,7 @@ module LeadRetargeting
       query = apply_status_filter(query)
       query = apply_pipeline_status_filter(query)
       query = apply_label_filter(query)
+      query = apply_custom_attribute_filters(query)
       query
     end
 
@@ -146,6 +147,13 @@ module LeadRetargeting
       else
         query
       end
+    end
+
+    def apply_custom_attribute_filters(query)
+      filters = trigger_conditions['custom_attribute_filters']
+      return query if filters.blank?
+
+      LeadRetargeting::CustomAttributeFilterApplier.call(query, filters)
     end
   end
 end

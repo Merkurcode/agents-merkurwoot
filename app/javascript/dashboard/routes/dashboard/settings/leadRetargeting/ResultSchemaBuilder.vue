@@ -17,7 +17,7 @@ const emit = defineEmits(['update:modelValue']);
 const FIELD_TYPES = ['text', 'select', 'number', 'boolean'];
 
 const typeLabel = type =>
-  t(`SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.TYPES.${type}`);
+  t(`LEAD_RETARGETING.RESULT_SCHEMA.TYPES.${type}`);
 
 const addField = () => {
   const newKey = `field_${Date.now()}`;
@@ -70,7 +70,7 @@ const optionsAsString = field =>
 <template>
   <div class="flex flex-col gap-3">
     <p class="text-sm text-n-slate-11">
-      {{ t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.SECTION_DESCRIPTION') }}
+      {{ t('LEAD_RETARGETING.RESULT_SCHEMA.SECTION_DESCRIPTION') }}
     </p>
 
     <div
@@ -82,10 +82,10 @@ const optionsAsString = field =>
         <div class="flex-1">
           <Input
             :model-value="field.label"
-            :label="t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.FIELD_LABEL')"
+            :label="t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_LABEL')"
             :placeholder="
               t(
-                'SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.FIELD_LABEL_PLACEHOLDER'
+                'LEAD_RETARGETING.RESULT_SCHEMA.FIELD_LABEL_PLACEHOLDER'
               )
             "
             @update:model-value="v => updateField(index, { label: v })"
@@ -113,7 +113,7 @@ const optionsAsString = field =>
             @change="e => updateField(index, { required: e.target.checked })"
           />
           <label :for="`required-${index}`" class="text-xs text-n-slate-11">
-            {{ t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.FIELD_REQUIRED') }}
+            {{ t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_REQUIRED') }}
           </label>
         </div>
 
@@ -124,7 +124,7 @@ const optionsAsString = field =>
           icon="i-lucide-x"
           class="mt-5 shrink-0"
           :aria-label="
-            t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.REMOVE_FIELD')
+            t('LEAD_RETARGETING.RESULT_SCHEMA.REMOVE_FIELD')
           "
           @click="removeField(index)"
         />
@@ -133,10 +133,10 @@ const optionsAsString = field =>
       <Input
         v-if="field.type === 'select'"
         :model-value="optionsAsString(field)"
-        :label="t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS')"
+        :label="t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS')"
         :placeholder="
           t(
-            'SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS_PLACEHOLDER'
+            'LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS_PLACEHOLDER'
           )
         "
         @update:model-value="v => updateOptions(index, v)"
@@ -148,7 +148,7 @@ const optionsAsString = field =>
       slate
       sm
       icon="i-lucide-plus"
-      :label="t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.ADD_FIELD')"
+      :label="t('LEAD_RETARGETING.RESULT_SCHEMA.ADD_FIELD')"
       class="self-start"
       @click="addField"
     />

@@ -561,6 +561,24 @@
         "SIGN_IN": "Sign in with Google",
         "EMAIL_PLACEHOLDER": "Enter email address",
         "ERROR_MESSAGE": "There was an error connecting to Google, please try again"
+      },
+      "RESEND": {
+        "TITLE": "Resend Email Inbox",
+        "DESC": "Send outbound emails through Resend SMTP and receive replies via Resend's inbound webhook. Make sure the domain is verified in Resend and the inbound webhook is configured to hit /webhooks/resend/inbound.",
+        "CHANNEL_NAME": {
+          "LABEL": "Channel Name",
+          "PLACEHOLDER": "Please enter a channel name",
+          "ERROR": "This field is required"
+        },
+        "EMAIL": {
+          "LABEL": "Email",
+          "PLACEHOLDER": "Please enter your email address",
+          "SUBTITLE": "Use an address on a domain verified in Resend (e.g. replies@notification.merkur.la). Replies will arrive here via the Resend inbound webhook."
+        },
+        "SUBMIT_BUTTON": "Create Resend Inbox",
+        "API": {
+          "ERROR_MESSAGE": "We were unable to create the Resend inbox, please try again"
+        }
       }
     },
     "DETAILS": {
@@ -766,6 +784,10 @@
       "FORWARD_EMAIL_TITLE": "Forward to Email",
       "FORWARD_EMAIL_SUB_TEXT": "Start forwarding your emails to the following email address.",
       "FORWARD_EMAIL_NOT_CONFIGURED": "Forwarding emails to your inbox is currently disabled on this installation. To use this feature, it must be enabled by your administrator. Please get in touch with them to proceed.",
+      "RESEND_CONFIGURATION_TITLE": "Resend configuration",
+      "RESEND_CONFIGURATION_SUBTITLE": "This inbox sends emails through Resend SMTP and receives replies via the Resend inbound webhook. SMTP and IMAP credentials are managed at the server level and cannot be edited here.",
+      "RESEND_OUTBOUND_LABEL": "Outbound",
+      "RESEND_INBOUND_LABEL": "Inbound",
       "ALLOW_MESSAGES_AFTER_RESOLVED": "Allow messages after conversation resolved",
       "ALLOW_MESSAGES_AFTER_RESOLVED_SUB_TEXT": "Allow the end-users to send messages even after the conversation is resolved.",
       "WHATSAPP_SECTION_SUBHEADER": "This API Key is used for the integration with the WhatsApp APIs.",
@@ -1087,6 +1109,10 @@
       "GOOGLE": {
         "TITLE": "Google",
         "DESCRIPTION": "Connect with Google"
+      },
+      "RESEND": {
+        "TITLE": "Resend",
+        "DESCRIPTION": "Send via Resend, receive via webhook"
       },
       "OTHER_PROVIDERS": {
         "TITLE": "Other Providers",

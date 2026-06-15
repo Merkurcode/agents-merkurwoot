@@ -5,6 +5,7 @@ class ConversationReplyMailer < ApplicationMailer
 
   include ConversationReplyMailerHelper
   include ReferencesHeaderBuilder
+  include ResendComplianceHeaders
   default from: ENV.fetch('MAILER_SENDER_EMAIL', 'Chatwoot <accounts@nauto.la>')
   layout :choose_layout
 

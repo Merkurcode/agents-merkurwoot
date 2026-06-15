@@ -751,6 +751,11 @@ Rails.application.routes.draw do
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'
   post 'webhooks/eleven_labs', to: 'webhooks/eleven_labs#process_payload'
   post 'webhooks/eleven_labs/post_call', to: 'webhooks/eleven_labs#post_call'
+  post 'webhooks/resend/inbound', to: 'webhooks/resend#inbound'
+  post 'webhooks/resend/events', to: 'webhooks/resend#events'
+
+  get 'unsubscribe', to: 'unsubscribe#show'
+  post 'unsubscribe', to: 'unsubscribe#process_unsubscribe'
 
   namespace :twitter do
     resource :callback, only: [:show]

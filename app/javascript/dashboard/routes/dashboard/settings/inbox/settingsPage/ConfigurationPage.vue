@@ -425,8 +425,29 @@ export default {
         </div>
       </SettingsSection>
     </div>
-    <ImapSettings :inbox="inbox" />
-    <SmtpSettings v-if="inbox.imap_enabled" :inbox="inbox" />
+    <div v-if="isAResendInbox" class="mx-8">
+      <SettingsSection
+        :title="$t('INBOX_MGMT.SETTINGS_POPUP.RESEND_CONFIGURATION_TITLE')"
+        :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.RESEND_CONFIGURATION_SUBTITLE')"
+      >
+        <div
+          class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg max-w-3xl"
+        >
+          <p class="text-sm text-blue-900 dark:text-blue-100 mb-2">
+            <strong>{{ $t('INBOX_MGMT.SETTINGS_POPUP.RESEND_OUTBOUND_LABEL') }}:</strong>
+            smtp.resend.com (managed via RESEND_API_KEY env var)
+          </p>
+          <p class="text-sm text-blue-900 dark:text-blue-100 mb-0">
+            <strong>{{ $t('INBOX_MGMT.SETTINGS_POPUP.RESEND_INBOUND_LABEL') }}:</strong>
+            POST /webhooks/resend/inbound (Resend webhook with event email.received)
+          </p>
+        </div>
+      </SettingsSection>
+    </div>
+    <template v-else>
+      <ImapSettings :inbox="inbox" />
+      <SmtpSettings v-if="inbox.imap_enabled" :inbox="inbox" />
+    </template>
   </div>
   <div v-else-if="isAWhatsAppChannel && !isATwilioChannel">
     <div v-if="inbox.provider_config" class="mx-8">

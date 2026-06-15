@@ -16,6 +16,7 @@ module ConversationReplyMailerHelper
       @options[:cc] = cc_bcc_emails[0]
       @options[:bcc] = cc_bcc_emails[1]
     end
+    @options.merge!(resend_compliance_headers) if resend_channel?
     oauth_smtp_settings
     set_delivery_method
 
@@ -99,8 +100,14 @@ module ConversationReplyMailerHelper
 
   def email_reply_to
     return Email::ReplyToBuilder.new(inbox: @inbox, message: current_message).build if @account.feature_enabled?(:reply_mailer_migration)
+    return resend_plus_addressed_reply_to if @channel.respond_to?(:resend?) && @channel.resend?
 
     email_imap_enabled ? @channel.email : reply_email
+  end
+
+  def resend_plus_addressed_reply_to
+    domain = @channel.email.to_s.split('@').last
+    sender_name("reply+#{@conversation.uuid}@#{domain}")
   end
 
   # Use channel email domain in case of account email domain is not set for custom message_id and in_reply_to

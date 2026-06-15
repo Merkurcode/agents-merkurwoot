@@ -1360,6 +1360,7 @@
       "FIELD_REQUIRED": "Required",
       "FIELD_OPTIONS": "Options (comma-separated)",
       "FIELD_OPTIONS_PLACEHOLDER": "Converted, Not interested, No response",
+      "FIELD_KEY_LABEL": "key:",
       "REMOVE_FIELD": "Remove field",
       "TYPES": {
         "text": "Free text",

@@ -1,70 +1,106 @@
 <script setup>
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 
-const { t } = useI18n();
-
 const props = defineProps({
-  modelValue: {
-    type: Array,
-    default: () => [],
-  },
+  modelValue: { type: Array, default: () => [] },
 });
-
 const emit = defineEmits(['update:modelValue']);
 
-const FIELD_TYPES = ['text', 'select', 'number', 'boolean'];
+const { t } = useI18n();
 
-const typeLabel = type =>
-  t(`LEAD_RETARGETING.RESULT_SCHEMA.TYPES.${type}`);
+const FIELD_TYPES = ['text', 'number', 'select', 'boolean'];
+
+const TYPE_ICONS = {
+  text: 'i-lucide-type',
+  number: 'i-lucide-hash',
+  select: 'i-lucide-chevrons-up-down',
+  boolean: 'i-lucide-toggle-left',
+};
+
+const typeLabel = type => t(`LEAD_RETARGETING.RESULT_SCHEMA.TYPES.${type}`);
+
+const toLocal = f => ({
+  ...f,
+  optionsString: (f.options || []).map(o => o.label).join(', '),
+});
+
+// Local copy prevents focus loss on every keystroke
+const localFields = ref(props.modelValue.map(toLocal));
+
+watch(
+  () => props.modelValue,
+  newVal => {
+    const newKeys = newVal.map(f => f.key).join(',');
+    const localKeys = localFields.value.map(f => f.key).join(',');
+    if (newKeys !== localKeys) {
+      localFields.value = newVal.map(toLocal);
+    }
+  }
+);
+
+const emitUpdate = () => {
+  emit(
+    'update:modelValue',
+    // Strip internal optionsString before emitting
+    localFields.value.map(({ optionsString, ...f }) => f)
+  );
+};
 
 const addField = () => {
-  const newKey = `field_${Date.now()}`;
-  emit('update:modelValue', [
-    ...props.modelValue,
-    { key: newKey, label: '', type: 'text', required: false, options: [] },
-  ]);
+  localFields.value.push({
+    key: `field_${Date.now()}`,
+    label: '',
+    type: 'text',
+    required: false,
+    options: [],
+    optionsString: '',
+  });
+  emitUpdate();
 };
 
 const removeField = index => {
-  emit(
-    'update:modelValue',
-    props.modelValue.filter((_, i) => i !== index)
-  );
+  localFields.value.splice(index, 1);
+  emitUpdate();
 };
 
-const updateField = (index, patch) => {
-  emit(
-    'update:modelValue',
-    props.modelValue.map((f, i) => {
-      if (i !== index) return f;
-      const updated = { ...f, ...patch };
-      if (patch.label !== undefined) {
-        updated.key = patch.label
-          .toLowerCase()
-          .replace(/\s+/g, '_')
-          .replace(/[^a-z0-9_]/g, '');
-      }
-      if (patch.type !== undefined && patch.type !== 'select') {
-        updated.options = [];
-      }
-      return updated;
-    })
-  );
+const onLabelBlur = index => {
+  const field = localFields.value[index];
+  if (field.label) {
+    field.key = field.label
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '');
+  }
+  emitUpdate();
 };
 
-const updateOptions = (index, rawValue) => {
-  const options = rawValue
+const setType = (index, type) => {
+  const field = localFields.value[index];
+  field.type = type;
+  if (type !== 'select') {
+    field.options = [];
+    field.optionsString = '';
+  }
+  emitUpdate();
+};
+
+const toggleRequired = index => {
+  localFields.value[index].required = !localFields.value[index].required;
+  emitUpdate();
+};
+
+const finalizeOptions = index => {
+  const field = localFields.value[index];
+  field.options = (field.optionsString || '')
     .split(',')
     .map(o => o.trim())
     .filter(Boolean)
     .map(o => ({ label: o, value: o.toLowerCase().replace(/\s+/g, '_') }));
-  updateField(index, { options });
+  emitUpdate();
 };
-
-const optionsAsString = field =>
-  (field.options || []).map(o => o.label).join(', ');
 </script>
 
 <template>
@@ -74,73 +110,92 @@ const optionsAsString = field =>
     </p>
 
     <div
-      v-for="(field, index) in modelValue"
+      v-for="(field, index) in localFields"
       :key="field.key"
-      class="flex flex-col gap-2 rounded-lg border border-n-weak p-3"
+      class="rounded-lg border border-n-weak"
     >
-      <div class="flex items-start gap-2">
-        <div class="flex-1">
-          <Input
-            :model-value="field.label"
-            :label="t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_LABEL')"
-            :placeholder="
-              t(
-                'LEAD_RETARGETING.RESULT_SCHEMA.FIELD_LABEL_PLACEHOLDER'
-              )
-            "
-            @update:model-value="v => updateField(index, { label: v })"
-          />
-        </div>
-
-        <div class="w-36 pt-5">
-          <select
-            :value="field.type"
-            class="w-full rounded-lg border border-n-weak bg-n-background px-3 py-2 text-sm text-n-slate-12 focus:outline-none focus:ring-1 focus:ring-n-blue-8"
-            @change="e => updateField(index, { type: e.target.value })"
+      <div class="flex flex-col gap-2.5 p-3">
+        <!-- Label input row -->
+        <div class="flex items-center gap-2">
+          <span
+            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-n-slate-3 text-xs font-semibold text-n-slate-10"
           >
-            <option v-for="type in FIELD_TYPES" :key="type" :value="type">
-              {{ typeLabel(type) }}
-            </option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-1.5 pt-7">
-          <input
-            :id="`required-${index}`"
-            type="checkbox"
-            :checked="field.required"
-            class="h-4 w-4 rounded border-n-weak text-n-blue-9"
-            @change="e => updateField(index, { required: e.target.checked })"
+            {{ index + 1 }}
+          </span>
+          <div class="flex-1" @blur.capture="onLabelBlur(index)">
+            <Input
+              v-model="field.label"
+              :placeholder="
+                t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_LABEL_PLACEHOLDER')
+              "
+            />
+          </div>
+          <Button
+            ghost
+            ruby
+            xs
+            icon="i-lucide-trash-2"
+            :aria-label="t('LEAD_RETARGETING.RESULT_SCHEMA.REMOVE_FIELD')"
+            @click="removeField(index)"
           />
-          <label :for="`required-${index}`" class="text-xs text-n-slate-11">
-            {{ t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_REQUIRED') }}
-          </label>
         </div>
 
-        <Button
-          ghost
-          ruby
-          xs
-          icon="i-lucide-x"
-          class="mt-5 shrink-0"
-          :aria-label="
-            t('LEAD_RETARGETING.RESULT_SCHEMA.REMOVE_FIELD')
-          "
-          @click="removeField(index)"
-        />
-      </div>
+        <!-- Auto-generated key preview -->
+        <p v-if="field.label" class="pl-7 font-mono text-xs text-n-slate-9">
+          {{ t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_KEY_LABEL') }}
+          {{ field.key }}
+        </p>
 
-      <Input
-        v-if="field.type === 'select'"
-        :model-value="optionsAsString(field)"
-        :label="t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS')"
-        :placeholder="
-          t(
-            'LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS_PLACEHOLDER'
-          )
-        "
-        @update:model-value="v => updateOptions(index, v)"
-      />
+        <!-- Type pills + Required toggle -->
+        <div class="flex flex-wrap items-center gap-1.5 pl-7">
+          <button
+            v-for="type in FIELD_TYPES"
+            :key="type"
+            type="button"
+            class="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors"
+            :class="
+              field.type === type
+                ? 'bg-n-blue-3 text-n-blue-11 ring-1 ring-n-blue-6'
+                : 'text-n-slate-10 hover:bg-n-slate-3'
+            "
+            @click="setType(index, type)"
+          >
+            <span :class="TYPE_ICONS[type]" class="h-3 w-3" />
+            {{ typeLabel(type) }}
+          </button>
+
+          <div class="mx-0.5 h-3 w-px bg-n-weak" />
+
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors"
+            :class="
+              field.required
+                ? 'bg-n-amber-3 text-n-amber-11 ring-1 ring-n-amber-6'
+                : 'text-n-slate-10 hover:bg-n-slate-3'
+            "
+            @click="toggleRequired(index)"
+          >
+            <span class="i-lucide-asterisk h-3 w-3" />
+            {{ t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_REQUIRED') }}
+          </button>
+        </div>
+
+        <!-- Options input (select type only) -->
+        <div
+          v-if="field.type === 'select'"
+          class="pl-7"
+          @blur.capture="finalizeOptions(index)"
+        >
+          <Input
+            v-model="field.optionsString"
+            :label="t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS')"
+            :placeholder="
+              t('LEAD_RETARGETING.RESULT_SCHEMA.FIELD_OPTIONS_PLACEHOLDER')
+            "
+          />
+        </div>
+      </div>
     </div>
 
     <Button

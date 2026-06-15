@@ -1306,6 +1306,7 @@
       "FIELD_REQUIRED": "Requerido",
       "FIELD_OPTIONS": "Opciones (separadas por coma)",
       "FIELD_OPTIONS_PLACEHOLDER": "Convertido, No interesado, Sin respuesta",
+      "FIELD_KEY_LABEL": "clave:",
       "REMOVE_FIELD": "Eliminar campo",
       "TYPES": {
         "text": "Texto libre",

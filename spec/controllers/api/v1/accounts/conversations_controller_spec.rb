@@ -1068,4 +1068,92 @@ RSpec.describe 'Conversations API', type: :request do
       end
     end
   end
+
+  describe 'GET /api/v1/accounts/{account_id}/conversations/{conversation_id}/enrollment_result_schema' do
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:whatsapp_channel) do
+      create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false)
+    end
+    let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
+    let(:conversation) { create(:conversation, account: account, inbox: whatsapp_inbox) }
+
+    before { create(:inbox_member, user: agent, inbox: whatsapp_inbox) }
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/enrollment_result_schema"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when there is no active enrollment' do
+      it 'returns nil enrollment_id and empty schema' do
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/enrollment_result_schema",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:enrollment_id]).to be_nil
+        expect(body[:result_schema]).to eq([])
+      end
+    end
+
+    context 'when there is an active enrollment without result schema' do
+      before { create(:sequence_enrollment, conversation: conversation) }
+
+      it 'returns the enrollment_id and empty schema' do
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/enrollment_result_schema",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:enrollment_id]).to be_present
+        expect(body[:result_schema]).to eq([])
+      end
+    end
+
+    context 'when there is an active enrollment with result schema' do
+      let!(:enrollment) { create(:sequence_enrollment, :with_result_schema, conversation: conversation) }
+
+      it 'returns the enrollment with schema, sequence info, and current result' do
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/enrollment_result_schema",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:enrollment_id]).to eq(enrollment.id)
+        expect(body[:sequence_id]).to eq(enrollment.lead_follow_up_sequence_id)
+        expect(body[:sequence_name]).to be_present
+        expect(body[:result_schema]).not_to be_empty
+        expect(body[:result_schema].first[:key]).to eq('outcome')
+        expect(body[:result_schema].first[:options]).not_to be_empty
+        expect(body[:result_complete]).to eq(false)
+        expect(body[:current_result]).to be_a(Hash)
+      end
+    end
+
+    context 'when there is a completed enrollment and an active one' do
+      let!(:completed_enrollment) do
+        create(:sequence_enrollment, :completed, :with_result_schema, conversation: conversation)
+      end
+      # Reuse the same sequence to avoid one-active-per-inbox validation
+      let!(:active_enrollment) do
+        create(:sequence_enrollment, conversation: conversation,
+                                     lead_follow_up_sequence: completed_enrollment.lead_follow_up_sequence)
+      end
+
+      it 'returns the active enrollment' do
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/enrollment_result_schema",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:enrollment_id]).to eq(active_enrollment.id)
+      end
+    end
+  end
 end

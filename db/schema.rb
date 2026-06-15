@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_12_180000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_12_190003) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1163,6 +1163,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_12_180000) do
     t.index ["sequence_enrollment_id"], name: "index_enrollment_events_on_sequence_enrollment_id"
   end
 
+  create_table "enrollment_result_values", force: :cascade do |t|
+    t.bigint "sequence_enrollment_id", null: false
+    t.bigint "lead_follow_up_sequence_id", null: false
+    t.string "field_key", null: false
+    t.text "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lead_follow_up_sequence_id", "field_key", "value"], name: "idx_enrollment_results_seq_key_value"
+    t.index ["lead_follow_up_sequence_id", "field_key"], name: "idx_enrollment_results_seq_key"
+    t.index ["lead_follow_up_sequence_id"], name: "index_enrollment_result_values_on_lead_follow_up_sequence_id"
+    t.index ["sequence_enrollment_id"], name: "index_enrollment_result_values_on_sequence_enrollment_id"
+  end
+
   create_table "faq_categories", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "parent_id"
@@ -1384,6 +1397,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_12_180000) do
     t.integer "completed_enrollments_count", default: 0
     t.integer "cancelled_enrollments_count", default: 0
     t.integer "failed_enrollments_count", default: 0
+    t.jsonb "result_schema", default: []
     t.index ["account_id", "active"], name: "index_lead_follow_up_sequences_on_account_id_and_active"
     t.index ["account_id"], name: "index_lead_follow_up_sequences_on_account_id"
     t.index ["inbox_id"], name: "index_lead_follow_up_sequences_on_inbox_id"
@@ -1792,6 +1806,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_12_180000) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "result_captured_by"
+    t.datetime "result_captured_at"
+    t.boolean "result_complete", default: false, null: false
     t.index ["completed_at"], name: "index_sequence_enrollments_on_completed_at"
     t.index ["conversation_id", "lead_follow_up_sequence_id", "enrolled_at"], name: "index_enrollments_on_conv_sequence_enrolled"
     t.index ["conversation_id"], name: "index_sequence_enrollments_on_conversation_id"
@@ -2082,6 +2099,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_12_180000) do
   add_foreign_key "enrollment_events", "conversations"
   add_foreign_key "enrollment_events", "lead_follow_up_sequences"
   add_foreign_key "enrollment_events", "sequence_enrollments"
+  add_foreign_key "enrollment_result_values", "lead_follow_up_sequences"
+  add_foreign_key "enrollment_result_values", "sequence_enrollments"
   add_foreign_key "faq_categories", "accounts"
   add_foreign_key "faq_categories", "faq_categories", column: "parent_id"
   add_foreign_key "faq_categories", "users", column: "created_by_id"

@@ -41,6 +41,24 @@ class LeadFollowUpSequencesAPI extends ApiClient {
       `${this.url}/${sequenceId}/enrollments/${enrollmentId}/timeline`
     );
   }
+
+  submitEnrollmentResult(sequenceId, enrollmentId, values) {
+    return axios.post(
+      `${this.url}/${sequenceId}/enrollments/${enrollmentId}/result`,
+      { values }
+    );
+  }
+
+  cancelEnrollment(sequenceId, enrollmentId, { reason, values } = {}) {
+    return axios.post(
+      `${this.url}/${sequenceId}/enrollments/${enrollmentId}/cancel`,
+      { reason, values }
+    );
+  }
+
+  getResultIndicators(sequenceId) {
+    return axios.get(`${this.url}/${sequenceId}/result_indicators`);
+  }
 }
 
 export default new LeadFollowUpSequencesAPI();

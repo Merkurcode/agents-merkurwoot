@@ -24,7 +24,7 @@ FactoryBot.define do
             'closed_window_action' => 'send_template',
             'ai_config' => { 'enabled' => false, 'context' => '', 'variables' => {} },
             'template_config' => {
-              'template_name' => 'follow_up_message',
+              'template_name' => 'ticket_status_updated',
               'language' => 'en',
               'template_params' => { 'body' => { '1' => '{{contact.name}}' } }
             },
@@ -54,7 +54,7 @@ FactoryBot.define do
       sequence.inbox ||= create(
         :inbox,
         account: sequence.account,
-        channel: create(:channel_whatsapp, account: sequence.account)
+        channel: create(:channel_whatsapp, account: sequence.account, sync_templates: false, validate_provider_config: false)
       )
     end
   end

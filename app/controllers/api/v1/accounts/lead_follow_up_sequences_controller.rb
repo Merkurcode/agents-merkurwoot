@@ -1,6 +1,9 @@
 class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::BaseController
+  before_action :check_admin_authorization?, except: %i[submit_enrollment_result cancel_enrollment]
   before_action :set_inbox, only: [:index, :create, :available_templates]
-  before_action :set_sequence, only: [:show, :update, :destroy, :activate, :deactivate, :enrolled_conversations, :cancel_follow_ups, :enrollment_timeline]
+  before_action :set_sequence, only: [:show, :update, :destroy, :activate, :deactivate, :enrolled_conversations,
+                                      :cancel_follow_ups, :enrollment_timeline, :submit_enrollment_result,
+                                      :cancel_enrollment, :result_indicators]
 
   def index
     @sequences = Current.account.lead_follow_up_sequences.includes(:inbox)
@@ -219,7 +222,9 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
             name: enrollment.conversation.contact&.name,
             phone_number: enrollment.conversation.contact&.phone_number
           },
-          conversation_status: enrollment.conversation.status
+          conversation_status: enrollment.conversation.status,
+          result_complete: enrollment.result_complete,
+          result_captured_by: enrollment.result_captured_by
         }
       end.compact,
       page: page,
@@ -269,6 +274,54 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     render json: { error: 'Failed to fetch enrollment timeline' }, status: :internal_server_error
   end
 
+  def submit_enrollment_result
+    enrollment = @sequence.sequence_enrollments.find(params[:enrollment_id])
+    captured_by = @resource.is_a?(AgentBot) ? 'agent_bot' : 'human'
+    enrollment.set_result!(result_values_params, captured_by: captured_by)
+    render json: { result: enrollment.result_as_hash, result_complete: enrollment.result_complete }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Enrollment not found' }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  def cancel_enrollment
+    enrollment = @sequence.sequence_enrollments.find(params[:enrollment_id])
+    return render json: { error: 'Enrollment is not active' }, status: :unprocessable_entity unless enrollment.active?
+
+    follow_up = enrollment.conversation.conversation_follow_up
+    reason = params[:reason].presence || 'cancelled_by_agent'
+
+    ActiveRecord::Base.transaction do
+      follow_up&.cancel_job!
+      follow_up&.mark_as_completed!(reason)
+      enrollment.cancel!(reason)
+      captured_by = @resource.is_a?(AgentBot) ? 'agent_bot' : 'human'
+      enrollment.set_result!(result_values_params, captured_by: captured_by) if result_values_params.any?
+    end
+
+    render json: { status: enrollment.status, reason: enrollment.completion_reason }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Enrollment not found' }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  def result_indicators
+    return render json: { indicators: {} } if @sequence.result_schema.blank?
+
+    indicators = @sequence.result_schema.each_with_object({}) do |field, acc|
+      counts = EnrollmentResultValue
+               .for_sequence(@sequence.id)
+               .for_field(field['key'])
+               .group(:value)
+               .count
+      acc[field['key']] = { label: field['label'], type: field['type'], counts: counts }
+    end
+
+    render json: { indicators: indicators }
+  end
+
   private
 
   def set_inbox
@@ -295,7 +348,12 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     permitted[:settings] = raw_params[:settings].to_unsafe_h if raw_params[:settings].present?
     permitted[:source_config] = raw_params[:source_config].to_unsafe_h if raw_params[:source_config].present?
     permitted[:first_contact_config] = raw_params[:first_contact_config].to_unsafe_h if raw_params[:first_contact_config].present?
+    permitted[:result_schema] = raw_params[:result_schema].map(&:to_unsafe_h) if raw_params[:result_schema].present?
 
     permitted
+  end
+
+  def result_values_params
+    params.permit(values: {}).fetch(:values, {}).to_unsafe_h
   end
 end

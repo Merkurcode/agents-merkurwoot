@@ -4,6 +4,7 @@ class LeadFollowUpSequence < ApplicationRecord
   has_many :conversation_follow_ups, dependent: :destroy
   has_many :sequence_enrollments, dependent: :destroy
   has_many :enrollment_events, dependent: :destroy
+  has_many :enrollment_result_values, dependent: :destroy_async
 
   validates :name, presence: true
   validates :source_type, presence: true, inclusion: { in: %w[existing_conversations notion_database] }
@@ -15,6 +16,7 @@ class LeadFollowUpSequence < ApplicationRecord
   validate :validate_trigger_conditions
   validate :validate_source_config
   validate :validate_first_contact_config
+  validate :validate_result_schema
 
   after_commit :enroll_eligible_conversations, if: :should_auto_enroll?
   after_commit :sync_notion_custom_attributes, if: :notion_database?
@@ -671,5 +673,20 @@ class LeadFollowUpSequence < ApplicationRecord
     end
   rescue StandardError => e
     Rails.logger.error "Failed to sync Notion custom attributes: #{e.message}"
+  end
+
+  def validate_result_schema
+    return if result_schema.blank?
+
+    result_schema.each do |field|
+      errors.add(:result_schema, 'field missing key')   unless field['key'].present?
+      errors.add(:result_schema, 'field missing label') unless field['label'].present?
+      unless %w[text select number boolean].include?(field['type'])
+        errors.add(:result_schema, "invalid type '#{field['type']}'")
+      end
+      next unless field['type'] == 'select'
+
+      errors.add(:result_schema, "select field '#{field['key']}' needs options") unless field['options'].is_a?(Array) && field['options'].any?
+    end
   end
 end

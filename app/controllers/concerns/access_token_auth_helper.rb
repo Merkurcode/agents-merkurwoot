@@ -3,7 +3,8 @@ module AccessTokenAuthHelper
     'api/v1/accounts/conversations' => %w[toggle_status toggle_priority create update custom_attributes],
     'api/v1/accounts/conversations/messages' => ['create'],
     'api/v1/accounts/conversations/assignments' => ['create'],
-    'api/v1/accounts/inbox_message_templates' => %w[index create show destroy]
+    'api/v1/accounts/inbox_message_templates' => %w[index create show destroy],
+    'api/v1/accounts/lead_follow_up_sequences' => %w[submit_enrollment_result cancel_enrollment]
   }.freeze
 
   def ensure_access_token

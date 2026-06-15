@@ -20,6 +20,7 @@ const statusCounts = ref({});
 const selectedFollowUps = ref([]);
 const cancellingFollowUps = ref(false);
 const totalSteps = ref(0);
+const resultIndicators = ref({});
 
 const goBack = () => {
   router.push({ name: 'copilots_list' });
@@ -76,6 +77,17 @@ const fetchEnrolledConversations = async () => {
     useAlert('Error al cargar conversaciones');
   } finally {
     enrolledLoading.value = false;
+  }
+};
+
+const fetchResultIndicators = async () => {
+  try {
+    const response = await leadFollowUpSequencesAPI.getResultIndicators(
+      route.params.sequenceId
+    );
+    resultIndicators.value = response.data.indicators || {};
+  } catch {
+    // indicadores no críticos, no mostrar alerta
   }
 };
 
@@ -287,7 +299,7 @@ const resetData = () => {
 
 const loadData = async () => {
   await fetchSequence();
-  await fetchEnrolledConversations();
+  await Promise.all([fetchEnrolledConversations(), fetchResultIndicators()]);
 };
 
 onMounted(async () => {
@@ -501,7 +513,46 @@ onBeforeUnmount(() => {
             </p>
           </div>
 
-          <div v-else class="overflow-x-auto">
+          <div v-else class="flex flex-col gap-6">
+            <!-- Result Indicators -->
+            <div
+              v-if="sequence?.result_schema?.length && Object.keys(resultIndicators).length"
+              class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              <div
+                v-for="(indicator, key) in resultIndicators"
+                :key="key"
+                class="rounded-lg border border-n-weak p-4"
+              >
+                <p class="mb-3 text-sm font-medium text-n-slate-12">
+                  {{ indicator.label }}
+                </p>
+                <div class="flex flex-col gap-1.5">
+                  <div
+                    v-for="(count, value) in indicator.counts"
+                    :key="value"
+                    class="flex items-center gap-2"
+                  >
+                    <div class="flex-1">
+                      <div class="mb-0.5 flex justify-between text-xs text-n-slate-11">
+                        <span>{{ value }}</span>
+                        <span>{{ count }}</span>
+                      </div>
+                      <div class="h-1.5 w-full overflow-hidden rounded-full bg-n-slate-3">
+                        <div
+                          class="h-full rounded-full bg-n-blue-9"
+                          :style="{
+                            width: `${Math.round((count / Object.values(indicator.counts).reduce((a, b) => a + b, 0)) * 100)}%`,
+                          }"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
             <table class="w-full">
               <thead class="bg-n-slate-2 dark:bg-n-slate-3">
                 <tr>
@@ -560,6 +611,12 @@ onBeforeUnmount(() => {
                     class="px-4 py-3 text-left text-xs font-medium text-n-slate-11"
                   >
                     {{ t('LEAD_RETARGETING.SHOW.ENROLLED_TABLE.ENROLLED') }}
+                  </th>
+                  <th
+                    v-if="sequence?.result_schema?.length"
+                    class="px-4 py-3 text-left text-xs font-medium text-n-slate-11"
+                  >
+                    {{ t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.TITLE') }}
                   </th>
                   <th class="px-4 py-3 w-16" />
                 </tr>
@@ -687,6 +744,24 @@ onBeforeUnmount(() => {
                       {{ formatDate(item.created_at) }}
                     </p>
                   </td>
+                  <td
+                    v-if="sequence?.result_schema?.length"
+                    class="px-4 py-3"
+                  >
+                    <span
+                      v-if="item.result_complete"
+                      class="inline-flex items-center gap-1 rounded-full bg-n-teal-3 px-2 py-0.5 text-xs font-medium text-n-teal-11"
+                    >
+                      <span class="i-lucide-check-circle h-3 w-3" />
+                      {{ t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.COMPLETE') }}
+                    </span>
+                    <span
+                      v-else-if="item.status !== 'active'"
+                      class="inline-flex items-center gap-1 rounded-full bg-n-amber-3 px-2 py-0.5 text-xs font-medium text-n-amber-11"
+                    >
+                      {{ t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.PENDING') }}
+                    </span>
+                  </td>
                   <td class="px-4 py-3">
                     <Button
                       v-if="item.status === 'active'"
@@ -702,6 +777,7 @@ onBeforeUnmount(() => {
                 </tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>

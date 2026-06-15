@@ -2,11 +2,13 @@ class SequenceEnrollment < ApplicationRecord
   belongs_to :conversation
   belongs_to :lead_follow_up_sequence, counter_cache: :enrollments_count
   has_many :enrollment_events, dependent: :destroy
+  has_many :result_values, class_name: 'EnrollmentResultValue', dependent: :destroy_async
   has_one :active_follow_up, class_name: 'ConversationFollowUp', dependent: :nullify
 
   after_create :increment_status_counter
   after_update :update_status_counter, if: :saved_change_to_status?
   after_destroy :decrement_status_counter
+  after_commit :enqueue_result_analysis_webhook, if: :should_request_result_analysis?
 
   validates :status, presence: true, inclusion: { in: %w[active completed cancelled failed] }
   validates :enrolled_at, presence: true
@@ -106,6 +108,28 @@ class SequenceEnrollment < ApplicationRecord
     (completed_at - enrolled_at).to_i
   end
 
+  def set_result!(values_hash, captured_by:)
+    transaction do
+      result_values.destroy_all
+      values_hash.each do |key, value|
+        result_values.create!(
+          lead_follow_up_sequence: lead_follow_up_sequence,
+          field_key: key.to_s,
+          value: value.to_s
+        )
+      end
+      update!(
+        result_captured_by: captured_by,
+        result_captured_at: Time.current,
+        result_complete: required_fields_complete?(values_hash)
+      )
+    end
+  end
+
+  def result_as_hash
+    result_values.index_by(&:field_key).transform_values(&:value)
+  end
+
   private
 
   def increment_status_counter
@@ -135,10 +159,28 @@ class SequenceEnrollment < ApplicationRecord
     column = "#{status_name}_enrollments_count"
     # We can't check respond_to? on the association easily if it's not loaded,
     # so we rely on the column naming convention.
-    
+
     # Use update_counters to atomic update without triggering model callbacks
     LeadFollowUpSequence.update_counters(lead_follow_up_sequence_id, column => by)
   rescue StandardError => e
     Rails.logger.warn "Failed to update counter #{column}: #{e.message}"
+  end
+
+  def should_request_result_analysis?
+    finished? &&
+      saved_change_to_status? &&
+      lead_follow_up_sequence.result_schema.present? &&
+      result_values.empty?
+  end
+
+  def enqueue_result_analysis_webhook
+    FollowUpResultAnalysisJob.perform_later(id)
+  end
+
+  def required_fields_complete?(values)
+    required_keys = lead_follow_up_sequence.result_schema
+                    .select { |f| f['required'] }
+                    .pluck('key')
+    required_keys.all? { |k| values[k.to_s].present? || values[k.to_sym].present? }
   end
 end

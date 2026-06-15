@@ -128,6 +128,9 @@ Rails.application.routes.draw do
               get :enrolled_conversations
               post :cancel_follow_ups
               get 'enrollments/:enrollment_id/timeline', action: :enrollment_timeline, as: :enrollment_timeline
+              post 'enrollments/:enrollment_id/result', action: :submit_enrollment_result, as: :enrollment_result
+              post 'enrollments/:enrollment_id/cancel', action: :cancel_enrollment, as: :cancel_enrollment
+              get :result_indicators
             end
             collection do
               get :available_templates

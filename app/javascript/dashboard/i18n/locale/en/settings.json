@@ -1306,6 +1306,45 @@
       "re_enrolled": "Re-enrolled in copilot",
       "paused": "Copilot paused",
       "resumed": "Copilot resumed"
+    },
+    "RESULT_SCHEMA": {
+      "SECTION_TITLE": "Results to capture",
+      "SECTION_DESCRIPTION": "Define what outcome fields to record when this copilot finishes. Can be filled manually by an agent or automatically by the AI agent.",
+      "ADD_FIELD": "Add field",
+      "FIELD_LABEL": "Field label",
+      "FIELD_LABEL_PLACEHOLDER": "e.g. Was the lead converted?",
+      "FIELD_TYPE": "Type",
+      "FIELD_REQUIRED": "Required",
+      "FIELD_OPTIONS": "Options (comma-separated)",
+      "FIELD_OPTIONS_PLACEHOLDER": "Converted, Not interested, No response",
+      "REMOVE_FIELD": "Remove field",
+      "TYPES": {
+        "text": "Free text",
+        "select": "Single choice",
+        "number": "Number",
+        "boolean": "Yes / No"
+      }
+    },
+    "RESULT_FORM": {
+      "TITLE": "Copilot result",
+      "SUBTITLE": "Record the outcome of this interaction",
+      "SAVE": "Save result",
+      "SAVING": "Saving...",
+      "CANCEL_ENROLLMENT": "Cancel copilot for this conversation",
+      "CANCEL_REASON_PLACEHOLDER": "Reason for cancellation (optional)",
+      "CAPTURED_BY_HUMAN": "Filled by agent",
+      "CAPTURED_BY_BOT": "Filled by AI agent",
+      "PENDING": "Pending",
+      "COMPLETE": "Complete",
+      "SUCCESS": "Result saved successfully",
+      "CANCEL_SUCCESS": "Copilot cancelled and result saved",
+      "ERROR": "Failed to save result"
+    },
+    "RESULT_INDICATORS": {
+      "TITLE": "Result indicators",
+      "NO_SCHEMA": "No result schema configured for this copilot.",
+      "NO_DATA": "No results recorded yet.",
+      "TOTAL_WITH_RESULT": "{count} conversations with result"
     }
   }
 }

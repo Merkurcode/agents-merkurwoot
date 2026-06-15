@@ -13,6 +13,7 @@ import SettingIntroBanner from 'dashboard/components/widgets/SettingIntroBanner.
 import SettingsSection from 'dashboard/components/SettingsSection.vue';
 import TagMultiSelectComboBox from 'dashboard/components-next/combobox/TagMultiSelectComboBox.vue';
 import CustomAttributeFiltersSection from './CustomAttributeFiltersSection.vue';
+import ResultSchemaBuilder from './ResultSchemaBuilder.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -203,6 +204,7 @@ const defaultSequence = {
     },
     max_retries_per_step: 2,
   },
+  result_schema: [],
 };
 
 const sequence = ref(JSON.parse(JSON.stringify(defaultSequence)));
@@ -3853,6 +3855,13 @@ const saveSequence = async () => {
               </div>
             </div>
           </div>
+        </SettingsSection>
+
+        <!-- Result Schema -->
+        <SettingsSection
+          :title="t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.SECTION_TITLE')"
+        >
+          <ResultSchemaBuilder v-model="sequence.value.result_schema" />
         </SettingsSection>
 
         <!-- Action Buttons -->

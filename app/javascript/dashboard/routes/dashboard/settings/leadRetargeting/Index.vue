@@ -223,6 +223,10 @@ const confirmDeletion = async () => {
                 <i class="i-lucide-database text-n-purple-11" />
                 <span class="text-sm">{{ sequence.source_config?.notion_database_name || 'Notion Database' }}</span>
               </div>
+              <div v-else-if="sequence.source_type === 'imported_contacts'" class="flex items-center gap-2">
+                <i class="i-lucide-users text-n-teal-11" />
+                <span class="text-sm">Contactos Importados</span>
+              </div>
               <div v-else>
                 {{ sequence.inbox?.name || '-' }}
               </div>

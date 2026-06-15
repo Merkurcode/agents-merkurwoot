@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
+import { debounce } from '@chatwoot/utils';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
@@ -122,6 +123,11 @@ const {
 const showPreviewModal = ref(false);
 const showNotionPreviewModal = ref(false);
 
+const contactsPreviewCount = ref(null);
+const contactsPreviewLoading = ref(false);
+const contactsPreviewContacts = ref([]);
+const showContactsPreviewModal = ref(false);
+
 // Notion Database Integration
 const {
   databases: notionDatabases,
@@ -141,12 +147,29 @@ const {
 
 const customAttributeCounter = ref(0);
 
+const defaultImportedContactsSourceConfig = {
+  labels: [],
+  label_match: 'any',
+  contact_types: [],
+  require_phone: false,
+  require_email: false,
+  created_at_filter: {
+    enabled: false,
+    operator: 'newer_than',
+    value: 30,
+    from_date: null,
+    to_date: null,
+  },
+  additional_attribute_filters: [],
+  custom_attribute_filters: [],
+};
+
 const defaultSequence = {
   name: '',
   description: '',
   inbox_id: null,
   active: false,
-  source_type: 'existing_conversations', // 'existing_conversations' | 'notion_database'
+  source_type: 'existing_conversations', // 'existing_conversations' | 'notion_database' | 'imported_contacts'
   source_config: {
     notion_database_id: null,
     notion_database_name: '',
@@ -224,7 +247,7 @@ const hasFirstContactStep = computed(() => {
 // Check if first_contact step can be added (only one allowed, must be first)
 const canAddFirstContact = computed(() => {
   return (
-    sequence.value.source_type === 'notion_database' &&
+    ['notion_database', 'imported_contacts'].includes(sequence.value.source_type) &&
     !hasFirstContactStep.value
   );
 });
@@ -311,8 +334,12 @@ const fetchSequence = async () => {
       });
     }
 
-    // Load templates for Notion copilots (inbox in first_contact step)
-    if (sequence.value.source_type === 'notion_database') {
+    if (sequence.value.source_type === 'imported_contacts') {
+      previewImportedContacts();
+    }
+
+    // Load templates for Notion / imported_contacts copilots (inbox in first_contact step)
+    if (['notion_database', 'imported_contacts'].includes(sequence.value.source_type)) {
       const firstContactStep = sequence.value.steps?.find(
         s => s.type === 'first_contact'
       );
@@ -437,6 +464,16 @@ watch(
   { deep: true, immediate: true }
 );
 
+watch(
+  () => sequence.value.source_config,
+  () => {
+    if (sequence.value.source_type === 'imported_contacts') {
+      previewImportedContacts();
+    }
+  },
+  { deep: true }
+);
+
 // Watch for route changes to reset form when navigating from edit to create
 watch(
   () => route.params.sequenceId,
@@ -462,7 +499,7 @@ const addStep = type => {
     first_contact: {
       id: stepId,
       type: 'first_contact',
-      name: 'Primer Contacto desde Notion',
+      name: sequence.value.source_type === 'imported_contacts' ? 'Primer Contacto' : 'Primer Contacto desde Notion',
       enabled: true,
       config: {
         channel: 'whatsapp', // 'whatsapp' | 'sms' | 'email'
@@ -849,12 +886,15 @@ const loadNotionDatabasesIfNeeded = async () => {
   }
 };
 
-// Watch for source_type changes to load Notion data
+// Watch for source_type changes to load Notion data or initialize imported_contacts config
 watch(
   () => sequence.value.source_type,
   async newType => {
     if (newType === 'notion_database' && notionDatabases.value.length === 0) {
       await loadNotionDatabasesIfNeeded();
+    }
+    if (newType === 'imported_contacts' && !sequence.value.source_config?.labels) {
+      sequence.value.source_config = JSON.parse(JSON.stringify(defaultImportedContactsSourceConfig));
     }
   }
 );
@@ -960,6 +1000,23 @@ const renameCustomAttributeKey = (oldKey, newKey) => {
   delete sequence.value.source_config.field_mappings.custom_attributes[oldKey];
   sequence.value.source_config.field_mappings.custom_attributes[sanitizedKey] = value;
 };
+
+const previewImportedContacts = debounce(async () => {
+  if (sequence.value.source_type !== 'imported_contacts') return;
+  contactsPreviewLoading.value = true;
+  contactsPreviewCount.value = null;
+  try {
+    const response = await leadFollowUpSequencesAPI.previewEligibleContacts(
+      sequence.value.source_config
+    );
+    contactsPreviewCount.value = response.data.total_count;
+    contactsPreviewContacts.value = response.data.contacts || [];
+  } catch {
+    useAlert('Error al calcular contactos elegibles');
+  } finally {
+    contactsPreviewLoading.value = false;
+  }
+}, 1000);
 
 const previewNotionRecords = async () => {
   if (!sequence.value.source_config.notion_database_id) {
@@ -1143,6 +1200,41 @@ const getSelectFieldOptions = fieldName => {
   return field?.options || [];
 };
 
+// Imported contacts filter handlers
+const addContactCustomAttributeFilter = () => {
+  if (!sequence.value.source_config.custom_attribute_filters) {
+    sequence.value.source_config.custom_attribute_filters = [];
+  }
+  sequence.value.source_config.custom_attribute_filters.push({
+    id: `f_${Date.now()}`,
+    attribute_key: '',
+    attribute_display_type: 'text',
+    operator: 'equal_to',
+    value: '',
+  });
+};
+
+const removeContactCustomAttributeFilter = index => {
+  sequence.value.source_config.custom_attribute_filters.splice(index, 1);
+};
+
+const onContactCustomAttributeChange = (filter) => {
+  const attr = contactCustomAttributes.value.find(a => a.attributeKey === filter.attribute_key);
+  if (attr) {
+    filter.attribute_display_type = attr.attributeDisplayType;
+    filter.operator = 'equal_to';
+    filter.value = '';
+  }
+};
+
+const contactCustomAttrOperatorOptions = [
+  { label: 'Equals', value: 'equal_to' },
+  { label: 'Not equals', value: 'not_equal_to' },
+  { label: 'Contains', value: 'contains' },
+  { label: 'Has value', value: 'is_present' },
+  { label: 'Is empty', value: 'is_not_present' },
+];
+
 const saveSequence = async () => {
   if (!sequence.value.name) {
     useAlert(t('LEAD_RETARGETING.FORM.NAME_REQUIRED'));
@@ -1164,6 +1256,27 @@ const saveSequence = async () => {
 
     if (!sequence.value.source_config.field_mappings.phone_number && !sequence.value.source_config.field_mappings.email) {
       useAlert('Debes mapear al menos Teléfono o Email');
+      return;
+    }
+  } else if (sequence.value.source_type === 'imported_contacts') {
+    if (!sequence.value.steps || sequence.value.steps.length === 0) {
+      useAlert('Debes agregar al menos el paso "Primer Contacto" para el copilot de contactos importados');
+      return;
+    }
+
+    const firstStep = sequence.value.steps[0];
+    if (firstStep.type !== 'first_contact') {
+      useAlert('El primer paso debe ser "Primer Contacto" para copilots de contactos importados');
+      return;
+    }
+
+    if (!firstStep.config.inbox_id) {
+      useAlert('Debes seleccionar un inbox en el paso "Primer Contacto"');
+      return;
+    }
+
+    if (firstStep.config.channel === 'whatsapp' && !firstStep.config.template_name) {
+      useAlert('Debes seleccionar un template de WhatsApp en el paso "Primer Contacto"');
       return;
     }
   }
@@ -1207,7 +1320,7 @@ const saveSequence = async () => {
     return;
   }
 
-  // Validaciones específicas para copilots de Notion
+  // Validaciones específicas para copilots de Notion (imported_contacts ya validado arriba)
   if (sequence.value.source_type === 'notion_database') {
     if (!sequence.value.steps || sequence.value.steps.length === 0) {
       useAlert(
@@ -1224,7 +1337,6 @@ const saveSequence = async () => {
       return;
     }
 
-    // Validar configuración del primer contacto
     if (!firstStep.config.inbox_id) {
       useAlert('Debes seleccionar un inbox en el paso "Primer Contacto"');
       return;
@@ -1303,7 +1415,7 @@ const saveSequence = async () => {
           title="Tipo de Flujo"
           sub-title="Selecciona cómo quieres que se inicie este copilot"
         >
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Existing Conversations Option -->
             <button
               type="button"
@@ -1318,17 +1430,49 @@ const saveSequence = async () => {
               <div class="flex items-start space-x-3">
                 <i class="i-lucide-refresh-ccw text-2xl text-n-blue-9 mt-1" />
                 <div class="flex-1">
-                  <h3 class="font-semibold text-base text-n-slate-12 mb-1">
-                    Seguimiento
-                  </h3>
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 class="font-semibold text-base text-n-slate-12">
+                      Seguimiento
+                    </h3>
+                    <span class="text-xs px-1.5 py-0.5 rounded-full bg-n-teal-3 text-n-teal-11 font-medium shrink-0">
+                      Recomendado
+                    </span>
+                  </div>
                   <p class="text-sm text-n-slate-11">
-                    Da seguimiento a conversaciones existentes que ya están en
-                    tu inbox
+                    Reactiva leads que ya te escribieron pero no respondieron
                   </p>
                 </div>
                 <i
                   v-if="sequence.source_type === 'existing_conversations'"
-                  class="i-lucide-check-circle text-xl text-n-blue-9"
+                  class="i-lucide-check-circle text-xl text-n-blue-9 shrink-0"
+                />
+              </div>
+            </button>
+
+            <!-- Imported Contacts Option -->
+            <button
+              type="button"
+              class="border-2 rounded-lg p-6 text-left transition-all"
+              :class="[
+                sequence.source_type === 'imported_contacts'
+                  ? 'border-n-blue-9 bg-n-blue-2 dark:bg-n-blue-3'
+                  : 'border-n-weak hover:border-n-blue-6',
+              ]"
+              @click="sequence.source_type = 'imported_contacts'"
+            >
+              <div class="flex items-start space-x-3">
+                <i class="i-lucide-users text-2xl text-n-blue-9 mt-1" />
+                <div class="flex-1">
+                  <h3 class="font-semibold text-base text-n-slate-12 mb-1">
+                    Contactos Importados
+                  </h3>
+                  <p class="text-sm text-n-slate-11">
+                    Campañas de salida sobre tu base de contactos existente
+                  </p>
+                </div>
+                <i
+                  v-if="sequence.source_type === 'imported_contacts'"
+                  class="i-lucide-check-circle text-xl text-n-blue-9 shrink-0"
                 />
               </div>
             </button>
@@ -1340,24 +1484,33 @@ const saveSequence = async () => {
               :class="[
                 sequence.source_type === 'notion_database'
                   ? 'border-n-blue-9 bg-n-blue-2 dark:bg-n-blue-3'
-                  : 'border-n-weak hover:border-n-blue-6',
+                  : 'border-dashed border-n-slate-6 hover:border-n-blue-6',
               ]"
               @click="sequence.source_type = 'notion_database'"
             >
               <div class="flex items-start space-x-3">
-                <i class="i-lucide-database text-2xl text-n-blue-9 mt-1" />
+                <i
+                  class="i-lucide-database text-2xl mt-1"
+                  :class="
+                    sequence.source_type === 'notion_database'
+                      ? 'text-n-blue-9'
+                      : 'text-n-slate-9'
+                  "
+                />
                 <div class="flex-1">
                   <h3 class="font-semibold text-base text-n-slate-12 mb-1">
                     Iniciar desde Notion
                   </h3>
+                  <span class="inline-block text-xs px-1.5 py-0.5 rounded-full bg-n-slate-3 text-n-slate-10 font-medium mb-1">
+                    Integración externa
+                  </span>
                   <p class="text-sm text-n-slate-11">
-                    Inicia conversaciones con leads desde una base de datos de
-                    Notion
+                    Para equipos que gestionan leads en Notion
                   </p>
                 </div>
                 <i
                   v-if="sequence.source_type === 'notion_database'"
-                  class="i-lucide-check-circle text-xl text-n-blue-9"
+                  class="i-lucide-check-circle text-xl text-n-blue-9 shrink-0"
                 />
               </div>
             </button>
@@ -2029,6 +2182,224 @@ const saveSequence = async () => {
                 :disabled="!sequence.source_config.notion_database_id"
                 @click="previewNotionRecordsWithFilters"
               />
+            </div>
+          </div>
+        </SettingsSection>
+
+        <!-- Imported Contacts Filters Section -->
+        <SettingsSection
+          v-if="sequence.source_type === 'imported_contacts'"
+          :title="t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.SECTION_TITLE')"
+          :sub-title="t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.SECTION_SUBTITLE')"
+        >
+          <div class="space-y-4">
+            <!-- Label filter -->
+            <div class="border border-n-weak/60 rounded-lg p-4">
+              <h4 class="font-semibold text-sm text-n-slate-12 mb-1">
+                {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.LABEL_FILTER_TITLE') }}
+              </h4>
+              <p class="text-xs text-n-slate-11 mb-3">
+                {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.LABEL_FILTER_HELP') }}
+              </p>
+              <TagMultiSelectComboBox
+                v-model="sequence.source_config.labels"
+                :options="labelOptions"
+                placeholder="Selecciona labels de contacto..."
+              />
+              <div class="flex gap-4 mt-3">
+                <label class="flex items-center gap-2 cursor-pointer text-sm text-n-slate-11">
+                  <input
+                    v-model="sequence.source_config.label_match"
+                    type="radio"
+                    value="any"
+                    class="rounded"
+                  />
+                  {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.LABEL_MATCH_ANY') }}
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-sm text-n-slate-11">
+                  <input
+                    v-model="sequence.source_config.label_match"
+                    type="radio"
+                    value="all"
+                    class="rounded"
+                  />
+                  {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.LABEL_MATCH_ALL') }}
+                </label>
+              </div>
+            </div>
+
+            <!-- Creation date filter -->
+            <div class="border border-n-weak/60 rounded-lg p-4">
+              <label class="flex items-center gap-2 cursor-pointer mb-3">
+                <input
+                  v-model="sequence.source_config.created_at_filter.enabled"
+                  type="checkbox"
+                  class="rounded"
+                />
+                <span class="text-sm font-medium text-n-slate-12">
+                  {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.CREATED_AT_ENABLE') }}
+                </span>
+              </label>
+              <div
+                v-if="sequence.source_config.created_at_filter.enabled"
+                class="space-y-3 mt-2"
+              >
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs text-n-slate-11 mb-1">
+                      {{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR') }}
+                    </label>
+                    <select v-model="sequence.source_config.created_at_filter.operator" class="w-full text-sm">
+                      <option value="newer_than">{{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR_NEWER_THAN') }}</option>
+                      <option value="older_than">{{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR_OLDER_THAN') }}</option>
+                      <option value="between">{{ t('LEAD_RETARGETING.FORM.DATE_OPERATOR_BETWEEN') }}</option>
+                    </select>
+                  </div>
+                  <div v-if="sequence.source_config.created_at_filter.operator !== 'between'">
+                    <label class="block text-xs text-n-slate-11 mb-1">
+                      {{ t('LEAD_RETARGETING.FORM.DAYS') }}
+                    </label>
+                    <input
+                      v-model.number="sequence.source_config.created_at_filter.value"
+                      type="number"
+                      min="1"
+                      class="w-full text-sm"
+                    />
+                  </div>
+                </div>
+                <div v-if="sequence.source_config.created_at_filter.operator === 'between'" class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs text-n-slate-11 mb-1">{{ t('LEAD_RETARGETING.FORM.FROM_DATE') }}</label>
+                    <input v-model="sequence.source_config.created_at_filter.from_date" type="date" class="w-full text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-n-slate-11 mb-1">{{ t('LEAD_RETARGETING.FORM.TO_DATE') }}</label>
+                    <input v-model="sequence.source_config.created_at_filter.to_date" type="date" class="w-full text-sm" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact custom attribute filters -->
+            <div v-if="contactCustomAttributes.length > 0" class="border border-n-weak/60 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h4 class="font-semibold text-sm text-n-slate-12">
+                    {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.CUSTOM_ATTRS_TITLE') }}
+                  </h4>
+                  <p class="text-xs text-n-slate-11 mt-0.5">
+                    {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.CUSTOM_ATTRS_SUBTITLE') }}
+                  </p>
+                </div>
+                <Button xs slate faded label="+ Agregar Filtro" @click="addContactCustomAttributeFilter" />
+              </div>
+              <div
+                v-if="!sequence.source_config.custom_attribute_filters || sequence.source_config.custom_attribute_filters.length === 0"
+                class="text-center py-4 border border-dashed border-n-weak rounded text-sm text-n-slate-11"
+              >
+                Sin filtros de atributos personalizados
+              </div>
+              <div v-else class="space-y-2">
+                <div
+                  v-for="(filter, index) in sequence.source_config.custom_attribute_filters"
+                  :key="filter.id"
+                  class="grid grid-cols-12 gap-2 items-center"
+                >
+                  <select
+                    v-model="filter.attribute_key"
+                    class="col-span-4 text-sm"
+                    @change="onContactCustomAttributeChange(filter)"
+                  >
+                    <option value="">Selecciona atributo</option>
+                    <option
+                      v-for="attr in contactCustomAttributes"
+                      :key="attr.attributeKey"
+                      :value="attr.attributeKey"
+                    >
+                      {{ attr.attributeDisplayName }}
+                    </option>
+                  </select>
+                  <select v-model="filter.operator" class="col-span-3 text-sm">
+                    <option v-for="op in contactCustomAttrOperatorOptions" :key="op.value" :value="op.value">
+                      {{ op.label }}
+                    </option>
+                  </select>
+                  <input
+                    v-if="!['is_present', 'is_not_present'].includes(filter.operator)"
+                    v-model="filter.value"
+                    type="text"
+                    class="col-span-4 text-sm"
+                    placeholder="Valor"
+                  />
+                  <div v-else class="col-span-4" />
+                  <button
+                    type="button"
+                    class="col-span-1 text-n-red-10 hover:text-n-red-11 flex justify-center"
+                    @click="removeContactCustomAttributeFilter(index)"
+                  >
+                    <i class="i-lucide-trash-2 text-base" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Require phone / email -->
+            <div class="border border-n-weak/60 rounded-lg p-4">
+              <div class="space-y-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" v-model="sequence.source_config.require_phone" class="rounded" />
+                  <span class="text-sm text-n-slate-12">
+                    {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.REQUIRE_PHONE') }}
+                  </span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" v-model="sequence.source_config.require_email" class="rounded" />
+                  <span class="text-sm text-n-slate-12">
+                    {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.REQUIRE_EMAIL') }}
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Contacts Preview -->
+            <div class="mt-2 p-4 bg-n-teal-2 dark:bg-n-teal-3 rounded-lg border border-n-teal-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <i class="i-lucide-users text-xl text-n-teal-11" />
+                  <div>
+                    <p class="text-sm font-medium text-n-slate-12">
+                      {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_TITLE') }}
+                    </p>
+                    <p class="text-xs text-n-slate-11">
+                      {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_SUBTITLE') }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div v-if="contactsPreviewLoading" class="flex items-center gap-2">
+                    <i class="i-lucide-loader-2 animate-spin text-n-teal-11" />
+                    <span class="text-sm text-n-slate-11">
+                      {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_LOADING') }}
+                    </span>
+                  </div>
+                  <template v-else-if="contactsPreviewCount !== null">
+                    <span class="px-3 py-1.5 bg-n-teal-9 text-white font-semibold rounded-full text-lg">
+                      {{ contactsPreviewCount.toLocaleString() }}
+                    </span>
+                    <span class="text-sm text-n-slate-11">
+                      {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_CONTACTS') }}
+                    </span>
+                    <Button
+                      xs
+                      teal
+                      faded
+                      :label="t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_VIEW_DETAIL')"
+                      icon="i-lucide-list"
+                      @click="showContactsPreviewModal = true"
+                    />
+                  </template>
+                </div>
+              </div>
             </div>
           </div>
         </SettingsSection>
@@ -3859,9 +4230,9 @@ const saveSequence = async () => {
 
         <!-- Result Schema -->
         <SettingsSection
-          :title="t('SETTINGS.LEAD_RETARGETING.RESULT_SCHEMA.SECTION_TITLE')"
+          :title="t('LEAD_RETARGETING.RESULT_SCHEMA.SECTION_TITLE')"
         >
-          <ResultSchemaBuilder v-model="sequence.value.result_schema" />
+          <ResultSchemaBuilder v-model="sequence.result_schema" />
         </SettingsSection>
 
         <!-- Action Buttons -->
@@ -4014,6 +4385,68 @@ const saveSequence = async () => {
             {{
               notionRecordsPreview.length >= 100
                 ? 'Puede haber más registros disponibles.'
+                : ''
+            }}
+          </p>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Imported Contacts Preview Modal -->
+    <Modal
+      v-model:show="showContactsPreviewModal"
+      :on-close="() => (showContactsPreviewModal = false)"
+    >
+      <div class="p-6 w-full max-w-3xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-n-slate-12">
+            {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_MODAL_TITLE') }}
+          </h3>
+          <span class="text-sm text-n-slate-11">
+            {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_MODAL_TOTAL', { count: contactsPreviewCount?.toLocaleString() }) }}
+          </span>
+        </div>
+
+        <div
+          v-if="contactsPreviewContacts.length > 0"
+          class="space-y-2 max-h-96 overflow-y-auto"
+        >
+          <div
+            v-for="contact in contactsPreviewContacts"
+            :key="contact.id"
+            class="flex items-center gap-3 p-3 border border-n-weak/60 rounded hover:bg-n-weak/30 transition-colors"
+          >
+            <div class="flex-1">
+              <p class="font-medium text-n-slate-12">
+                {{ contact.name || t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_NO_NAME') }}
+              </p>
+              <p class="text-xs text-n-slate-11">
+                {{ contact.phone_number || contact.email || t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_NO_CONTACT') }}
+              </p>
+            </div>
+            <div v-if="contact.labels?.length" class="flex gap-1 flex-wrap">
+              <span
+                v-for="label in contact.labels.slice(0, 3)"
+                :key="label"
+                class="text-xs px-1.5 py-0.5 rounded-full bg-n-teal-3 text-n-teal-11"
+              >
+                {{ label }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="py-8 text-center text-n-slate-11">
+          <i class="i-lucide-users text-4xl mb-2" />
+          <p>{{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_EMPTY') }}</p>
+        </div>
+
+        <div class="mt-4 p-3 bg-n-teal-2 dark:bg-n-teal-3 rounded text-xs text-n-slate-11">
+          <p>
+            {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_SHOWING', { count: contactsPreviewContacts.length }) }}
+            {{
+              contactsPreviewCount > contactsPreviewContacts.length
+                ? t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_MORE', { more: contactsPreviewCount - contactsPreviewContacts.length })
                 : ''
             }}
           </p>

@@ -959,6 +959,11 @@
         "INBOX": "Inbox",
         "STEPS": "Steps"
       },
+      "STATS": {
+        "COMPLETED": "completed",
+        "NO_DATA": "No enrollments",
+        "AUTO_COMPLETED": "Auto-completed"
+      },
       "API": {
         "ERROR_MESSAGE": "Failed to load copilots"
       }

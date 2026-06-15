@@ -32,7 +32,7 @@ const fetchSequences = async () => {
   try {
     loading.value = true;
     const response = await leadFollowUpSequencesAPI.get();
-    sequences.value = response.data;
+    sequences.value = response.data.sort((a, b) => b.id - a.id);
   } catch (error) {
     useAlert(t('LEAD_RETARGETING.LIST.API.ERROR_MESSAGE'));
   } finally {
@@ -181,7 +181,12 @@ const confirmDeletion = async () => {
         <tbody class="divide-y divide-n-weak text-n-slate-12">
           <tr v-for="sequence in sequences" :key="sequence.id">
             <td class="py-4 ltr:pr-4 rtl:pl-4">
-              <span class="block font-medium">{{ sequence.name }}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="font-medium">{{ sequence.name }}</span>
+                <span class="font-mono text-xs text-n-slate-9">{{
+                  `#${sequence.id}`
+                }}</span>
+              </div>
               <p
                 v-if="sequence.description"
                 class="mb-0 text-sm text-n-slate-11"
@@ -214,7 +219,20 @@ const confirmDeletion = async () => {
                   class="inline-flex items-center gap-1 text-xs text-n-teal-11"
                 >
                   <i class="i-lucide-check-circle text-xs" />
-                  Auto-completado
+                  {{ t('LEAD_RETARGETING.LIST.STATS.AUTO_COMPLETED') }}
+                </span>
+                <span
+                  v-if="sequence.stats?.total_enrolled > 0"
+                  class="text-xs text-n-slate-10"
+                >
+                  {{
+                    sequence.stats.total_completed > 0
+                      ? `${sequence.stats.total_enrolled} ${t('LEAD_RETARGETING.LIST.ENROLLED')} · ${sequence.stats.total_completed} ${t('LEAD_RETARGETING.LIST.STATS.COMPLETED')}`
+                      : `${sequence.stats.total_enrolled} ${t('LEAD_RETARGETING.LIST.ENROLLED')}`
+                  }}
+                </span>
+                <span v-else class="text-xs text-n-slate-9">
+                  {{ t('LEAD_RETARGETING.LIST.STATS.NO_DATA') }}
                 </span>
               </div>
             </td>

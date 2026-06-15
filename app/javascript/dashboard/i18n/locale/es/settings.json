@@ -905,6 +905,11 @@
         "SOURCE": "Origen",
         "STEPS": "Pasos"
       },
+      "STATS": {
+        "COMPLETED": "completados",
+        "NO_DATA": "Sin inscripciones",
+        "AUTO_COMPLETED": "Auto-completado"
+      },
       "API": {
         "ERROR_MESSAGE": "Error al cargar los copilots"
       }

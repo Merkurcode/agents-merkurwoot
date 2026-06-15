@@ -76,6 +76,68 @@ RSpec.describe LeadFollowUpSequence do
       end
     end
 
+    context 'when source_type is imported_contacts' do
+      let(:widget_channel) { create(:channel_widget, account: account) }
+      let(:widget_inbox) { create(:inbox, channel: widget_channel, account: account) }
+
+      def build_imported_sequence(source_config = {})
+        build(:lead_follow_up_sequence,
+              account: account,
+              inbox: widget_inbox,
+              source_type: 'imported_contacts',
+              source_config: source_config,
+              steps: [])
+      end
+
+      it 'does not add source_config errors with an empty source_config' do
+        seq = build_imported_sequence
+        seq.valid?
+        expect(seq.errors[:source_config]).to be_empty
+      end
+
+      it 'skips inbox channel validation' do
+        seq = build_imported_sequence
+        seq.valid?
+        expect(seq.errors[:inbox]).to be_empty
+      end
+
+      it 'does not add errors for allowed contact_types' do
+        seq = build_imported_sequence('contact_types' => %w[lead customer])
+        seq.valid?
+        expect(seq.errors[:source_config]).not_to include(a_string_matching('invalid contact_types'))
+      end
+
+      it 'is invalid with unknown contact_types' do
+        seq = build_imported_sequence('contact_types' => %w[lead unknown_type])
+        seq.valid?
+        expect(seq.errors[:source_config]).to include(a_string_matching('invalid contact_types'))
+      end
+
+      it 'is invalid when labels is not an array' do
+        seq = build_imported_sequence('labels' => 'hot-lead')
+        seq.valid?
+        expect(seq.errors[:source_config]).to include('labels must be an array')
+      end
+
+      it 'is invalid with an unknown created_at operator' do
+        seq = build_imported_sequence('created_at_filter' => { 'operator' => 'yesterday', 'value' => 1 })
+        seq.valid?
+        expect(seq.errors[:source_config]).to include(a_string_matching('invalid created_at_filter operator'))
+      end
+
+      it 'is invalid when between filter is missing dates' do
+        seq = build_imported_sequence('created_at_filter' => { 'operator' => 'between' })
+        seq.valid?
+        expect(seq.errors[:source_config]).to include(a_string_matching('requires from_date and to_date'))
+      end
+
+      it 'is invalid when newer_than value is not positive' do
+        seq = build_imported_sequence('created_at_filter' => { 'operator' => 'newer_than', 'value' => 0 })
+        seq.valid?
+        expect(seq.errors[:source_config]).to include('created_at_filter value must be positive')
+      end
+    end
+
     context 'when result_schema has invalid fields' do
       let(:whatsapp_sequence) { build(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
 

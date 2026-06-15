@@ -537,4 +537,99 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       end
     end
   end
+
+  describe 'POST /api/v1/accounts/{account.id}/copilot_sequences/preview_eligible_contacts' do
+    let(:administrator) { create(:user, account: account, role: :administrator) }
+    let(:url) { "/api/v1/accounts/#{account.id}/copilot_sequences/preview_eligible_contacts" }
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        post url
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as administrator' do
+      before { create(:contact, account: account, phone_number: '+521234567890') }
+
+      it 'returns total_count and contacts with no filters' do
+        post url,
+             params: { source_config: {} },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+        expect(body[:contacts].length).to eq(1)
+        expect(body[:contacts].first[:phone_number]).to eq('+521234567890')
+      end
+
+      it 'filters by require_phone' do
+        create(:contact, account: account, phone_number: nil, email: 'nophone@example.com')
+
+        post url,
+             params: { source_config: { require_phone: true } },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+      end
+
+      it 'filters by require_email' do
+        create(:contact, account: account, email: 'has@email.com')
+
+        post url,
+             params: { source_config: { require_email: true } },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+        expect(body[:contacts].first[:email]).to eq('has@email.com')
+      end
+
+      it 'filters by created_at newer_than' do
+        create(:contact, account: account, created_at: 60.days.ago)
+
+        post url,
+             params: { source_config: { created_at_filter: { enabled: true, operator: 'newer_than', value: 30 } } },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+      end
+
+      it 'filters by custom_attribute equal_to' do
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro' })
+
+        post url,
+             params: {
+               source_config: {
+                 custom_attribute_filters: [{ attribute_key: 'plan', operator: 'equal_to', value: 'pro' }]
+               }
+             },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+      end
+
+      it 'returns contacts with labels included' do
+        contact = create(:contact, account: account, phone_number: '+521111111111')
+        contact.update(label_list: ['vip'])
+
+        post url,
+             params: { source_config: {} },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:contacts].first[:labels]).to include('vip')
+      end
+    end
+  end
 end

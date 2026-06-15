@@ -65,6 +65,30 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     render json: { error: 'Failed to fetch copilot events' }, status: :internal_server_error
   end
 
+  def enrollment_result_schema
+    enrollment = @conversation.sequence_enrollments
+                              .includes(:lead_follow_up_sequence)
+                              .active
+                              .order(created_at: :desc)
+                              .first
+
+    return render json: { enrollment_id: nil, result_schema: [] } unless enrollment
+
+    sequence = enrollment.lead_follow_up_sequence
+    render json: {
+      enrollment_id: enrollment.id,
+      sequence_id: sequence.id,
+      sequence_name: sequence.name,
+      result_schema: sequence.result_schema,
+      current_result: enrollment.result_as_hash,
+      result_captured_by: enrollment.result_captured_by,
+      result_complete: enrollment.result_complete
+    }
+  rescue StandardError => e
+    Rails.logger.error "Error fetching enrollment result schema: #{e.message}"
+    render json: { error: 'Failed to fetch enrollment result schema' }, status: :internal_server_error
+  end
+
   def ai_usage
     usage = @conversation.conversation_ai_usage
     render json: usage&.as_json(

@@ -293,6 +293,7 @@ Rails.application.routes.draw do
               post :custom_attributes
               get :attachments
               get :copilot_events
+              get :enrollment_result_schema
               get :inbox_assistant
               get :ai_usage
               get :reporting_events if ChatwootApp.enterprise?

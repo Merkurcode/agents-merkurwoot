@@ -18,6 +18,10 @@ class ConversationApi extends ApiClient {
     return axios.get(`${this.url}/${conversationId}/copilot_events`);
   }
 
+  getEnrollmentResultSchema(conversationId) {
+    return axios.get(`${this.url}/${conversationId}/enrollment_result_schema`);
+  }
+
   getAiUsage(conversationId) {
     return axios.get(`${this.url}/${conversationId}/ai_usage`);
   }

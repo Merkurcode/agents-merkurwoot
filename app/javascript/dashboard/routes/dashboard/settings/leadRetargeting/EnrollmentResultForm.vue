@@ -6,8 +6,6 @@ import Input from 'dashboard/components-next/input/Input.vue';
 import leadFollowUpSequencesAPI from 'dashboard/api/leadFollowUpSequences';
 import { useAlert } from 'dashboard/composables';
 
-const { t } = useI18n();
-
 const props = defineProps({
   sequenceId: { type: Number, required: true },
   enrollmentId: { type: Number, required: true },
@@ -18,14 +16,16 @@ const props = defineProps({
 
 const emit = defineEmits(['saved']);
 
+const { t } = useI18n();
+
 const values = ref({ ...props.initialValues });
 const isSaving = ref(false);
 
 const capturedByLabel = computed(() => {
   if (props.capturedBy === 'agent_bot')
-    return t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.CAPTURED_BY_BOT');
+    return t('LEAD_RETARGETING.RESULT_FORM.CAPTURED_BY_BOT');
   if (props.capturedBy === 'human')
-    return t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.CAPTURED_BY_HUMAN');
+    return t('LEAD_RETARGETING.RESULT_FORM.CAPTURED_BY_HUMAN');
   return null;
 });
 
@@ -37,10 +37,10 @@ const saveResult = async () => {
       props.enrollmentId,
       values.value
     );
-    useAlert(t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.SUCCESS'));
+    useAlert(t('LEAD_RETARGETING.RESULT_FORM.SUCCESS'));
     emit('saved', values.value);
   } catch {
-    useAlert(t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.ERROR'));
+    useAlert(t('LEAD_RETARGETING.RESULT_FORM.ERROR'));
   } finally {
     isSaving.value = false;
   }
@@ -52,10 +52,10 @@ const saveResult = async () => {
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-n-slate-12">
-          {{ t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.TITLE') }}
+          {{ t('LEAD_RETARGETING.RESULT_FORM.TITLE') }}
         </p>
         <p class="text-xs text-n-slate-11">
-          {{ t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.SUBTITLE') }}
+          {{ t('LEAD_RETARGETING.RESULT_FORM.SUBTITLE') }}
         </p>
       </div>
       <span
@@ -113,8 +113,8 @@ const saveResult = async () => {
       solid
       :label="
         isSaving
-          ? t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.SAVING')
-          : t('SETTINGS.LEAD_RETARGETING.RESULT_FORM.SAVE')
+          ? t('LEAD_RETARGETING.RESULT_FORM.SAVING')
+          : t('LEAD_RETARGETING.RESULT_FORM.SAVE')
       "
       :is-loading="isSaving"
       @click="saveResult"

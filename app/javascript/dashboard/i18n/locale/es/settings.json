@@ -1329,6 +1329,8 @@
       "CANCEL_REASON_PLACEHOLDER": "Motivo de cancelación (opcional)",
       "CAPTURED_BY_HUMAN": "Completado por agente",
       "CAPTURED_BY_BOT": "Completado por agente de IA",
+      "YES": "Sí",
+      "NO": "No",
       "LOADING": "Cargando formulario de resultado...",
       "NO_ACTIVE_ENROLLMENT": "No hay copilot activo para esta conversación",
       "NO_SCHEMA": "Este copilot no tiene campos de resultado configurados",

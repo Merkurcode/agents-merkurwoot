@@ -269,13 +269,14 @@ onMounted(() => {
         <div
           v-for="field in enrollmentData.result_schema"
           :key="field.key"
-          class="flex flex-col gap-1"
+          class="flex flex-col gap-1.5"
         >
           <label class="text-xs font-medium text-n-slate-11">
-            {{ field.label }}
-            <span v-if="field.required" class="text-n-ruby-9">*</span>
+            {{ field.label
+            }}<span v-if="field.required" class="ml-0.5 text-n-ruby-9">*</span>
           </label>
 
+          <!-- Select: styled native dropdown -->
           <select
             v-if="field.type === 'select'"
             v-model="resultValues[field.key]"
@@ -291,15 +292,43 @@ onMounted(() => {
             </option>
           </select>
 
-          <input
-            v-else-if="field.type === 'boolean'"
-            v-model="resultValues[field.key]"
-            type="checkbox"
-            class="h-4 w-4 rounded border-n-weak text-n-blue-9"
-            true-value="true"
-            false-value="false"
-          />
+          <!-- Boolean: Sí / No pill buttons -->
+          <div v-else-if="field.type === 'boolean'" class="flex gap-2">
+            <button
+              type="button"
+              class="flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+              :class="
+                resultValues[field.key] === 'true'
+                  ? 'border-n-teal-7 bg-n-teal-3 text-n-teal-11'
+                  : 'border-n-weak bg-n-background text-n-slate-11 hover:bg-n-slate-3'
+              "
+              @click="resultValues[field.key] = 'true'"
+            >
+              <span
+                v-if="resultValues[field.key] === 'true'"
+                class="i-lucide-check h-3.5 w-3.5"
+              />
+              {{ t('LEAD_RETARGETING.RESULT_FORM.YES') }}
+            </button>
+            <button
+              type="button"
+              class="flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+              :class="
+                resultValues[field.key] === 'false'
+                  ? 'border-n-ruby-7 bg-n-ruby-3 text-n-ruby-11'
+                  : 'border-n-weak bg-n-background text-n-slate-11 hover:bg-n-slate-3'
+              "
+              @click="resultValues[field.key] = 'false'"
+            >
+              <span
+                v-if="resultValues[field.key] === 'false'"
+                class="i-lucide-x h-3.5 w-3.5"
+              />
+              {{ t('LEAD_RETARGETING.RESULT_FORM.NO') }}
+            </button>
+          </div>
 
+          <!-- Number / Text -->
           <Input
             v-else
             v-model="resultValues[field.key]"

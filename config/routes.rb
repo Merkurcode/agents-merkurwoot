@@ -135,6 +135,7 @@ Rails.application.routes.draw do
             collection do
               get :available_templates
               post :preview_eligible
+              post :preview_eligible_contacts
             end
           end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do

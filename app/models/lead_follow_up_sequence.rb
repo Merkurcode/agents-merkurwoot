@@ -7,7 +7,7 @@ class LeadFollowUpSequence < ApplicationRecord
   has_many :enrollment_result_values, dependent: :destroy_async
 
   validates :name, presence: true
-  validates :source_type, presence: true, inclusion: { in: %w[existing_conversations notion_database] }
+  validates :source_type, presence: true, inclusion: { in: %w[existing_conversations notion_database imported_contacts] }
   validate :inbox_validation
   validate :inbox_must_be_messaging_channel
   validate :one_active_sequence_per_inbox
@@ -203,7 +203,7 @@ class LeadFollowUpSequence < ApplicationRecord
 
   def inbox_must_be_messaging_channel
     return unless inbox
-    return if source_type == 'notion_database' # For notion, inbox is in first_contact_config
+    return if source_type.in?(%w[notion_database imported_contacts]) # For these, inbox is in first_contact_config
 
     supported = %w[Channel::Whatsapp Channel::TwilioSms Channel::Email]
     errors.add(:inbox, 'must be a WhatsApp, SMS, or Email inbox') unless supported.include?(inbox.channel_type)
@@ -311,10 +311,16 @@ class LeadFollowUpSequence < ApplicationRecord
         errors.add(:steps, "message step at index #{index} requires template_config when closed_window_action is send_template")
       end
 
-      validate_step_inbox_type(config['whatsapp_inbox_id'], 'Channel::Whatsapp', "whatsapp_inbox_id at step #{index}") if config['whatsapp_inbox_id'].present?
+      if config['whatsapp_inbox_id'].present?
+        validate_step_inbox_type(config['whatsapp_inbox_id'], 'Channel::Whatsapp',
+                                 "whatsapp_inbox_id at step #{index}")
+      end
 
     when 'send_sms'
-      validate_step_inbox_type(config['sms_inbox_id'], %w[Channel::TwilioSms Channel::Sms], "sms_inbox_id at step #{index}") if config['sms_inbox_id'].present?
+      if config['sms_inbox_id'].present?
+        validate_step_inbox_type(config['sms_inbox_id'], %w[Channel::TwilioSms Channel::Sms],
+                                 "sms_inbox_id at step #{index}")
+      end
 
     when 'send_email'
       validate_step_inbox_type(config['email_inbox_id'], 'Channel::Email', "email_inbox_id at step #{index}") if config['email_inbox_id'].present?
@@ -332,7 +338,11 @@ class LeadFollowUpSequence < ApplicationRecord
     end
 
     allowed = Array(expected_types)
-    errors.add(:steps, "#{field_label} must reference a #{allowed.map { |t| t.split('::').last }.join(' or ')} inbox") unless allowed.include?(inbox.channel_type)
+    return if allowed.include?(inbox.channel_type)
+
+    errors.add(:steps, "#{field_label} must reference a #{allowed.map do |t|
+      t.split('::').last
+    end.join(' or ')} inbox")
   end
 
   def validate_templates_exist
@@ -467,9 +477,9 @@ class LeadFollowUpSequence < ApplicationRecord
     filter = trigger_conditions['enrollment_filter']
     return if filter.blank?
 
-    unless [true, false].include?(filter['include_completed'])
-      errors.add(:trigger_conditions, 'Enrollment filter include_completed must be a boolean')
-    end
+    return if [true, false].include?(filter['include_completed'])
+
+    errors.add(:trigger_conditions, 'Enrollment filter include_completed must be a boolean')
   end
 
   def validate_custom_attribute_filters
@@ -512,15 +522,14 @@ class LeadFollowUpSequence < ApplicationRecord
   end
 
   def validate_source_config
+    return validate_imported_contacts_source_config if source_type == 'imported_contacts'
     return unless source_type == 'notion_database'
 
     errors.add(:source_config, 'is required for notion_database source') if source_config.blank?
     return if source_config.blank?
 
     # Validate notion database ID
-    if source_config['notion_database_id'].blank?
-      errors.add(:source_config, 'must have a notion_database_id')
-    end
+    errors.add(:source_config, 'must have a notion_database_id') if source_config['notion_database_id'].blank?
 
     # Validate field mappings
     if source_config['field_mappings'].blank?
@@ -531,13 +540,13 @@ class LeadFollowUpSequence < ApplicationRecord
     # At least phone or email must be mapped
     phone_mapped = source_config.dig('field_mappings', 'phone_number').present?
     email_mapped = source_config.dig('field_mappings', 'email').present?
-    unless phone_mapped || email_mapped
-      errors.add(:source_config, 'must have at least phone_number or email field mapping')
-    end
+    return if phone_mapped || email_mapped
+
+    errors.add(:source_config, 'must have at least phone_number or email field mapping')
   end
 
   def validate_first_contact_config
-    return unless source_type == 'notion_database'
+    return unless source_type.in?(%w[notion_database imported_contacts])
 
     # Find first_contact step in steps array
     first_contact_step = steps&.find { |s| s['type'] == 'first_contact' }
@@ -562,9 +571,7 @@ class LeadFollowUpSequence < ApplicationRecord
     end
 
     # Validate inbox_id
-    if config['inbox_id'].blank?
-      errors.add(:steps, 'first_contact step must have inbox_id')
-    end
+    errors.add(:steps, 'first_contact step must have inbox_id') if config['inbox_id'].blank?
 
     # Validate WhatsApp configuration
     if config['channel'] == 'whatsapp' && config['template_name'].blank?
@@ -605,6 +612,8 @@ class LeadFollowUpSequence < ApplicationRecord
       EnrollEligibleConversationsJob.perform_later(id)
     when 'notion_database'
       EnrollNotionDatabaseRecordsJob.perform_later(id)
+    when 'imported_contacts'
+      EnrollImportedContactsJob.perform_later(id)
     else
       Rails.logger.error "Unknown source_type: #{source_type} for sequence #{id}"
     end
@@ -668,22 +677,54 @@ class LeadFollowUpSequence < ApplicationRecord
       ) do |definition|
         definition.attribute_display_name = attribute_key.to_s.titleize
         definition.attribute_display_type = :text
-        definition.attribute_description = "Imported from Notion database"
+        definition.attribute_description = 'Imported from Notion database'
       end
     end
   rescue StandardError => e
     Rails.logger.error "Failed to sync Notion custom attributes: #{e.message}"
   end
 
+  # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity, Metrics/AbcSize
+  def validate_imported_contacts_source_config
+    return if source_config.blank?
+
+    if source_config['contact_types'].present?
+      valid = %w[visitor lead customer]
+      invalid = Array(source_config['contact_types']) - valid
+      errors.add(:source_config, "invalid contact_types: #{invalid.join(', ')}") if invalid.any?
+    end
+
+    errors.add(:source_config, 'labels must be an array') if source_config['labels'].present? && !source_config['labels'].is_a?(Array)
+
+    if source_config['created_at_filter'].present?
+      f = source_config['created_at_filter']
+      valid_ops = %w[older_than newer_than between]
+      errors.add(:source_config, "invalid created_at_filter operator: #{f['operator']}") unless valid_ops.include?(f['operator'])
+      if f['operator'] == 'between'
+        errors.add(:source_config, 'created_at_filter between requires from_date and to_date') unless f['from_date'].present? && f['to_date'].present?
+      elsif f['value'].to_i <= 0
+        errors.add(:source_config, 'created_at_filter value must be positive')
+      end
+    end
+
+    if source_config['additional_attribute_filters'].present? && !source_config['additional_attribute_filters'].is_a?(Array)
+      errors.add(:source_config,
+                 'additional_attribute_filters must be an array')
+    end
+    return unless source_config['custom_attribute_filters'].present? && !source_config['custom_attribute_filters'].is_a?(Array)
+
+    errors.add(:source_config,
+               'custom_attribute_filters must be an array')
+  end
+  # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity, Metrics/AbcSize
+
   def validate_result_schema
     return if result_schema.blank?
 
     result_schema.each do |field|
-      errors.add(:result_schema, 'field missing key')   unless field['key'].present?
-      errors.add(:result_schema, 'field missing label') unless field['label'].present?
-      unless %w[text select number boolean].include?(field['type'])
-        errors.add(:result_schema, "invalid type '#{field['type']}'")
-      end
+      errors.add(:result_schema, 'field missing key')   if field['key'].blank?
+      errors.add(:result_schema, 'field missing label') if field['label'].blank?
+      errors.add(:result_schema, "invalid type '#{field['type']}'") unless %w[text select number boolean].include?(field['type'])
       next unless field['type'] == 'select'
 
       errors.add(:result_schema, "select field '#{field['key']}' needs options") unless field['options'].is_a?(Array) && field['options'].any?

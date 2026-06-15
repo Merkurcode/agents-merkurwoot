@@ -24,6 +24,12 @@ class LeadFollowUpSequencesAPI extends ApiClient {
     return axios.post(`${this.url}/preview_eligible`, params);
   }
 
+  previewEligibleContacts(sourceConfig) {
+    return axios.post(`${this.url}/preview_eligible_contacts`, {
+      source_config: sourceConfig,
+    });
+  }
+
   getEnrolledConversations(sequenceId, params = {}) {
     return axios.get(`${this.url}/${sequenceId}/enrolled_conversations`, {
       params: params,

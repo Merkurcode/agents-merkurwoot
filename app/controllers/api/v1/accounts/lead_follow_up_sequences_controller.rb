@@ -122,6 +122,45 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     render json: { error: 'Failed to preview eligible conversations' }, status: :internal_server_error
   end
 
+  def preview_eligible_contacts
+    source_config = (params[:source_config] || {}).to_unsafe_h
+    contacts = Current.account.contacts
+
+    if source_config['labels'].present?
+      match_any = source_config['label_match'] != 'all'
+      contacts = contacts.tagged_with(source_config['labels'], any: match_any)
+    end
+
+    contacts = contacts.where(contact_type: source_config['contact_types']) if source_config['contact_types'].present?
+    contacts = contacts.where.not(phone_number: [nil, '']) if source_config['require_phone']
+    contacts = contacts.where.not(email: [nil, '']) if source_config['require_email']
+
+    contacts = apply_created_at_filter_for_preview(contacts, source_config['created_at_filter'])
+
+    Array(source_config['custom_attribute_filters']).each do |f|
+      contacts = apply_jsonb_preview_filter(contacts, 'custom_attributes', f)
+    end
+
+    total_count = contacts.count
+    sample = contacts.order(created_at: :desc).limit(20)
+
+    render json: {
+      total_count: total_count,
+      contacts: sample.map do |c|
+        {
+          id: c.id,
+          name: c.name,
+          phone_number: c.phone_number,
+          email: c.email,
+          labels: c.label_list
+        }
+      end
+    }
+  rescue StandardError => e
+    Rails.logger.error "Error previewing eligible contacts: #{e.message}"
+    render json: { error: 'Failed to preview eligible contacts' }, status: :internal_server_error
+  end
+
   def cancel_follow_ups
     enrollment_ids = params[:follow_up_ids] || params[:enrollment_ids] || []
 
@@ -323,6 +362,44 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
   end
 
   private
+
+  def apply_created_at_filter_for_preview(scope, filter)
+    return scope unless filter&.dig('enabled')
+
+    case filter['operator']
+    when 'newer_than'
+      scope.where('contacts.created_at >= ?', filter['value'].to_i.days.ago)
+    when 'older_than'
+      scope.where('contacts.created_at <= ?', filter['value'].to_i.days.ago)
+    when 'between'
+      from = Date.parse(filter['from_date'])
+      to   = Date.parse(filter['to_date'])
+      scope.where(created_at: from.beginning_of_day..to.end_of_day)
+    else
+      scope
+    end
+  rescue StandardError
+    scope
+  end
+
+  def apply_jsonb_preview_filter(scope, column, filter)
+    key = filter['attribute_key']
+    val = filter['value']
+    case filter['operator']
+    when 'equal_to'
+      scope.where("contacts.#{column}->>? = ?", key, val.to_s)
+    when 'not_equal_to'
+      scope.where("contacts.#{column}->>? != ?", key, val.to_s)
+    when 'contains'
+      scope.where("contacts.#{column}->>? ILIKE ?", key, "%#{val}%")
+    when 'is_present'
+      scope.where("contacts.#{column}->>? IS NOT NULL", key)
+    when 'is_not_present'
+      scope.where("contacts.#{column}->>? IS NULL", key)
+    else
+      scope
+    end
+  end
 
   def set_inbox
     @inbox = Current.account.inboxes.find(params[:inbox_id]) if params[:inbox_id]

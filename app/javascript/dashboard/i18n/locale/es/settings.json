@@ -997,7 +997,90 @@
       "INCLUDE_COMPLETED_COPILOTS_HELP": "Cuando está habilitado, las conversaciones que previamente completaron una secuencia de copiloto serán elegibles para enrolamiento nuevamente. Solo se permite un copiloto activo por inbox.",
       "DATE_RANGE_REQUIRED": "Por favor selecciona ambas fechas: desde y hasta",
       "DATE_VALUE_REQUIRED": "Por favor ingresa un número de días válido",
-      "LABELS_REQUIRED": "Por favor selecciona al menos una etiqueta"
+      "LABELS_REQUIRED": "Por favor selecciona al menos una etiqueta",
+      "IMPORTED_CONTACTS": {
+        "SECTION_TITLE": "Filtros de Contactos Importados",
+        "SECTION_SUBTITLE": "Selecciona qué contactos inscribir. Todos los filtros son opcionales — déjalos vacíos para incluir todos los contactos.",
+        "LABEL_FILTER_TITLE": "Filtrar por Etiquetas",
+        "LABEL_FILTER_HELP": "Solo se inscribirán los contactos que tengan al menos una de estas etiquetas. Déjalo vacío para incluir todos.",
+        "LABEL_MATCH_ANY": "Cualquier etiqueta (O)",
+        "LABEL_MATCH_ALL": "Todas las etiquetas (Y)",
+        "CONTACT_TYPE_TITLE": "Filtrar por Tipo de Contacto",
+        "CONTACT_TYPE_HELP": "Déjalo vacío para incluir todos los tipos de contacto.",
+        "TYPE_VISITOR": "Visitante",
+        "TYPE_LEAD": "Lead",
+        "TYPE_CUSTOMER": "Cliente",
+        "CREATED_AT_TITLE": "Filtrar por Fecha de Creación",
+        "CREATED_AT_ENABLE": "Habilitar Filtro de Fecha de Creación",
+        "ADDITIONAL_ATTRS_TITLE": "Filtros de Atributos Adicionales",
+        "ADDITIONAL_ATTRS_SUBTITLE": "Filtra por campos estándar (ciudad, empresa, código de país, etc.)",
+        "ADDITIONAL_ATTRS_ADD": "+ Añadir Filtro",
+        "ADDITIONAL_ATTRS_KEY_PLACEHOLDER": "Nombre del campo (ej. city)",
+        "ADDITIONAL_ATTRS_VALUE_PLACEHOLDER": "Valor",
+        "CUSTOM_ATTRS_TITLE": "Filtros de Atributos Personalizados",
+        "CUSTOM_ATTRS_SUBTITLE": "Filtra por atributos personalizados del contacto",
+        "REQUIRE_PHONE": "Solo incluir contactos con número de teléfono",
+        "REQUIRE_EMAIL": "Solo incluir contactos con correo electrónico",
+        "PREVIEW_TITLE": "Contactos elegibles",
+        "PREVIEW_SUBTITLE": "Basado en los filtros configurados",
+        "PREVIEW_LOADING": "Calculando...",
+        "PREVIEW_CONTACTS": "contactos",
+        "PREVIEW_VIEW_DETAIL": "Ver detalle",
+        "PREVIEW_MODAL_TITLE": "Contactos Elegibles",
+        "PREVIEW_MODAL_TOTAL": "Total: {count}",
+        "PREVIEW_EMPTY": "No hay contactos que coincidan con los filtros",
+        "PREVIEW_SHOWING": "Mostrando los primeros {count} contactos.",
+        "PREVIEW_MORE": "Hay {more} más que coinciden con los filtros.",
+        "PREVIEW_NO_NAME": "Sin nombre",
+        "PREVIEW_NO_CONTACT": "Sin información de contacto",
+        "OPERATORS": {
+          "equals": "Igual a",
+          "not_equals": "Diferente de",
+          "contains": "Contiene",
+          "is_present": "Tiene valor",
+          "is_not_present": "Está vacío"
+        }
+      },
+      "CUSTOM_ATTRIBUTE_FILTERS": {
+        "TITLE": "Filtros de Atributos Personalizados",
+        "SUBTITLE": "Filtra conversaciones por atributos del contacto o la conversación",
+        "ADD_FILTER": "+ Añadir Filtro",
+        "EMPTY_STATE": "No hay filtros de atributos personalizados configurados",
+        "MAX_FILTERS_WARNING": "Máximo 10 filtros de atributos personalizados por copilot.",
+        "FILTER_LABEL": "Filtro",
+        "ENTITY_LABEL": "Entidad",
+        "ATTRIBUTE_LABEL": "Atributo",
+        "OPERATOR_LABEL": "Condición",
+        "VALUE_LABEL": "Valor",
+        "VALUE2_LABEL": "Hasta",
+        "DATE_LABEL": "Fecha",
+        "DATETIME_LABEL": "Fecha y Hora",
+        "VALUES_LABEL": "Valores",
+        "SELECT_ATTRIBUTE": "Selecciona un atributo",
+        "SELECT_VALUE": "Selecciona un valor",
+        "ENTITY_CONTACT": "Contacto",
+        "ENTITY_CONVERSATION": "Conversación",
+        "BOOL_TRUE": "Verdadero",
+        "BOOL_FALSE": "Falso",
+        "OPERATORS": {
+          "equals": "Igual a",
+          "not_equals": "Diferente de",
+          "contains": "Contiene",
+          "not_contains": "No contiene",
+          "starts_with": "Comienza con",
+          "ends_with": "Termina con",
+          "greater_than": "Mayor que",
+          "less_than": "Menor que",
+          "gte": "Mayor o igual que",
+          "lte": "Menor o igual que",
+          "before": "Antes de",
+          "after": "Después de",
+          "between": "Entre",
+          "includes_any": "Incluye alguno de",
+          "present": "Tiene valor",
+          "blank": "Está vacío"
+        }
+      }
     },
     "SHOW": {
       "HEADER": "Detalle de Copilot",
@@ -1086,7 +1169,12 @@
         "CLOSED_WINDOW": {
           "TITLE": "Acción Ventana Cerrada (>24h)",
           "SEND_TEMPLATE": "Enviar Plantilla WhatsApp",
-          "SEND_SMS": "Enviar SMS vía IA"
+          "SEND_SMS": "Enviar SMS vía IA",
+          "SEND_EMAIL": "Enviar Email vía IA",
+          "WHATSAPP_INBOX": "Bandeja WhatsApp (opcional)",
+          "SMS_INBOX": "Bandeja SMS (opcional)",
+          "EMAIL_INBOX": "Bandeja Email (opcional)",
+          "USE_CONVERSATION_INBOX": "Usar bandeja de la conversación (por defecto)..."
         },
         "SMS_CONFIG": {
           "AGENT_BOT": "Agente de IA para SMS",
@@ -1158,6 +1246,9 @@
         "PARAMS": "Parámetros de la Plantilla",
         "SMS_CONTEXT": "Contexto para el SMS",
         "SMS_CONTEXT_HELP": "El IA generará un mensaje SMS basado en este contexto y los datos del contacto.",
+        "EMAIL_CONTEXT": "Contexto para el Email",
+        "EMAIL_CONTEXT_PLACEHOLDER": "Describe el contexto para que la IA genere un email personalizado...",
+        "EMAIL_CONTEXT_HELP": "La IA generará un email basado en este contexto y los datos del contacto.",
         "PREVIEW": "Vista previa del mensaje"
       },
       "CONDITION": {
@@ -1167,6 +1258,8 @@
       "SEND_EMAIL": {
         "ADD": "Enviar Email",
         "DEFAULT_NAME": "Enviar correo electrónico",
+        "EMAIL_INBOX": "Bandeja Email (opcional)",
+        "SELECT_EMAIL_INBOX": "Usar bandeja de la conversación (por defecto)...",
         "SENDER_EMAIL": "Email del emisor (opcional)",
         "SENDER_EMAIL_PLACEHOLDER": "Ej: soporte{'@'}tuempresa.com",
         "SUBJECT": "Asunto del correo (opcional)",
@@ -1202,6 +1295,45 @@
       "re_enrolled": "Re-inscrito en el copilot",
       "paused": "Copilot pausado",
       "resumed": "Copilot reanudado"
+    },
+    "RESULT_SCHEMA": {
+      "SECTION_TITLE": "Resultados a capturar",
+      "SECTION_DESCRIPTION": "Define qué campos de resultado registrar cuando este copilot finalice. Puede ser llenado manualmente por un agente o automáticamente por el agente de IA.",
+      "ADD_FIELD": "Añadir campo",
+      "FIELD_LABEL": "Etiqueta del campo",
+      "FIELD_LABEL_PLACEHOLDER": "ej. ¿Se convirtió el lead?",
+      "FIELD_TYPE": "Tipo",
+      "FIELD_REQUIRED": "Requerido",
+      "FIELD_OPTIONS": "Opciones (separadas por coma)",
+      "FIELD_OPTIONS_PLACEHOLDER": "Convertido, No interesado, Sin respuesta",
+      "REMOVE_FIELD": "Eliminar campo",
+      "TYPES": {
+        "text": "Texto libre",
+        "select": "Opción única",
+        "number": "Número",
+        "boolean": "Sí / No"
+      }
+    },
+    "RESULT_FORM": {
+      "TITLE": "Resultado del copilot",
+      "SUBTITLE": "Registra el resultado de esta interacción",
+      "SAVE": "Guardar resultado",
+      "SAVING": "Guardando...",
+      "CANCEL_ENROLLMENT": "Cancelar copilot para esta conversación",
+      "CANCEL_REASON_PLACEHOLDER": "Motivo de cancelación (opcional)",
+      "CAPTURED_BY_HUMAN": "Completado por agente",
+      "CAPTURED_BY_BOT": "Completado por agente de IA",
+      "PENDING": "Pendiente",
+      "COMPLETE": "Completo",
+      "SUCCESS": "Resultado guardado exitosamente",
+      "CANCEL_SUCCESS": "Copilot cancelado y resultado guardado",
+      "ERROR": "Error al guardar el resultado"
+    },
+    "RESULT_INDICATORS": {
+      "TITLE": "Indicadores de resultado",
+      "NO_SCHEMA": "No hay esquema de resultado configurado para este copilot.",
+      "NO_DATA": "Aún no se han registrado resultados.",
+      "TOTAL_WITH_RESULT": "{count} conversaciones con resultado"
     }
   }
 }

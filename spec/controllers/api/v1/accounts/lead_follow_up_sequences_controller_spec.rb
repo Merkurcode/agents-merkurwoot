@@ -491,6 +491,161 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
+  describe 'GET /api/v1/accounts/{account.id}/copilot_sequences/:id/enrolled_conversations' do
+    let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
+    let(:url) { "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrolled_conversations" }
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        get url
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as agent' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+
+      it 'returns unauthorized' do
+        get url, headers: agent.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as administrator' do
+      let(:administrator) { create(:user, account: account, role: :administrator) }
+
+      it 'returns success with empty list when no enrollments exist' do
+        get url, headers: administrator.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:success)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:enrolled_conversations]).to eq([])
+        expect(body[:total_count]).to eq(0)
+        expect(body[:total_pages]).to eq(0)
+      end
+
+      context 'with enrollments' do
+        let(:conversation) { create(:conversation, account: account, inbox: whatsapp_inbox) }
+        let!(:enrollment) { create(:sequence_enrollment, conversation: conversation, lead_follow_up_sequence: sequence) }
+
+        it 'returns the enrollment with the expected fields' do
+          get url, headers: administrator.create_new_auth_token, as: :json
+
+          expect(response).to have_http_status(:success)
+          body = JSON.parse(response.body, symbolize_names: true)
+          item = body[:enrolled_conversations].first
+
+          expect(item[:id]).to eq(enrollment.id)
+          expect(item[:enrollment_id]).to eq(enrollment.id)
+          expect(item[:display_id]).to eq(conversation.display_id)
+          expect(item[:status]).to eq('active')
+          expect(item[:contact][:id]).to eq(conversation.contact.id)
+          expect(item[:contact][:name]).to eq(conversation.contact.name)
+        end
+
+        it 'returns correct pagination metadata' do
+          get url, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:total_count]).to eq(1)
+          expect(body[:page]).to eq(1)
+          expect(body[:per_page]).to eq(50)
+          expect(body[:total_pages]).to eq(1)
+        end
+
+        it 'returns status_counts for all statuses' do
+          completed_conv = create(:conversation, account: account, inbox: whatsapp_inbox)
+          create(:sequence_enrollment, :completed, conversation: completed_conv, lead_follow_up_sequence: sequence)
+
+          get url, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:status_counts][:active]).to eq(1)
+          expect(body[:status_counts][:completed]).to eq(1)
+        end
+      end
+
+      context 'with pagination' do
+        before do
+          stub_const('Api::V1::Accounts::LeadFollowUpSequencesController::DEFAULT_PER_PAGE', 2) if
+            defined?(Api::V1::Accounts::LeadFollowUpSequencesController::DEFAULT_PER_PAGE)
+
+          3.times do
+            conv = create(:conversation, account: account, inbox: whatsapp_inbox)
+            create(:sequence_enrollment, conversation: conv, lead_follow_up_sequence: sequence)
+          end
+        end
+
+        it 'returns only the requested page window' do
+          get url, params: { page: 1, per_page: 2 }, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:enrolled_conversations].length).to eq(2)
+          expect(body[:total_count]).to eq(3)
+          expect(body[:total_pages]).to eq(2)
+          expect(body[:page]).to eq(1)
+          expect(body[:per_page]).to eq(2)
+        end
+
+        it 'returns the second page correctly' do
+          get url, params: { page: 2, per_page: 2 }, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:enrolled_conversations].length).to eq(1)
+          expect(body[:page]).to eq(2)
+        end
+
+        it 'caps per_page at 100' do
+          get url, params: { per_page: 500 }, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:per_page]).to eq(100)
+        end
+      end
+
+      context 'with status filter' do
+        let(:conv_active) { create(:conversation, account: account, inbox: whatsapp_inbox) }
+        let(:conv_completed) { create(:conversation, account: account, inbox: whatsapp_inbox) }
+        let!(:active_enrollment) { create(:sequence_enrollment, conversation: conv_active, lead_follow_up_sequence: sequence) }
+        let!(:completed_enrollment) do
+          create(:sequence_enrollment, :completed, conversation: conv_completed, lead_follow_up_sequence: sequence)
+        end
+
+        it 'returns only active enrollments when filtered by status=active' do
+          get url, params: { status: 'active' }, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:enrolled_conversations].length).to eq(1)
+          expect(body[:enrolled_conversations].first[:id]).to eq(active_enrollment.id)
+          expect(body[:total_count]).to eq(1)
+        end
+
+        it 'returns only completed enrollments when filtered by status=completed' do
+          get url, params: { status: 'completed' }, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:enrolled_conversations].length).to eq(1)
+          expect(body[:enrolled_conversations].first[:id]).to eq(completed_enrollment.id)
+        end
+
+        it 'returns all enrollments when no status filter is applied' do
+          get url, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:total_count]).to eq(2)
+        end
+
+        it 'always reflects all statuses in status_counts regardless of filter' do
+          get url, params: { status: 'active' }, headers: administrator.create_new_auth_token, as: :json
+
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:status_counts][:active]).to eq(1)
+          expect(body[:status_counts][:completed]).to eq(1)
+        end
+      end
+    end
+  end
+
   describe 'GET /api/v1/accounts/{account.id}/copilot_sequences/available_templates' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do

@@ -47,11 +47,14 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
   def update
     @product_catalog.update!(product_catalog_params.except(:kb_resource_ids))
 
-    # Handle KB resource associations if provided
-    if params[:product_catalog].key?(:kb_resource_ids)
-      kb_resource_ids = Array(params[:product_catalog][:kb_resource_ids]).map(&:to_i).uniq
-      @product_catalog.kb_resource_ids = kb_resource_ids
-    end
+    @product_catalog.all_product_media.where(id: Array(params[:removed_media_ids])).destroy_all if params[:removed_media_ids].present?
+
+    Array(params[:new_media]).each { |file| upload_product_media(file) } if params[:new_media].present?
+
+    return unless params[:product_catalog].key?(:kb_resource_ids)
+
+    kb_resource_ids = Array(params[:product_catalog][:kb_resource_ids]).map(&:to_i).uniq
+    @product_catalog.kb_resource_ids = kb_resource_ids
   end
 
   def destroy
@@ -280,6 +283,13 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
     end
   end
 
+  MEDIA_TYPE_BY_EXTENSION = {
+    %w[jpg jpeg png gif webp svg] => 'IMAGE',
+    %w[mp4 avi mov wmv flv webm] => 'VIDEO',
+    %w[mp3 wav ogg m4a] => 'AUDIO',
+    %w[pdf doc docx xls xlsx txt] => 'DOCUMENT'
+  }.freeze
+
   private
 
   def download_single_export_file(bulk_request)
@@ -355,27 +365,53 @@ class Api::V1::Accounts::ProductCatalogsController < Api::V1::Accounts::BaseCont
 
   def product_catalog_params
     params.require(:product_catalog).permit(
+      :productName,
       :industry,
-      :product_service,
       :type,
       :subcategory,
-      :list_price,
-      :currency,
+      :listPrice,
       :description,
       :payment_options,
-      :financing_term,
-      :interest_rate,
-      :attributes,
-      :brand,
-      :model,
-      :year,
       :is_visible,
       metadata: {},
       kb_resource_ids: []
-    ).merge(
-      created_by: current_user,
-      updated_by: current_user
+    ).merge(last_updated_by_id: current_user.id)
+  end
+
+  def upload_product_media(file)
+    extension = File.extname(file.original_filename).downcase.delete('.')
+    file_type = MEDIA_TYPE_BY_EXTENSION.find { |exts, _| exts.include?(extension) }&.last || 'DOCUMENT'
+
+    s3_key = ProductCatalogs::S3KeyGeneratorService.new(
+      account_id: Current.account.id,
+      product_id: @product_catalog.product_id || @product_catalog.id.to_s,
+      file_type: file_type,
+      filename: "#{SecureRandom.uuid}.#{extension}"
+    ).generate
+
+    bucket = ENV.fetch('S3_BUCKET_NAME', '')
+    Aws::S3::Client.new.put_object(
+      bucket: bucket,
+      key: s3_key,
+      body: file.read,
+      content_type: file.content_type
     )
+
+    s3_url = "https://#{bucket}.s3.amazonaws.com/#{s3_key}"
+
+    @product_catalog.all_product_media.create!(
+      file_type: file_type,
+      file_name: file.original_filename,
+      file_url: s3_url,
+      file_size: file.size,
+      mime_type: file.content_type,
+      s3_key: s3_key,
+      s3_status: 'completed',
+      user_id: current_user.id,
+      last_updated_by_id: current_user.id
+    )
+  rescue StandardError => e
+    Rails.logger.error("Failed to upload media for product #{@product_catalog.id}: #{e.message}")
   end
 
   def save_uploaded_file(uploaded_file)

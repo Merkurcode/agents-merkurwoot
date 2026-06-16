@@ -136,6 +136,65 @@ RSpec.describe LeadFollowUpSequence do
         seq.valid?
         expect(seq.errors[:source_config]).to include('created_at_filter value must be positive')
       end
+
+      context 'with custom_attribute_filters logical_operator validation' do
+        it 'is valid when custom_attribute_filters is absent' do
+          seq = build_imported_sequence
+          seq.valid?
+          expect(seq.errors[:source_config]).to be_empty
+        end
+
+        it 'is valid with logical_operator: and' do
+          seq = build_imported_sequence('custom_attribute_filters' => [
+                                          { 'attribute_key' => 'plan', 'operator' => 'equal_to', 'value' => 'pro',
+                                            'logical_operator' => 'and' },
+                                          { 'attribute_key' => 'city', 'operator' => 'equal_to', 'value' => 'CDMX',
+                                            'logical_operator' => 'and' }
+                                        ])
+          seq.valid?
+          expect(seq.errors[:source_config]).not_to include(a_string_matching('logical_operator'))
+        end
+
+        it 'is valid with logical_operator: or' do
+          seq = build_imported_sequence('custom_attribute_filters' => [
+                                          { 'attribute_key' => 'city', 'operator' => 'equal_to', 'value' => 'CDMX',
+                                            'logical_operator' => 'and' },
+                                          { 'attribute_key' => 'city', 'operator' => 'equal_to', 'value' => 'GDL',
+                                            'logical_operator' => 'or' }
+                                        ])
+          seq.valid?
+          expect(seq.errors[:source_config]).not_to include(a_string_matching('logical_operator'))
+        end
+
+        it 'is valid when logical_operator is nil (backward compatibility with old filters)' do
+          seq = build_imported_sequence('custom_attribute_filters' => [
+                                          { 'attribute_key' => 'plan', 'operator' => 'equal_to', 'value' => 'pro' },
+                                          { 'attribute_key' => 'city', 'operator' => 'equal_to', 'value' => 'CDMX' }
+                                        ])
+          seq.valid?
+          expect(seq.errors[:source_config]).not_to include(a_string_matching('logical_operator'))
+        end
+
+        it 'is invalid with an unsupported logical_operator value' do
+          seq = build_imported_sequence('custom_attribute_filters' => [
+                                          { 'attribute_key' => 'plan', 'operator' => 'equal_to', 'value' => 'pro',
+                                            'logical_operator' => 'and' },
+                                          { 'attribute_key' => 'city', 'operator' => 'equal_to', 'value' => 'CDMX',
+                                            'logical_operator' => 'xor' }
+                                        ])
+          seq.valid?
+          expect(seq.errors[:source_config]).to include(a_string_matching("logical_operator must be 'and' or 'or'"))
+        end
+
+        it 'ignores logical_operator on the first filter (no predecessor to connect with)' do
+          seq = build_imported_sequence('custom_attribute_filters' => [
+                                          { 'attribute_key' => 'plan', 'operator' => 'equal_to', 'value' => 'pro',
+                                            'logical_operator' => 'xor' }
+                                        ])
+          seq.valid?
+          expect(seq.errors[:source_config]).not_to include(a_string_matching('logical_operator'))
+        end
+      end
     end
 
     context 'when result_schema has invalid fields' do

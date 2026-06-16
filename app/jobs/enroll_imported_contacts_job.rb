@@ -2,9 +2,9 @@
 class EnrollImportedContactsJob < ApplicationJob
   queue_as :default
 
-  BATCH_SIZE = 200
+  BATCH_SIZE = 1000
 
-  def perform(sequence_id, offset = 0)
+  def perform(sequence_id, last_id = 0)
     sequence = LeadFollowUpSequence.find_by(id: sequence_id)
     return unless sequence&.active? && sequence.source_type == 'imported_contacts'
 
@@ -14,8 +14,11 @@ class EnrollImportedContactsJob < ApplicationJob
       return
     end
 
-    contacts = build_contacts_query(sequence).offset(offset).limit(BATCH_SIZE)
-    total_in_batch = contacts.count
+    contacts = build_contacts_query(sequence)
+               .where('contacts.id > ?', last_id)
+               .order('contacts.id ASC')
+               .limit(BATCH_SIZE)
+    total_in_batch = contacts.length
 
     enrolled_count = 0
     skipped_count = 0
@@ -35,9 +38,9 @@ class EnrollImportedContactsJob < ApplicationJob
       skipped_count += 1
     end
 
-    Rails.logger.info "EnrollImportedContacts sequence=#{sequence_id} offset=#{offset} enrolled=#{enrolled_count} skipped=#{skipped_count}"
+    Rails.logger.info "EnrollImportedContacts sequence=#{sequence_id} last_id=#{last_id} enrolled=#{enrolled_count} skipped=#{skipped_count}"
 
-    self.class.perform_later(sequence_id, offset + BATCH_SIZE) if total_in_batch == BATCH_SIZE
+    self.class.perform_later(sequence_id, contacts.last.id) if total_in_batch == BATCH_SIZE
   end
 
   private
@@ -113,26 +116,50 @@ class EnrollImportedContactsJob < ApplicationJob
   def apply_custom_attribute_filters(scope, filters)
     return scope if filters.blank?
 
-    filters.each do |f|
-      key = f['attribute_key']
-      val = f['value']
-      scope = case f['operator']
-              when 'equal_to'
-                scope.where('contacts.custom_attributes->>? = ?', key, val.to_s)
-              when 'not_equal_to'
-                scope.where('contacts.custom_attributes->>? != ?', key, val.to_s)
-              when 'contains'
-                scope.where('contacts.custom_attributes->>? ILIKE ?', key, "%#{val}%")
-              when 'is_present'
-                scope.where('contacts.custom_attributes->>? IS NOT NULL', key)
-              when 'is_not_present'
-                scope.where('contacts.custom_attributes->>? IS NULL', key)
-              else
-                scope
-              end
+    # Group consecutive AND filters; each OR boundary starts a new group.
+    # [F1, F2(AND), F3(OR), F4(AND)] → [[F1,F2], [F3,F4]] → (F1∧F2) ∨ (F3∧F4)
+    groups = filters.each_with_object([[]]) do |f, acc|
+      acc << [] if f['logical_operator'] == 'or' && acc.last.any?
+      acc.last << f
     end
 
-    scope
+    or_parts = []
+    binds = []
+    groups.each do |group|
+      and_parts = []
+      group.each do |f|
+        sql, b = custom_attr_filter_sql(f)
+        next unless sql
+
+        and_parts << sql
+        binds.concat(b)
+      end
+      or_parts << "(#{and_parts.join(' AND ')})" if and_parts.any?
+    end
+
+    return scope if or_parts.empty?
+
+    scope.where(or_parts.join(' OR '), *binds)
+  end
+
+  def custom_attr_filter_sql(filter)
+    key = filter['attribute_key']
+    val = filter['value']
+    col = 'contacts.custom_attributes'
+
+    case filter['operator']
+    when 'equal_to'
+      # @> uses the existing GIN index on custom_attributes
+      ["#{col} @> jsonb_build_object(?, ?::text)", [key, val.to_s]]
+    when 'not_equal_to'
+      ["(#{col}->>? IS NOT NULL AND #{col}->>? != ?)", [key, key, val.to_s]]
+    when 'contains'
+      ["#{col}->>? ILIKE ?", [key, "%#{ActiveRecord::Base.sanitize_sql_like(val.to_s)}%"]]
+    when 'is_present'
+      ["(#{col}->>? IS NOT NULL AND #{col}->>? != '')", [key, key]]
+    when 'is_not_present'
+      ["(#{col}->>? IS NULL OR #{col}->>? = '')", [key, key]]
+    end
   end
 
   def create_conversation_with_first_contact(sequence, contact)

@@ -630,6 +630,123 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
         body = JSON.parse(response.body, symbolize_names: true)
         expect(body[:contacts].first[:labels]).to include('vip')
       end
+
+      it 'returns capped: false when count is below the cap' do
+        post url,
+             params: { source_config: {} },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:capped]).to be false
+      end
+
+      it 'returns capped: true and total_count equal to the cap when results exceed the cap' do
+        # Lower the cap constant so we can test with a small number of real DB records
+        stub_const('Api::V1::Accounts::LeadFollowUpSequencesController::PREVIEW_CONTACTS_CAP', 1)
+
+        # before block already created 1 contact; create one more to exceed the cap of 1
+        create(:contact, account: account, phone_number: '+529999999999')
+
+        post url,
+             params: { source_config: {} },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:capped]).to be true
+        expect(body[:total_count]).to eq(1) # equals the stubbed cap
+      end
+
+      it 'applies OR logic between custom_attribute_filters with logical_operator: or' do
+        create(:contact, account: account, custom_attributes: { 'city' => 'CDMX' })
+        create(:contact, account: account, custom_attributes: { 'city' => 'GDL' })
+        create(:contact, account: account, custom_attributes: { 'city' => 'MTY' })
+
+        post url,
+             params: {
+               source_config: {
+                 custom_attribute_filters: [
+                   { attribute_key: 'city', operator: 'equal_to', value: 'CDMX', logical_operator: 'and' },
+                   { attribute_key: 'city', operator: 'equal_to', value: 'GDL',  logical_operator: 'or' }
+                 ]
+               }
+             },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        # The 'before' contact has no city attribute and won't match; only CDMX + GDL contacts match
+        expect(body[:total_count]).to eq(2)
+      end
+
+      it 'applies AND logic between filters within the same OR group' do
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro', 'city' => 'CDMX' })
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro', 'city' => 'GDL' })
+        create(:contact, account: account, custom_attributes: { 'plan' => 'free', 'city' => 'CDMX' })
+
+        post url,
+             params: {
+               source_config: {
+                 custom_attribute_filters: [
+                   { attribute_key: 'plan', operator: 'equal_to', value: 'pro',  logical_operator: 'and' },
+                   { attribute_key: 'city', operator: 'equal_to', value: 'CDMX', logical_operator: 'and' }
+                 ]
+               }
+             },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        # Only the contact with plan=pro AND city=CDMX matches
+        expect(body[:total_count]).to eq(1)
+      end
+
+      it 'returns correct count for mixed AND/OR groups: (plan=pro AND city=CDMX) OR (city=GDL)' do
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro',  'city' => 'CDMX' }) # group 1 ✓
+        create(:contact, account: account, custom_attributes: { 'plan' => 'free', 'city' => 'CDMX' }) # group 1 ✗
+        create(:contact, account: account, custom_attributes: { 'plan' => 'free', 'city' => 'GDL' })  # group 2 ✓
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro',  'city' => 'GDL' })  # group 2 ✓
+
+        post url,
+             params: {
+               source_config: {
+                 custom_attribute_filters: [
+                   { attribute_key: 'plan', operator: 'equal_to', value: 'pro',  logical_operator: 'and' },
+                   { attribute_key: 'city', operator: 'equal_to', value: 'CDMX', logical_operator: 'and' },
+                   { attribute_key: 'city', operator: 'equal_to', value: 'GDL',  logical_operator: 'or' }
+                 ]
+               }
+             },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        # 1 (from before) + 1 (pro+CDMX) + 2 (GDL) = but before contact has no custom_attrs, doesn't match
+        expect(body[:total_count]).to eq(3)
+      end
+
+      it 'treats filters without logical_operator as AND (backward compat)' do
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro',  'city' => 'CDMX' })
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro',  'city' => 'GDL' })
+        create(:contact, account: account, custom_attributes: { 'plan' => 'free', 'city' => 'CDMX' })
+
+        post url,
+             params: {
+               source_config: {
+                 # No logical_operator field — old format
+                 custom_attribute_filters: [
+                   { attribute_key: 'plan', operator: 'equal_to', value: 'pro' },
+                   { attribute_key: 'city', operator: 'equal_to', value: 'CDMX' }
+                 ]
+               }
+             },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+      end
     end
   end
 end

@@ -1,4 +1,5 @@
 class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::BaseController
+  PREVIEW_CONTACTS_CAP = 50_000
   before_action :check_admin_authorization?, except: %i[submit_enrollment_result cancel_enrollment]
   before_action :set_inbox, only: [:index, :create, :available_templates]
   before_action :set_sequence, only: [:show, :update, :destroy, :activate, :deactivate, :enrolled_conversations,
@@ -136,16 +137,18 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     contacts = contacts.where.not(email: [nil, '']) if source_config['require_email']
 
     contacts = apply_created_at_filter_for_preview(contacts, source_config['created_at_filter'])
+    contacts = apply_custom_attr_filters_with_logic(contacts, source_config['custom_attribute_filters'])
 
-    Array(source_config['custom_attribute_filters']).each do |f|
-      contacts = apply_jsonb_preview_filter(contacts, 'custom_attributes', f)
-    end
+    count_limit = PREVIEW_CONTACTS_CAP + 1
+    raw_count = contacts.limit(count_limit).count
+    capped = raw_count >= count_limit
+    total_count = capped ? PREVIEW_CONTACTS_CAP : raw_count
 
-    total_count = contacts.count
     sample = contacts.order(created_at: :desc).limit(20)
 
     render json: {
       total_count: total_count,
+      capped: capped,
       contacts: sample.map do |c|
         {
           id: c.id,
@@ -382,22 +385,52 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     scope
   end
 
-  def apply_jsonb_preview_filter(scope, column, filter)
+  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+  def apply_custom_attr_filters_with_logic(scope, filters)
+    return scope if filters.blank?
+
+    groups = Array(filters).each_with_object([[]]) do |f, acc|
+      acc << [] if f['logical_operator'] == 'or' && acc.last.any?
+      acc.last << f
+    end
+
+    or_parts = []
+    binds = []
+    groups.each do |group|
+      and_parts = []
+      group.each do |f|
+        sql, b = jsonb_preview_filter_sql(f, 'custom_attributes')
+        next unless sql
+
+        and_parts << sql
+        binds.concat(b)
+      end
+      or_parts << "(#{and_parts.join(' AND ')})" if and_parts.any?
+    end
+
+    return scope if or_parts.empty?
+
+    scope.where(or_parts.join(' OR '), *binds)
+  end
+  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+  def jsonb_preview_filter_sql(filter, column)
     key = filter['attribute_key']
     val = filter['value']
+    col = "contacts.#{column}"
+
     case filter['operator']
     when 'equal_to'
-      scope.where("contacts.#{column}->>? = ?", key, val.to_s)
+      # @> uses the GIN index on custom_attributes
+      ["#{col} @> jsonb_build_object(?, ?::text)", [key, val.to_s]]
     when 'not_equal_to'
-      scope.where("contacts.#{column}->>? != ?", key, val.to_s)
+      ["(#{col}->>? IS NOT NULL AND #{col}->>? != ?)", [key, key, val.to_s]]
     when 'contains'
-      scope.where("contacts.#{column}->>? ILIKE ?", key, "%#{val}%")
+      ["#{col}->>? ILIKE ?", [key, "%#{ActiveRecord::Base.sanitize_sql_like(val.to_s)}%"]]
     when 'is_present'
-      scope.where("contacts.#{column}->>? IS NOT NULL", key)
+      ["(#{col}->>? IS NOT NULL AND #{col}->>? != '')", [key, key]]
     when 'is_not_present'
-      scope.where("contacts.#{column}->>? IS NULL", key)
-    else
-      scope
+      ["(#{col}->>? IS NULL OR #{col}->>? = '')", [key, key]]
     end
   end
 

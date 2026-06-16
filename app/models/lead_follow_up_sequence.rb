@@ -711,10 +711,22 @@ class LeadFollowUpSequence < ApplicationRecord
       errors.add(:source_config,
                  'additional_attribute_filters must be an array')
     end
-    return unless source_config['custom_attribute_filters'].present? && !source_config['custom_attribute_filters'].is_a?(Array)
 
-    errors.add(:source_config,
-               'custom_attribute_filters must be an array')
+    return if source_config['custom_attribute_filters'].blank?
+
+    unless source_config['custom_attribute_filters'].is_a?(Array)
+      errors.add(:source_config, 'custom_attribute_filters must be an array')
+      return
+    end
+
+    source_config['custom_attribute_filters'].each_with_index do |filter, i|
+      next if i.zero?
+
+      lo = filter['logical_operator']
+      next if lo.nil? || %w[and or].include?(lo)
+
+      errors.add(:source_config, "custom_attribute_filter[#{i}] logical_operator must be 'and' or 'or', got '#{lo}'")
+    end
   end
   # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity, Metrics/AbcSize
 

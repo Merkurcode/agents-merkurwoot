@@ -124,6 +124,7 @@ const showPreviewModal = ref(false);
 const showNotionPreviewModal = ref(false);
 
 const contactsPreviewCount = ref(null);
+const contactsPreviewCapped = ref(false);
 const contactsPreviewLoading = ref(false);
 const contactsPreviewContacts = ref([]);
 const showContactsPreviewModal = ref(false);
@@ -318,6 +319,19 @@ const fetchSequence = async () => {
         ...(data.settings || {}),
       },
     };
+
+    // Normalize logical_operator for imported_contacts filters loaded from DB.
+    // Existing filters without this field default to 'and' (backward-compat).
+    if (
+      sequence.value.source_type === 'imported_contacts' &&
+      Array.isArray(sequence.value.source_config?.custom_attribute_filters)
+    ) {
+      sequence.value.source_config.custom_attribute_filters =
+        sequence.value.source_config.custom_attribute_filters.map((f, i) => ({
+          ...f,
+          logical_operator: i === 0 ? 'and' : (f.logical_operator || 'and'),
+        }));
+    }
 
     // Load templates for regular copilots (inbox at sequence level)
     if (sequence.value.inbox_id) {
@@ -1005,11 +1019,13 @@ const previewImportedContacts = debounce(async () => {
   if (sequence.value.source_type !== 'imported_contacts') return;
   contactsPreviewLoading.value = true;
   contactsPreviewCount.value = null;
+  contactsPreviewCapped.value = false;
   try {
     const response = await leadFollowUpSequencesAPI.previewEligibleContacts(
       sequence.value.source_config
     );
     contactsPreviewCount.value = response.data.total_count;
+    contactsPreviewCapped.value = response.data.capped || false;
     contactsPreviewContacts.value = response.data.contacts || [];
   } catch {
     useAlert('Error al calcular contactos elegibles');
@@ -1211,11 +1227,18 @@ const addContactCustomAttributeFilter = () => {
     attribute_display_type: 'text',
     operator: 'equal_to',
     value: '',
+    logical_operator: 'and',
   });
 };
 
 const removeContactCustomAttributeFilter = index => {
   sequence.value.source_config.custom_attribute_filters.splice(index, 1);
+};
+
+const toggleContactFilterLogicalOperator = index => {
+  const filter = sequence.value.source_config.custom_attribute_filters[index];
+  if (!filter) return;
+  filter.logical_operator = filter.logical_operator === 'or' ? 'and' : 'or';
 };
 
 const onContactCustomAttributeChange = (filter) => {
@@ -2299,47 +2322,65 @@ const saveSequence = async () => {
               >
                 Sin filtros de atributos personalizados
               </div>
-              <div v-else class="space-y-2">
-                <div
+              <div v-else class="space-y-1">
+                <template
                   v-for="(filter, index) in sequence.source_config.custom_attribute_filters"
                   :key="filter.id"
-                  class="grid grid-cols-12 gap-2 items-center"
                 >
-                  <select
-                    v-model="filter.attribute_key"
-                    class="col-span-4 text-sm"
-                    @change="onContactCustomAttributeChange(filter)"
-                  >
-                    <option value="">Selecciona atributo</option>
-                    <option
-                      v-for="attr in contactCustomAttributes"
-                      :key="attr.attributeKey"
-                      :value="attr.attributeKey"
+                  <!-- AND/OR connector between filters -->
+                  <div v-if="index > 0" class="flex items-center gap-2 my-1">
+                    <div class="flex-1 border-t border-n-weak/40" />
+                    <button
+                      type="button"
+                      class="px-2 py-0.5 rounded text-xs font-semibold border transition-colors"
+                      :class="filter.logical_operator === 'or'
+                        ? 'bg-n-violet-3 text-n-violet-11 border-n-violet-6 dark:bg-n-violet-4'
+                        : 'bg-n-slate-3 text-n-slate-11 border-n-slate-6 dark:bg-n-slate-4'"
+                      @click="toggleContactFilterLogicalOperator(index)"
                     >
-                      {{ attr.attributeDisplayName }}
-                    </option>
-                  </select>
-                  <select v-model="filter.operator" class="col-span-3 text-sm">
-                    <option v-for="op in contactCustomAttrOperatorOptions" :key="op.value" :value="op.value">
-                      {{ op.label }}
-                    </option>
-                  </select>
-                  <input
-                    v-if="!['is_present', 'is_not_present'].includes(filter.operator)"
-                    v-model="filter.value"
-                    type="text"
-                    class="col-span-4 text-sm"
-                    placeholder="Valor"
-                  />
-                  <div v-else class="col-span-4" />
-                  <button
-                    type="button"
-                    class="col-span-1 text-n-red-10 hover:text-n-red-11 flex justify-center"
-                    @click="removeContactCustomAttributeFilter(index)"
-                  >
-                    <i class="i-lucide-trash-2 text-base" />
-                  </button>
-                </div>
+                      {{ filter.logical_operator === 'or' ? 'O' : 'Y' }}
+                    </button>
+                    <div class="flex-1 border-t border-n-weak/40" />
+                  </div>
+
+                  <!-- Filter row -->
+                  <div class="grid grid-cols-12 gap-2 items-center">
+                    <select
+                      v-model="filter.attribute_key"
+                      class="col-span-4 text-sm"
+                      @change="onContactCustomAttributeChange(filter)"
+                    >
+                      <option value="">Selecciona atributo</option>
+                      <option
+                        v-for="attr in contactCustomAttributes"
+                        :key="attr.attributeKey"
+                        :value="attr.attributeKey"
+                      >
+                        {{ attr.attributeDisplayName }}
+                      </option>
+                    </select>
+                    <select v-model="filter.operator" class="col-span-3 text-sm">
+                      <option v-for="op in contactCustomAttrOperatorOptions" :key="op.value" :value="op.value">
+                        {{ op.label }}
+                      </option>
+                    </select>
+                    <input
+                      v-if="!['is_present', 'is_not_present'].includes(filter.operator)"
+                      v-model="filter.value"
+                      type="text"
+                      class="col-span-4 text-sm"
+                      placeholder="Valor"
+                    />
+                    <div v-else class="col-span-4" />
+                    <button
+                      type="button"
+                      class="col-span-1 text-n-red-10 hover:text-n-red-11 flex justify-center"
+                      @click="removeContactCustomAttributeFilter(index)"
+                    >
+                      <i class="i-lucide-trash-2 text-base" />
+                    </button>
+                  </div>
+                </template>
               </div>
             </div>
 
@@ -2384,7 +2425,7 @@ const saveSequence = async () => {
                   </div>
                   <template v-else-if="contactsPreviewCount !== null">
                     <span class="px-3 py-1.5 bg-n-teal-9 text-white font-semibold rounded-full text-lg">
-                      {{ contactsPreviewCount.toLocaleString() }}
+                      {{ contactsPreviewCapped ? '+50,000' : contactsPreviewCount.toLocaleString() }}
                     </span>
                     <span class="text-sm text-n-slate-11">
                       {{ t('LEAD_RETARGETING.FORM.IMPORTED_CONTACTS.PREVIEW_CONTACTS') }}

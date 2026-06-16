@@ -41,9 +41,10 @@ const isUpdating = ref(false);
 const templateStatus = ref(null);
 const templateLoading = ref(false);
 
-const DEFAULT_MESSAGE = t(
-  'INBOX_MGMT.REENGAGEMENT_TEMPLATE.DEFAULT_MESSAGE'
-);
+const DEFAULT_MESSAGE =
+  'Hola {{1}}, ha pasado un tiempo desde nuestra última conversación. ' +
+  'Si tienes alguna duda o necesitas ayuda, estamos aquí para ti. ' +
+  '¿En qué podemos asistirte hoy?';
 
 const state = reactive({
   message: DEFAULT_MESSAGE,

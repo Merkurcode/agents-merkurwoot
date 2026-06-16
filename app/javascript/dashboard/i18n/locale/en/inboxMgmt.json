@@ -689,16 +689,15 @@
     },
     "REENGAGEMENT_TEMPLATE": {
       "TITLE": "Re-engagement Template",
-      "DESCRIPTION": "Configure a pre-approved WhatsApp template to re-engage customers when the 24-hour conversation window is closed. Use {{1}} as a placeholder for the contact's name.",
+      "DESCRIPTION": "Configure a pre-approved WhatsApp template to re-engage customers when the 24-hour conversation window is closed. Use {'{{1}}'} as a placeholder for the contact's name.",
       "MESSAGE": {
         "LABEL": "Message body",
-        "PLACEHOLDER": "Enter a message to re-engage the customer. Use {{1}} for contact name."
+        "PLACEHOLDER": "Enter a message to re-engage the customer. Use {'{{1}}'} for contact name."
       },
       "LANGUAGE": {
         "LABEL": "Language",
         "PLACEHOLDER": "Select template language"
       },
-      "DEFAULT_MESSAGE": "Hi {{1}}, it's been a while since our last conversation. If you have any questions or need help, we're here for you. How can we assist you today?",
       "CREATE_BUTTON": "Create Template",
       "UPDATE_BUTTON": "Update Template",
       "NOTE": "Note: We will create a template and send it for WhatsApp approval. Once approved, it will be sent automatically when the conversation window is closed.",

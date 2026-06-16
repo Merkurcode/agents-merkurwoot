@@ -6,6 +6,7 @@ import { useAlert } from 'dashboard/composables';
 import leadFollowUpSequencesAPI from 'dashboard/api/leadFollowUpSequences';
 import Button from 'dashboard/components-next/button/Button.vue';
 import SettingIntroBanner from 'dashboard/components/widgets/SettingIntroBanner.vue';
+import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -17,6 +18,9 @@ const enrolledConversations = ref([]);
 const enrolledLoading = ref(false);
 const statusFilter = ref(null);
 const statusCounts = ref({});
+const currentPage = ref(1);
+const perPage = ref(50);
+const totalCount = ref(0);
 const selectedFollowUps = ref([]);
 const cancellingFollowUps = ref(false);
 const totalSteps = ref(0);
@@ -67,11 +71,16 @@ const fetchEnrolledConversations = async () => {
   try {
     const response = await leadFollowUpSequencesAPI.getEnrolledConversations(
       route.params.sequenceId,
-      { status: statusFilter.value }
+      {
+        status: statusFilter.value,
+        page: currentPage.value,
+        per_page: perPage.value,
+      }
     );
     enrolledConversations.value = response.data.enrolled_conversations;
     statusCounts.value = response.data.status_counts;
     totalSteps.value = response.data.total_steps || 0;
+    totalCount.value = response.data.total_count || 0;
   } catch (error) {
     console.error('Error fetching enrolled conversations:', error);
     useAlert('Error al cargar conversaciones');
@@ -288,6 +297,12 @@ const cancelSingleFollowUp = async enrollmentId => {
   }
 };
 
+const onPageChange = page => {
+  currentPage.value = page;
+  selectedFollowUps.value = [];
+  fetchEnrolledConversations();
+};
+
 const resetData = () => {
   sequence.value = null;
   enrolledConversations.value = [];
@@ -295,6 +310,8 @@ const resetData = () => {
   statusCounts.value = {};
   selectedFollowUps.value = [];
   totalSteps.value = 0;
+  currentPage.value = 1;
+  totalCount.value = 0;
 };
 
 const loadData = async () => {
@@ -430,6 +447,7 @@ onBeforeUnmount(() => {
             ]"
             @click="
               statusFilter = statusFilter === status ? null : status;
+              currentPage = 1;
               fetchEnrolledConversations();
             "
           >
@@ -479,6 +497,7 @@ onBeforeUnmount(() => {
                   class="text-xs text-n-blue-11 hover:text-n-blue-12"
                   @click="
                     statusFilter = null;
+                    currentPage = 1;
                     fetchEnrolledConversations();
                   "
                 >
@@ -552,7 +571,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto relative">
             <table class="w-full">
               <thead class="bg-n-slate-2 dark:bg-n-slate-3">
                 <tr>
@@ -777,6 +796,14 @@ onBeforeUnmount(() => {
                 </tr>
               </tbody>
             </table>
+            </div>
+            <div v-if="totalCount > perPage" class="px-4 py-3 border-t border-n-weak/60">
+              <PaginationFooter
+                :current-page="currentPage"
+                :total-items="totalCount"
+                :items-per-page="perPage"
+                @update:current-page="onPageChange"
+              />
             </div>
           </div>
         </div>

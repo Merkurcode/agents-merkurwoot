@@ -68,10 +68,10 @@ export const actions = {
     }
   },
 
-  update: async ({ commit }, { id, ...updateObj }) => {
+  update: async ({ commit }, { id, data }) => {
     commit(types.SET_PRODUCT_CATALOG_UI_FLAG, { isUpdating: true });
     try {
-      const response = await ProductCatalogAPI.update(id, updateObj);
+      const response = await ProductCatalogAPI.update(id, data);
       commit(types.EDIT_PRODUCT_CATALOG, response.data);
     } catch (error) {
       throw new Error(error);

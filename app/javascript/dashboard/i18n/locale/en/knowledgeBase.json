@@ -80,6 +80,7 @@
         "ACTIONS": "Actions",
         "HIDE_PRODUCT": "Hide product",
         "SHOW_PRODUCT": "Show product",
+        "EDIT_PRODUCT": "Edit product",
         "DELETE_PRODUCT": "Delete product",
         "HIDDEN": "Hidden"
       },
@@ -153,6 +154,22 @@
         "RESULTS": "results"
       },
       "UPLOAD_HISTORY": "Upload History",
+      "EDIT": {
+        "TITLE": "Edit Product",
+        "PRODUCT_NAME": "Product Name",
+        "UPLOAD_MEDIA": "Upload Media",
+        "NEW_FILES": "New files to upload",
+        "DISCARD": "Discard",
+        "SAVE": "Save Changes",
+        "CANCEL": "Cancel",
+        "CONFIRM": "Confirm",
+        "DISCARD_TITLE": "Discard Changes",
+        "DISCARD_MESSAGE": "Are you sure you want to discard all unsaved changes?",
+        "SAVE_TITLE": "Save Changes",
+        "SAVE_MESSAGE": "Are you sure you want to save these changes to the product?",
+        "SUCCESS": "Product updated successfully",
+        "ERROR": "Failed to update product"
+      },
       "MEDIA_SPECS": {
         "TITLE": "Media File Requirements",
         "DESCRIPTION": "Click to view allowed file types and size limits",

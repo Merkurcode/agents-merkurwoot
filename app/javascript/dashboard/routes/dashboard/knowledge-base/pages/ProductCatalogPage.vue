@@ -146,6 +146,7 @@
           :selected-product-ids="selectedProductIds"
           @update:selected-product-ids="handleSelectedProductIdsUpdate"
           @select="handleProductSelect"
+          @edit="handleProductEdit"
           @delete="handleDelete"
           @toggle-visibility="handleToggleVisibility"
         />
@@ -260,6 +261,13 @@
       :product="selectedProductForMedia"
       @close="selectedProductForMedia = null"
     />
+
+    <EditProductDrawer
+      v-if="selectedProductForEdit"
+      :product="selectedProductForEdit"
+      @close="selectedProductForEdit = null"
+      @saved="handleProductEditSaved"
+    />
   </div>
 </template>
 
@@ -282,6 +290,7 @@ import ProductTable from 'dashboard/components-next/KnowledgeBase/Pages/ProductC
 import ConfirmDeleteDialog from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/ConfirmDeleteDialog.vue';
 import ProcessingStatus from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/ProcessingStatus.vue';
 import MediaDrawer from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/MediaDrawer.vue';
+import EditProductDrawer from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/EditProductDrawer.vue';
 import ProductCatalogEmptyState from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/ProductCatalogEmptyState.vue';
 import MediaSpecsNotice from 'dashboard/components-next/KnowledgeBase/Pages/ProductCatalogPage/MediaSpecsNotice.vue';
 import ProductCatalogAPI from 'dashboard/api/productCatalog';
@@ -293,6 +302,7 @@ const router = useRouter();
 const [showUploadDialog, toggleUploadDialog] = useToggle();
 const selectedProduct = ref(null);
 const selectedProductForMedia = ref(null);
+const selectedProductForEdit = ref(null);
 const selectedProductIds = ref([]);
 const deleteDialogRef = ref(null);
 const activeProcessing = ref(null);
@@ -722,6 +732,18 @@ const handleProductSelect = product => {
   } else {
     selectedProductForMedia.value = product;
   }
+};
+
+const handleProductEdit = product => {
+  selectedProductForEdit.value = product;
+};
+
+const handleProductEditSaved = async () => {
+  await store.dispatch('productCatalogs/get', {
+    page: meta.value.current_page,
+    per_page: 50,
+    q: searchQuery.value || undefined
+  });
 };
 
 const handleSelectedProductIdsUpdate = (newIds) => {

@@ -99,6 +99,13 @@
             <div class="flex flex-col gap-1" @click.stop>
               <button
                 class="p-2 text-n-slate-11 hover:text-n-blue-11 hover:bg-n-blue-2 rounded-lg transition-colors"
+                :title="$t('KNOWLEDGE_BASE.PRODUCT_CATALOG.TABLE.EDIT_PRODUCT')"
+                @click="emit('edit', product)"
+              >
+                <i class="i-lucide-pencil w-4 h-4" />
+              </button>
+              <button
+                class="p-2 text-n-slate-11 hover:text-n-blue-11 hover:bg-n-blue-2 rounded-lg transition-colors"
                 :title="product.is_visible ? $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.TABLE.HIDE_PRODUCT') : $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.TABLE.SHOW_PRODUCT')"
                 @click="emit('toggle-visibility', product)"
               >
@@ -160,6 +167,13 @@
           <div class="col-span-2 flex items-center justify-end gap-1" @click.stop>
             <button
               class="p-2 text-n-slate-11 hover:text-n-blue-11 hover:bg-n-blue-2 rounded-lg transition-colors"
+              :title="$t('KNOWLEDGE_BASE.PRODUCT_CATALOG.TABLE.EDIT_PRODUCT')"
+              @click="emit('edit', product)"
+            >
+              <i class="i-lucide-pencil w-4 h-4" />
+            </button>
+            <button
+              class="p-2 text-n-slate-11 hover:text-n-blue-11 hover:bg-n-blue-2 rounded-lg transition-colors"
               :title="product.is_visible ? $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.TABLE.HIDE_PRODUCT') : $t('KNOWLEDGE_BASE.PRODUCT_CATALOG.TABLE.SHOW_PRODUCT')"
               @click="emit('toggle-visibility', product)"
             >
@@ -199,7 +213,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['delete', 'select', 'update:selected-product-ids', 'toggle-visibility']);
+const emit = defineEmits(['delete', 'edit', 'select', 'update:selected-product-ids', 'toggle-visibility']);
 
 const handleProductClick = (product) => {
   emit('select', product);

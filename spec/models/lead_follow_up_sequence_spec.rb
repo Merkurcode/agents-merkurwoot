@@ -5,26 +5,31 @@ require 'rails_helper'
 RSpec.describe LeadFollowUpSequence do
   describe 'associations' do
     it { is_expected.to belong_to(:account) }
-    it { is_expected.to belong_to(:inbox) }
+    it { expect(described_class.reflect_on_association(:inbox)).not_to be_nil }
     it { is_expected.to have_many(:conversation_follow_ups).dependent(:destroy) }
+    it { is_expected.to have_many(:enrollment_result_values).dependent(:destroy_async) }
   end
 
   describe 'validations' do
     let(:account) { create(:account) }
-    let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
     let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
 
     it { is_expected.to validate_presence_of(:name) }
-    it { is_expected.to validate_presence_of(:inbox) }
+    it 'requires an inbox' do
+      seq = build(:lead_follow_up_sequence, account: create(:account))
+      seq.inbox = nil
+      expect(seq.valid?).to be false
+    end
 
     context 'when inbox is not WhatsApp' do
       let(:website_channel) { create(:channel_widget, account: account) }
       let(:website_inbox) { create(:inbox, channel: website_channel, account: account) }
       let(:sequence) { build(:lead_follow_up_sequence, account: account, inbox: website_inbox) }
 
-      it 'adds error for non-WhatsApp inbox' do
+      it 'adds error for non-messaging inbox' do
         expect(sequence.valid?).to be false
-        expect(sequence.errors[:inbox]).to include('must be a WhatsApp inbox')
+        expect(sequence.errors[:inbox]).to include('must be a WhatsApp, SMS, or Email inbox')
       end
     end
 
@@ -71,6 +76,121 @@ RSpec.describe LeadFollowUpSequence do
       end
     end
 
+    context 'when source_type is imported_contacts' do
+      let(:widget_channel) { create(:channel_widget, account: account) }
+      let(:widget_inbox) { create(:inbox, channel: widget_channel, account: account) }
+
+      def build_imported_sequence(source_config = {})
+        build(:lead_follow_up_sequence,
+              account: account,
+              inbox: widget_inbox,
+              source_type: 'imported_contacts',
+              source_config: source_config,
+              steps: [])
+      end
+
+      it 'does not add source_config errors with an empty source_config' do
+        seq = build_imported_sequence
+        seq.valid?
+        expect(seq.errors[:source_config]).to be_empty
+      end
+
+      it 'skips inbox channel validation' do
+        seq = build_imported_sequence
+        seq.valid?
+        expect(seq.errors[:inbox]).to be_empty
+      end
+
+      it 'does not add errors for allowed contact_types' do
+        seq = build_imported_sequence('contact_types' => %w[lead customer])
+        seq.valid?
+        expect(seq.errors[:source_config]).not_to include(a_string_matching('invalid contact_types'))
+      end
+
+      it 'is invalid with unknown contact_types' do
+        seq = build_imported_sequence('contact_types' => %w[lead unknown_type])
+        seq.valid?
+        expect(seq.errors[:source_config]).to include(a_string_matching('invalid contact_types'))
+      end
+
+      it 'is invalid when labels is not an array' do
+        seq = build_imported_sequence('labels' => 'hot-lead')
+        seq.valid?
+        expect(seq.errors[:source_config]).to include('labels must be an array')
+      end
+
+      it 'is invalid with an unknown created_at operator' do
+        seq = build_imported_sequence('created_at_filter' => { 'operator' => 'yesterday', 'value' => 1 })
+        seq.valid?
+        expect(seq.errors[:source_config]).to include(a_string_matching('invalid created_at_filter operator'))
+      end
+
+      it 'is invalid when between filter is missing dates' do
+        seq = build_imported_sequence('created_at_filter' => { 'operator' => 'between' })
+        seq.valid?
+        expect(seq.errors[:source_config]).to include(a_string_matching('requires from_date and to_date'))
+      end
+
+      it 'is invalid when newer_than value is not positive' do
+        seq = build_imported_sequence('created_at_filter' => { 'operator' => 'newer_than', 'value' => 0 })
+        seq.valid?
+        expect(seq.errors[:source_config]).to include('created_at_filter value must be positive')
+      end
+    end
+
+    context 'when result_schema has invalid fields' do
+      let(:whatsapp_sequence) { build(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
+
+      it 'is valid with an empty result_schema' do
+        whatsapp_sequence.result_schema = []
+        expect(whatsapp_sequence.valid?).to be true
+      end
+
+      it 'is valid with a well-formed schema' do
+        whatsapp_sequence.result_schema = [
+          { 'key' => 'outcome', 'label' => 'Outcome', 'type' => 'select',
+            'required' => true, 'options' => [{ 'label' => 'Converted', 'value' => 'converted' }] }
+        ]
+        expect(whatsapp_sequence.valid?).to be true
+      end
+
+      it 'is invalid when a field is missing key' do
+        whatsapp_sequence.result_schema = [{ 'label' => 'Outcome', 'type' => 'text' }]
+        expect(whatsapp_sequence.valid?).to be false
+        expect(whatsapp_sequence.errors[:result_schema]).to include('field missing key')
+      end
+
+      it 'is invalid when a field is missing label' do
+        whatsapp_sequence.result_schema = [{ 'key' => 'outcome', 'type' => 'text' }]
+        expect(whatsapp_sequence.valid?).to be false
+        expect(whatsapp_sequence.errors[:result_schema]).to include('field missing label')
+      end
+
+      it 'is invalid when field type is not supported' do
+        whatsapp_sequence.result_schema = [{ 'key' => 'outcome', 'label' => 'Outcome', 'type' => 'image' }]
+        expect(whatsapp_sequence.valid?).to be false
+        expect(whatsapp_sequence.errors[:result_schema]).to include("invalid type 'image'")
+      end
+
+      it 'is invalid when select field has no options' do
+        whatsapp_sequence.result_schema = [
+          { 'key' => 'outcome', 'label' => 'Outcome', 'type' => 'select', 'options' => [] }
+        ]
+        expect(whatsapp_sequence.valid?).to be false
+        expect(whatsapp_sequence.errors[:result_schema]).to include("select field 'outcome' needs options")
+      end
+
+      it 'accepts all supported types' do
+        %w[text select number boolean].each do |type|
+          field = { 'key' => 'f', 'label' => 'F', 'type' => type }
+          field['options'] = [{ 'label' => 'Yes', 'value' => 'yes' }] if type == 'select'
+          whatsapp_sequence.result_schema = [field]
+          whatsapp_sequence.valid?
+          expect(whatsapp_sequence.errors[:result_schema]).not_to include("invalid type '#{type}'")
+        end
+      end
+    end
+
     context 'when steps is not an array' do
       let(:sequence) do
         build(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox,
@@ -113,28 +233,29 @@ RSpec.describe LeadFollowUpSequence do
       end
     end
 
-    context 'when template step has missing config' do
+    context 'when send_message step is missing template_config' do
       let(:sequence) do
         build(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox,
                                         steps: [{
                                           'id' => '1',
-                                          'type' => 'send_template',
+                                          'type' => 'send_message',
                                           'enabled' => true,
-                                          'config' => {}
+                                          'config' => { 'closed_window_action' => 'send_template' }
                                         }])
       end
 
-      it 'adds errors for missing template config' do
+      it 'adds error for missing template_config' do
         expect(sequence.valid?).to be false
-        expect(sequence.errors[:steps]).to include('template step at index 0 must have template_name')
-        expect(sequence.errors[:steps]).to include('template step at index 0 must have language')
+        expect(sequence.errors[:steps]).to include(
+          'message step at index 0 requires template_config when closed_window_action is send_template'
+        )
       end
     end
   end
 
   describe 'scopes' do
     let(:account) { create(:account) }
-    let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
     let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
     let!(:active_sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox, active: true) }
     let!(:inactive_sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox, active: false) }
@@ -149,7 +270,7 @@ RSpec.describe LeadFollowUpSequence do
 
   describe '#activate!' do
     let(:account) { create(:account) }
-    let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
     let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
     let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox, active: false) }
 
@@ -161,7 +282,7 @@ RSpec.describe LeadFollowUpSequence do
 
   describe '#deactivate!' do
     let(:account) { create(:account) }
-    let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
     let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
     let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox, active: true) }
     let(:conversation) { create(:conversation, account: account, inbox: whatsapp_inbox) }
@@ -192,19 +313,20 @@ RSpec.describe LeadFollowUpSequence do
 
   describe '#step_by_id' do
     let(:account) { create(:account) }
-    let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
     let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
     let(:sequence) do
       create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox,
                                        steps: [
-                                         { 'id' => 'step_1', 'type' => 'wait', 'enabled' => true },
-                                         { 'id' => 'step_2', 'type' => 'send_template', 'enabled' => true }
+                                         { 'id' => 'step_1', 'type' => 'wait', 'enabled' => true,
+                                           'config' => { 'delay_value' => 2, 'delay_type' => 'hours' } },
+                                         { 'id' => 'step_2', 'type' => 'add_label', 'enabled' => true }
                                        ])
     end
 
     it 'returns step by id' do
       step = sequence.step_by_id('step_1')
-      expect(step).to eq({ 'id' => 'step_1', 'type' => 'wait', 'enabled' => true })
+      expect(step).to eq({ 'id' => 'step_1', 'type' => 'wait', 'enabled' => true, 'config' => { 'delay_value' => 2, 'delay_type' => 'hours' } })
     end
 
     it 'returns nil for non-existent step' do
@@ -215,13 +337,14 @@ RSpec.describe LeadFollowUpSequence do
 
   describe '#enabled_steps' do
     let(:account) { create(:account) }
-    let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
     let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
     let(:sequence) do
       create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox,
                                        steps: [
-                                         { 'id' => 'step_1', 'type' => 'wait', 'enabled' => true },
-                                         { 'id' => 'step_2', 'type' => 'send_template', 'enabled' => false },
+                                         { 'id' => 'step_1', 'type' => 'wait', 'enabled' => true,
+                                           'config' => { 'delay_value' => 2, 'delay_type' => 'hours' } },
+                                         { 'id' => 'step_2', 'type' => 'add_label', 'enabled' => false },
                                          { 'id' => 'step_3', 'type' => 'add_label', 'enabled' => true }
                                        ])
     end
@@ -235,7 +358,7 @@ RSpec.describe LeadFollowUpSequence do
 
   describe '#render_param_value' do
     let(:account) { create(:account) }
-    let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
     let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
     let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
     let(:contact) { create(:contact, account: account, name: 'John Doe', phone_number: '+1234567890') }

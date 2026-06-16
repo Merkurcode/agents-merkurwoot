@@ -1,6 +1,9 @@
 class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::BaseController
+  before_action :check_admin_authorization?, except: %i[submit_enrollment_result cancel_enrollment]
   before_action :set_inbox, only: [:index, :create, :available_templates]
-  before_action :set_sequence, only: [:show, :update, :destroy, :activate, :deactivate, :enrolled_conversations, :cancel_follow_ups, :enrollment_timeline]
+  before_action :set_sequence, only: [:show, :update, :destroy, :activate, :deactivate, :enrolled_conversations,
+                                      :cancel_follow_ups, :enrollment_timeline, :submit_enrollment_result,
+                                      :cancel_enrollment, :result_indicators]
 
   def index
     @sequences = Current.account.lead_follow_up_sequences.includes(:inbox)
@@ -119,6 +122,45 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     render json: { error: 'Failed to preview eligible conversations' }, status: :internal_server_error
   end
 
+  def preview_eligible_contacts
+    source_config = (params[:source_config] || {}).to_unsafe_h
+    contacts = Current.account.contacts
+
+    if source_config['labels'].present?
+      match_any = source_config['label_match'] != 'all'
+      contacts = contacts.tagged_with(source_config['labels'], any: match_any)
+    end
+
+    contacts = contacts.where(contact_type: source_config['contact_types']) if source_config['contact_types'].present?
+    contacts = contacts.where.not(phone_number: [nil, '']) if source_config['require_phone']
+    contacts = contacts.where.not(email: [nil, '']) if source_config['require_email']
+
+    contacts = apply_created_at_filter_for_preview(contacts, source_config['created_at_filter'])
+
+    Array(source_config['custom_attribute_filters']).each do |f|
+      contacts = apply_jsonb_preview_filter(contacts, 'custom_attributes', f)
+    end
+
+    total_count = contacts.count
+    sample = contacts.order(created_at: :desc).limit(20)
+
+    render json: {
+      total_count: total_count,
+      contacts: sample.map do |c|
+        {
+          id: c.id,
+          name: c.name,
+          phone_number: c.phone_number,
+          email: c.email,
+          labels: c.label_list
+        }
+      end
+    }
+  rescue StandardError => e
+    Rails.logger.error "Error previewing eligible contacts: #{e.message}"
+    render json: { error: 'Failed to preview eligible contacts' }, status: :internal_server_error
+  end
+
   def cancel_follow_ups
     enrollment_ids = params[:follow_up_ids] || params[:enrollment_ids] || []
 
@@ -219,7 +261,9 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
             name: enrollment.conversation.contact&.name,
             phone_number: enrollment.conversation.contact&.phone_number
           },
-          conversation_status: enrollment.conversation.status
+          conversation_status: enrollment.conversation.status,
+          result_complete: enrollment.result_complete,
+          result_captured_by: enrollment.result_captured_by
         }
       end.compact,
       page: page,
@@ -269,7 +313,93 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     render json: { error: 'Failed to fetch enrollment timeline' }, status: :internal_server_error
   end
 
+  def submit_enrollment_result
+    enrollment = @sequence.sequence_enrollments.find(params[:enrollment_id])
+    captured_by = @resource.is_a?(AgentBot) ? 'agent_bot' : 'human'
+    enrollment.set_result!(result_values_params, captured_by: captured_by)
+    render json: { result: enrollment.result_as_hash, result_complete: enrollment.result_complete }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Enrollment not found' }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  def cancel_enrollment
+    enrollment = @sequence.sequence_enrollments.find(params[:enrollment_id])
+    return render json: { error: 'Enrollment is not active' }, status: :unprocessable_entity unless enrollment.active?
+
+    follow_up = enrollment.conversation.conversation_follow_up
+    reason = params[:reason].presence || 'cancelled_by_agent'
+
+    ActiveRecord::Base.transaction do
+      follow_up&.cancel_job!
+      follow_up&.mark_as_completed!(reason)
+      enrollment.cancel!(reason)
+      captured_by = @resource.is_a?(AgentBot) ? 'agent_bot' : 'human'
+      enrollment.set_result!(result_values_params, captured_by: captured_by) if result_values_params.any?
+    end
+
+    render json: { status: enrollment.status, reason: enrollment.completion_reason }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Enrollment not found' }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  def result_indicators
+    return render json: { indicators: {} } if @sequence.result_schema.blank?
+
+    indicators = @sequence.result_schema.each_with_object({}) do |field, acc|
+      counts = EnrollmentResultValue
+               .for_sequence(@sequence.id)
+               .for_field(field['key'])
+               .group(:value)
+               .count
+      acc[field['key']] = { label: field['label'], type: field['type'], counts: counts }
+    end
+
+    render json: { indicators: indicators }
+  end
+
   private
+
+  def apply_created_at_filter_for_preview(scope, filter)
+    return scope unless filter&.dig('enabled')
+
+    case filter['operator']
+    when 'newer_than'
+      scope.where('contacts.created_at >= ?', filter['value'].to_i.days.ago)
+    when 'older_than'
+      scope.where('contacts.created_at <= ?', filter['value'].to_i.days.ago)
+    when 'between'
+      from = Date.parse(filter['from_date'])
+      to   = Date.parse(filter['to_date'])
+      scope.where(created_at: from.beginning_of_day..to.end_of_day)
+    else
+      scope
+    end
+  rescue StandardError
+    scope
+  end
+
+  def apply_jsonb_preview_filter(scope, column, filter)
+    key = filter['attribute_key']
+    val = filter['value']
+    case filter['operator']
+    when 'equal_to'
+      scope.where("contacts.#{column}->>? = ?", key, val.to_s)
+    when 'not_equal_to'
+      scope.where("contacts.#{column}->>? != ?", key, val.to_s)
+    when 'contains'
+      scope.where("contacts.#{column}->>? ILIKE ?", key, "%#{val}%")
+    when 'is_present'
+      scope.where("contacts.#{column}->>? IS NOT NULL", key)
+    when 'is_not_present'
+      scope.where("contacts.#{column}->>? IS NULL", key)
+    else
+      scope
+    end
+  end
 
   def set_inbox
     @inbox = Current.account.inboxes.find(params[:inbox_id]) if params[:inbox_id]
@@ -295,7 +425,12 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     permitted[:settings] = raw_params[:settings].to_unsafe_h if raw_params[:settings].present?
     permitted[:source_config] = raw_params[:source_config].to_unsafe_h if raw_params[:source_config].present?
     permitted[:first_contact_config] = raw_params[:first_contact_config].to_unsafe_h if raw_params[:first_contact_config].present?
+    permitted[:result_schema] = raw_params[:result_schema].map(&:to_unsafe_h) if raw_params[:result_schema].present?
 
     permitted
+  end
+
+  def result_values_params
+    params.permit(values: {}).fetch(:values, {}).to_unsafe_h
   end
 end

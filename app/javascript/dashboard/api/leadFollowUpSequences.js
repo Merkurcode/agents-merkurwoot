@@ -24,6 +24,12 @@ class LeadFollowUpSequencesAPI extends ApiClient {
     return axios.post(`${this.url}/preview_eligible`, params);
   }
 
+  previewEligibleContacts(sourceConfig) {
+    return axios.post(`${this.url}/preview_eligible_contacts`, {
+      source_config: sourceConfig,
+    });
+  }
+
   getEnrolledConversations(sequenceId, params = {}) {
     return axios.get(`${this.url}/${sequenceId}/enrolled_conversations`, {
       params: params,
@@ -40,6 +46,24 @@ class LeadFollowUpSequencesAPI extends ApiClient {
     return axios.get(
       `${this.url}/${sequenceId}/enrollments/${enrollmentId}/timeline`
     );
+  }
+
+  submitEnrollmentResult(sequenceId, enrollmentId, values) {
+    return axios.post(
+      `${this.url}/${sequenceId}/enrollments/${enrollmentId}/result`,
+      { values }
+    );
+  }
+
+  cancelEnrollment(sequenceId, enrollmentId, { reason, values } = {}) {
+    return axios.post(
+      `${this.url}/${sequenceId}/enrollments/${enrollmentId}/cancel`,
+      { reason, values }
+    );
+  }
+
+  getResultIndicators(sequenceId) {
+    return axios.get(`${this.url}/${sequenceId}/result_indicators`);
   }
 }
 

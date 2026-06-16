@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe 'Lead Follow-up Sequences API', type: :request do
   let(:account) { create(:account) }
-  let(:whatsapp_channel) { create(:channel_whatsapp, account: account) }
+  let(:whatsapp_channel) { create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false) }
   let(:whatsapp_inbox) { create(:inbox, channel: whatsapp_channel, account: account) }
 
   describe 'GET /api/v1/accounts/{account.id}/copilot_sequences' do
@@ -40,7 +40,10 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       end
 
       it 'filters by inbox_id when provided' do
-        other_inbox = create(:inbox, channel: create(:channel_whatsapp, account: account), account: account)
+        other_inbox = create(:inbox, channel: create(:channel_whatsapp, account: account,
+                                                                        sync_templates: false,
+                                                                        validate_provider_config: false),
+                                     account: account)
         other_sequence = create(:lead_follow_up_sequence, account: account, inbox: other_inbox)
 
         get "/api/v1/accounts/#{account.id}/copilot_sequences?inbox_id=#{whatsapp_inbox.id}",
@@ -214,17 +217,19 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
 
       it 'deactivates sequence before deletion if active' do
         conversation = create(:conversation, account: account, inbox: whatsapp_inbox)
-        follow_up = create(:conversation_follow_up,
-                           conversation: conversation,
-                           lead_follow_up_sequence: sequence,
-                           status: 'active')
+        create(:conversation_follow_up,
+               conversation: conversation,
+               lead_follow_up_sequence: sequence,
+               status: 'active')
+
+        expect_any_instance_of(LeadFollowUpSequence).to receive(:deactivate!).and_call_original
 
         delete "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}",
                headers: administrator.create_new_auth_token,
                as: :json
 
         expect(response).to have_http_status(:no_content)
-        expect(follow_up.reload.status).to eq('cancelled')
+        expect(LeadFollowUpSequence.exists?(sequence.id)).to be false
       end
     end
   end
@@ -293,6 +298,199 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/copilot_sequences/:id/enrollments/:enrollment_id/result' do
+    let(:sequence) do
+      create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox,
+                                       result_schema: [
+                                         { 'key' => 'outcome', 'label' => 'Outcome', 'type' => 'select',
+                                           'required' => true,
+                                           'options' => [{ 'label' => 'Converted', 'value' => 'converted' }] }
+                                       ])
+    end
+    let(:conversation) { create(:conversation, account: account, inbox: whatsapp_inbox) }
+    let(:enrollment) { create(:sequence_enrollment, :completed, conversation: conversation, lead_follow_up_sequence: sequence) }
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/result"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as administrator' do
+      let(:administrator) { create(:user, account: account, role: :administrator) }
+
+      it 'stores the result values' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/result",
+             headers: administrator.create_new_auth_token,
+             params: { values: { outcome: 'converted' } },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:result][:outcome]).to eq('converted')
+        expect(body[:result_complete]).to be true
+      end
+
+      it 'returns not_found for a non-existent enrollment' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/0/result",
+             headers: administrator.create_new_auth_token,
+             params: { values: { outcome: 'converted' } },
+             as: :json
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it 'sets result_captured_by to human' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/result",
+             headers: administrator.create_new_auth_token,
+             params: { values: { outcome: 'converted' } },
+             as: :json
+
+        expect(enrollment.reload.result_captured_by).to eq('human')
+      end
+    end
+
+    context 'when authenticated as agent_bot' do
+      let(:agent_bot) { create(:agent_bot, account: account) }
+
+      before { create(:agent_bot_inbox, inbox: whatsapp_inbox, agent_bot: agent_bot) }
+
+      it 'stores the result and marks captured_by as agent_bot' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/result",
+             headers: { api_access_token: agent_bot.access_token.token },
+             params: { values: { outcome: 'converted' } },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(enrollment.reload.result_captured_by).to eq('agent_bot')
+      end
+    end
+  end
+
+  describe 'POST /api/v1/accounts/{account.id}/copilot_sequences/:id/enrollments/:enrollment_id/cancel' do
+    let(:sequence) { create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox) }
+    let(:conversation) { create(:conversation, account: account, inbox: whatsapp_inbox) }
+    let(:enrollment) { create(:sequence_enrollment, conversation: conversation, lead_follow_up_sequence: sequence) }
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/cancel"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as administrator' do
+      let(:administrator) { create(:user, account: account, role: :administrator) }
+
+      it 'cancels the enrollment' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/cancel",
+             headers: administrator.create_new_auth_token,
+             params: { reason: 'bad_experience' },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:status]).to eq('cancelled')
+        expect(body[:reason]).to eq('bad_experience')
+      end
+
+      it 'rejects cancelling an already-completed enrollment' do
+        enrollment.update!(status: 'completed', completed_at: Time.current)
+
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/cancel",
+             headers: administrator.create_new_auth_token,
+             params: { reason: 'test' },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'stores result values when provided alongside cancellation' do
+        sequence.update!(result_schema: [
+                           { 'key' => 'reason', 'label' => 'Reason', 'type' => 'text', 'required' => false }
+                         ])
+
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/cancel",
+             headers: administrator.create_new_auth_token,
+             params: { reason: 'bad_experience', values: { reason: 'Too pushy' } },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(enrollment.reload.result_values.count).to eq(1)
+      end
+    end
+
+    context 'when authenticated as agent_bot' do
+      let(:agent_bot) { create(:agent_bot, account: account) }
+
+      before { create(:agent_bot_inbox, inbox: whatsapp_inbox, agent_bot: agent_bot) }
+
+      it 'cancels the enrollment and sets captured_by to agent_bot' do
+        post "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/enrollments/#{enrollment.id}/cancel",
+             headers: { api_access_token: agent_bot.access_token.token },
+             params: { reason: 'bad_experience' },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(enrollment.reload.status).to eq('cancelled')
+      end
+    end
+  end
+
+  describe 'GET /api/v1/accounts/{account.id}/copilot_sequences/:id/result_indicators' do
+    let(:sequence) do
+      create(:lead_follow_up_sequence, account: account, inbox: whatsapp_inbox,
+                                       result_schema: [
+                                         { 'key' => 'outcome', 'label' => 'Outcome', 'type' => 'select',
+                                           'required' => true,
+                                           'options' => [{ 'label' => 'Converted', 'value' => 'converted' }] }
+                                       ])
+    end
+    let(:conversation) { create(:conversation, account: account, inbox: whatsapp_inbox) }
+    let(:enrollment) { create(:sequence_enrollment, :completed, conversation: conversation, lead_follow_up_sequence: sequence) }
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/result_indicators"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as administrator' do
+      let(:administrator) { create(:user, account: account, role: :administrator) }
+
+      it 'returns empty indicators when no result_schema' do
+        sequence.update!(result_schema: [])
+
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/result_indicators",
+            headers: administrator.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:indicators]).to eq({})
+      end
+
+      it 'returns counts grouped by field and value' do
+        create(:enrollment_result_value,
+               sequence_enrollment: enrollment,
+               lead_follow_up_sequence: sequence,
+               field_key: 'outcome',
+               value: 'converted')
+
+        get "/api/v1/accounts/#{account.id}/copilot_sequences/#{sequence.id}/result_indicators",
+            headers: administrator.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:indicators][:outcome][:counts][:converted]).to eq(1)
+        expect(body[:indicators][:outcome][:label]).to eq('Outcome')
+      end
+    end
+  end
+
   describe 'GET /api/v1/accounts/{account.id}/copilot_sequences/available_templates' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
@@ -306,15 +504,15 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
       let(:administrator) { create(:user, account: account, role: :administrator) }
 
       it 'returns available templates for WhatsApp inbox' do
-        allow(whatsapp_channel).to receive(:message_templates).and_return([
-                                                                             {
-                                                                               'name' => 'template_1',
-                                                                               'language' => 'en',
-                                                                               'status' => 'APPROVED',
-                                                                               'category' => 'MARKETING',
-                                                                               'components' => []
-                                                                             }
-                                                                           ])
+        allow_any_instance_of(Channel::Whatsapp).to receive(:message_templates).and_return([
+                                                                                              {
+                                                                                                'name' => 'template_1',
+                                                                                                'language' => 'en',
+                                                                                                'status' => 'APPROVED',
+                                                                                                'category' => 'MARKETING',
+                                                                                                'components' => []
+                                                                                              }
+                                                                                            ])
 
         get "/api/v1/accounts/#{account.id}/copilot_sequences/available_templates?inbox_id=#{whatsapp_inbox.id}",
             headers: administrator.create_new_auth_token,
@@ -336,6 +534,101 @@ RSpec.describe 'Lead Follow-up Sequences API', type: :request do
         expect(response).to have_http_status(:unprocessable_entity)
         body = JSON.parse(response.body, symbolize_names: true)
         expect(body[:error]).to eq('Inbox must be WhatsApp')
+      end
+    end
+  end
+
+  describe 'POST /api/v1/accounts/{account.id}/copilot_sequences/preview_eligible_contacts' do
+    let(:administrator) { create(:user, account: account, role: :administrator) }
+    let(:url) { "/api/v1/accounts/#{account.id}/copilot_sequences/preview_eligible_contacts" }
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        post url
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when authenticated as administrator' do
+      before { create(:contact, account: account, phone_number: '+521234567890') }
+
+      it 'returns total_count and contacts with no filters' do
+        post url,
+             params: { source_config: {} },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+        expect(body[:contacts].length).to eq(1)
+        expect(body[:contacts].first[:phone_number]).to eq('+521234567890')
+      end
+
+      it 'filters by require_phone' do
+        create(:contact, account: account, phone_number: nil, email: 'nophone@example.com')
+
+        post url,
+             params: { source_config: { require_phone: true } },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+      end
+
+      it 'filters by require_email' do
+        create(:contact, account: account, email: 'has@email.com')
+
+        post url,
+             params: { source_config: { require_email: true } },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+        expect(body[:contacts].first[:email]).to eq('has@email.com')
+      end
+
+      it 'filters by created_at newer_than' do
+        create(:contact, account: account, created_at: 60.days.ago)
+
+        post url,
+             params: { source_config: { created_at_filter: { enabled: true, operator: 'newer_than', value: 30 } } },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+      end
+
+      it 'filters by custom_attribute equal_to' do
+        create(:contact, account: account, custom_attributes: { 'plan' => 'pro' })
+
+        post url,
+             params: {
+               source_config: {
+                 custom_attribute_filters: [{ attribute_key: 'plan', operator: 'equal_to', value: 'pro' }]
+               }
+             },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:total_count]).to eq(1)
+      end
+
+      it 'returns contacts with labels included' do
+        contact = create(:contact, account: account, phone_number: '+521111111111')
+        contact.update(label_list: ['vip'])
+
+        post url,
+             params: { source_config: {} },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:contacts].first[:labels]).to include('vip')
       end
     end
   end

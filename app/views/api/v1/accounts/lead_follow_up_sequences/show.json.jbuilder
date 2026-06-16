@@ -18,6 +18,7 @@ json.first_contact_config @sequence.first_contact_config
 json.trigger_conditions @sequence.trigger_conditions
 json.steps @sequence.steps
 json.settings @sequence.settings
+json.result_schema @sequence.result_schema
 json.stats @sequence.stats
 json.metadata @sequence.metadata
 json.created_at @sequence.created_at

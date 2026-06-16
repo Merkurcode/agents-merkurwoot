@@ -826,6 +826,8 @@ class LeadRetargeting::SendFollowUpService
       follow_up_data: {
         sequence_id: @sequence.id,
         sequence_name: @sequence.name,
+        follow_up_id: @follow_up.id,
+        enrollment_id: @enrollment&.id,
         step_id: step['id'],
         step_name: step['name'],
         current_step: @follow_up.current_step,

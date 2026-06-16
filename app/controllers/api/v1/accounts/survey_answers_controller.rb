@@ -33,7 +33,7 @@ class Api::V1::Accounts::SurveyAnswersController < Api::V1::Accounts::BaseContro
   end
 
   def survey_answer_params
-    params.permit(:answer_text, :survey_question_option_id)
+    params.permit(:answer_text, :survey_question_option_id, :file)
   end
 
   def check_and_mark_survey_completion

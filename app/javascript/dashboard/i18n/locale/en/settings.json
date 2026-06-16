@@ -959,6 +959,11 @@
         "INBOX": "Inbox",
         "STEPS": "Steps"
       },
+      "STATS": {
+        "COMPLETED": "completed",
+        "NO_DATA": "No enrollments",
+        "AUTO_COMPLETED": "Auto-completed"
+      },
       "API": {
         "ERROR_MESSAGE": "Failed to load copilots"
       }
@@ -1051,7 +1056,90 @@
       "INCLUDE_COMPLETED_COPILOTS_HELP": "When enabled, conversations that previously completed a copilot sequence will be eligible for enrollment again. Only one active copilot is allowed per inbox.",
       "DATE_RANGE_REQUIRED": "Please select both from and to dates",
       "DATE_VALUE_REQUIRED": "Please enter a valid number of days",
-      "LABELS_REQUIRED": "Please select at least one label"
+      "LABELS_REQUIRED": "Please select at least one label",
+      "IMPORTED_CONTACTS": {
+        "SECTION_TITLE": "Imported Contacts Filters",
+        "SECTION_SUBTITLE": "Select which contacts to enroll. All filters are optional — leave empty to include all contacts.",
+        "LABEL_FILTER_TITLE": "Filter by Labels",
+        "LABEL_FILTER_HELP": "Only contacts with at least one of these labels will be enrolled. Leave empty to include all.",
+        "LABEL_MATCH_ANY": "Any label (OR)",
+        "LABEL_MATCH_ALL": "All labels (AND)",
+        "CONTACT_TYPE_TITLE": "Filter by Contact Type",
+        "CONTACT_TYPE_HELP": "Leave empty to include all contact types.",
+        "TYPE_VISITOR": "Visitor",
+        "TYPE_LEAD": "Lead",
+        "TYPE_CUSTOMER": "Customer",
+        "CREATED_AT_TITLE": "Filter by Creation Date",
+        "CREATED_AT_ENABLE": "Enable Creation Date Filter",
+        "ADDITIONAL_ATTRS_TITLE": "Additional Attribute Filters",
+        "ADDITIONAL_ATTRS_SUBTITLE": "Filter by standard fields (city, company, country_code, etc.)",
+        "ADDITIONAL_ATTRS_ADD": "+ Add Filter",
+        "ADDITIONAL_ATTRS_KEY_PLACEHOLDER": "Field name (e.g. city)",
+        "ADDITIONAL_ATTRS_VALUE_PLACEHOLDER": "Value",
+        "CUSTOM_ATTRS_TITLE": "Custom Attribute Filters",
+        "CUSTOM_ATTRS_SUBTITLE": "Filter by custom contact attributes",
+        "REQUIRE_PHONE": "Only include contacts with phone number",
+        "REQUIRE_EMAIL": "Only include contacts with email",
+        "PREVIEW_TITLE": "Eligible contacts",
+        "PREVIEW_SUBTITLE": "Based on the configured filters",
+        "PREVIEW_LOADING": "Calculating...",
+        "PREVIEW_CONTACTS": "contacts",
+        "PREVIEW_VIEW_DETAIL": "View details",
+        "PREVIEW_MODAL_TITLE": "Eligible Contacts",
+        "PREVIEW_MODAL_TOTAL": "Total: {count}",
+        "PREVIEW_EMPTY": "No contacts match the configured filters",
+        "PREVIEW_SHOWING": "Showing the first {count} contacts.",
+        "PREVIEW_MORE": "There are {more} more matching the filters.",
+        "PREVIEW_NO_NAME": "No name",
+        "PREVIEW_NO_CONTACT": "No contact info",
+        "OPERATORS": {
+          "equals": "Equals",
+          "not_equals": "Not equals",
+          "contains": "Contains",
+          "is_present": "Has value",
+          "is_not_present": "Is empty"
+        }
+      },
+      "CUSTOM_ATTRIBUTE_FILTERS": {
+        "TITLE": "Custom Attribute Filters",
+        "SUBTITLE": "Filter conversations by contact or conversation attributes",
+        "ADD_FILTER": "+ Add Filter",
+        "EMPTY_STATE": "No custom attribute filters configured",
+        "MAX_FILTERS_WARNING": "Maximum 10 custom attribute filters per copilot.",
+        "FILTER_LABEL": "Filter",
+        "ENTITY_LABEL": "Entity",
+        "ATTRIBUTE_LABEL": "Attribute",
+        "OPERATOR_LABEL": "Condition",
+        "VALUE_LABEL": "Value",
+        "VALUE2_LABEL": "Until",
+        "DATE_LABEL": "Date",
+        "DATETIME_LABEL": "Date and Time",
+        "VALUES_LABEL": "Values",
+        "SELECT_ATTRIBUTE": "Select an attribute",
+        "SELECT_VALUE": "Select a value",
+        "ENTITY_CONTACT": "Contact",
+        "ENTITY_CONVERSATION": "Conversation",
+        "BOOL_TRUE": "True",
+        "BOOL_FALSE": "False",
+        "OPERATORS": {
+          "equals": "Equals",
+          "not_equals": "Not equals",
+          "contains": "Contains",
+          "not_contains": "Does not contain",
+          "starts_with": "Starts with",
+          "ends_with": "Ends with",
+          "greater_than": "Greater than",
+          "less_than": "Less than",
+          "gte": "Greater than or equal",
+          "lte": "Less than or equal",
+          "before": "Before",
+          "after": "After",
+          "between": "Between",
+          "includes_any": "Includes any of",
+          "present": "Has value",
+          "blank": "Is empty"
+        }
+      }
     },
     "SHOW": {
       "HEADER": "Copilot Detail",
@@ -1266,6 +1354,51 @@
       "re_enrolled": "Re-enrolled in copilot",
       "paused": "Copilot paused",
       "resumed": "Copilot resumed"
+    },
+    "RESULT_SCHEMA": {
+      "SECTION_TITLE": "Results to capture",
+      "SECTION_DESCRIPTION": "Define what outcome fields to record when this copilot finishes. Can be filled manually by an agent or automatically by the AI agent.",
+      "ADD_FIELD": "Add field",
+      "FIELD_LABEL": "Field label",
+      "FIELD_LABEL_PLACEHOLDER": "e.g. Was the lead converted?",
+      "FIELD_TYPE": "Type",
+      "FIELD_REQUIRED": "Required",
+      "FIELD_OPTIONS": "Options (comma-separated)",
+      "FIELD_OPTIONS_PLACEHOLDER": "Converted, Not interested, No response",
+      "FIELD_KEY_LABEL": "key:",
+      "REMOVE_FIELD": "Remove field",
+      "TYPES": {
+        "text": "Free text",
+        "select": "Single choice",
+        "number": "Number",
+        "boolean": "Yes / No"
+      }
+    },
+    "RESULT_FORM": {
+      "TITLE": "Copilot result",
+      "SUBTITLE": "Record the outcome of this interaction",
+      "SAVE": "Save result",
+      "SAVING": "Saving...",
+      "CANCEL_ENROLLMENT": "Cancel copilot for this conversation",
+      "CANCEL_REASON_PLACEHOLDER": "Reason for cancellation (optional)",
+      "CAPTURED_BY_HUMAN": "Filled by agent",
+      "CAPTURED_BY_BOT": "Filled by AI agent",
+      "YES": "Yes",
+      "NO": "No",
+      "LOADING": "Loading result form...",
+      "NO_ACTIVE_ENROLLMENT": "No active copilot for this conversation",
+      "NO_SCHEMA": "This copilot has no result fields configured",
+      "PENDING": "Pending",
+      "COMPLETE": "Complete",
+      "SUCCESS": "Result saved successfully",
+      "CANCEL_SUCCESS": "Copilot cancelled and result saved",
+      "ERROR": "Failed to save result"
+    },
+    "RESULT_INDICATORS": {
+      "TITLE": "Result indicators",
+      "NO_SCHEMA": "No result schema configured for this copilot.",
+      "NO_DATA": "No results recorded yet.",
+      "TOTAL_WITH_RESULT": "{count} conversations with result"
     }
   }
 }

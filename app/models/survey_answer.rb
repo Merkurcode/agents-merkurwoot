@@ -34,15 +34,26 @@ class SurveyAnswer < ApplicationRecord
   belongs_to :survey_question
   belongs_to :survey_question_option, optional: true
 
+  has_one_attached :file
+
   validates :account_id, presence: true
   validates :contact_id, presence: true
   validates :survey_question_id, presence: true
   validate :answer_presence
   validate :answer_type_consistency
+  validate :file_type_validation, if: -> { file.attached? }
+  validate :numeric_value_validation
+  validate :option_belongs_to_question
 
   private
 
   def answer_presence
+    # File questions require a file attachment
+    if survey_question&.file?
+      errors.add(:file, 'must be attached for file questions') unless file.attached?
+      return
+    end
+
     return if answer_text.present? || survey_question_option_id.present?
 
     errors.add(:base, 'Either answer_text or survey_question_option_id must be present')
@@ -55,6 +66,53 @@ class SurveyAnswer < ApplicationRecord
       errors.add(:survey_question_option_id, 'should not be present for open-ended questions')
     elsif survey_question.multiple_choice? && answer_text.present?
       errors.add(:answer_text, 'should not be present for multiple choice questions')
+    elsif survey_question.file? && (answer_text.present? || survey_question_option_id.present?)
+      errors.add(:base, 'File questions should not have answer_text or option_id')
+    end
+  end
+
+  def file_type_validation
+    return unless survey_question&.file? && file.attached?
+
+    accepted_types = survey_question.accepted_file_types_list
+    return if accepted_types.empty?
+
+    content_type = file.content_type
+    type_accepted = accepted_types.any? do |accepted_type|
+      if accepted_type.end_with?('/*')
+        # Wildcard match (e.g., image/*)
+        content_type.start_with?(accepted_type.gsub('/*', '/'))
+      else
+        # Exact match
+        content_type == accepted_type
+      end
+    end
+
+    return if type_accepted
+
+    errors.add(:file, "type '#{content_type}' is not accepted. Accepted types: #{accepted_types.join(', ')}")
+  end
+
+  def numeric_value_validation
+    return unless survey_question&.open_ended?
+    return unless survey_question.input_type == 'number'
+    return if answer_text.blank?
+
+    # Check if the answer is a valid number
+    begin
+      Float(answer_text)
+    rescue ArgumentError, TypeError
+      errors.add(:answer_text, 'must be a valid number for numeric questions')
+    end
+  end
+
+  def option_belongs_to_question
+    return unless survey_question&.multiple_choice?
+    return unless survey_question_option_id.present?
+
+    # Verify the selected option belongs to this question
+    unless survey_question.survey_question_options.exists?(id: survey_question_option_id)
+      errors.add(:survey_question_option_id, 'does not belong to this question')
     end
   end
 end

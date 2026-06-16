@@ -128,10 +128,14 @@ Rails.application.routes.draw do
               get :enrolled_conversations
               post :cancel_follow_ups
               get 'enrollments/:enrollment_id/timeline', action: :enrollment_timeline, as: :enrollment_timeline
+              post 'enrollments/:enrollment_id/result', action: :submit_enrollment_result, as: :enrollment_result
+              post 'enrollments/:enrollment_id/cancel', action: :cancel_enrollment, as: :cancel_enrollment
+              get :result_indicators
             end
             collection do
               get :available_templates
               post :preview_eligible
+              post :preview_eligible_contacts
             end
           end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do
@@ -289,6 +293,7 @@ Rails.application.routes.draw do
               post :custom_attributes
               get :attachments
               get :copilot_events
+              get :enrollment_result_schema
               get :inbox_assistant
               get :ai_usage
               get :reporting_events if ChatwootApp.enterprise?

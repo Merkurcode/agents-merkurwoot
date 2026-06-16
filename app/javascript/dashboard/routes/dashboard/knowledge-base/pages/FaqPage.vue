@@ -715,7 +715,7 @@ onUnmounted(() => {
 
         <!-- Import Button -->
         <button
-          class="h-8 px-3 bg-n-green-9 text-white rounded-lg hover:bg-n-green-10 transition-colors text-sm font-medium flex items-center gap-2"
+          class="h-8 px-3 bg-n-teal-9 text-white rounded-lg hover:bg-n-teal-10 transition-colors text-sm font-medium flex items-center gap-2"
           @click="showImportDialog = true"
         >
           <i class="i-lucide-upload w-4 h-4 flex-shrink-0" />
@@ -765,7 +765,7 @@ onUnmounted(() => {
                 <div v-if="importResult" class="p-3 bg-n-alpha-2 rounded-lg text-sm">
                   <p class="flex justify-between">
                     <span>{{ t('KNOWLEDGE_BASE.FAQ.IMPORT_DIALOG.CREATED') }}:</span>
-                    <span class="font-medium text-n-green-11">{{ importResult.created }}</span>
+                    <span class="font-medium text-n-teal-11">{{ importResult.created }}</span>
                   </p>
                   <p class="flex justify-between mt-1">
                     <span>{{ t('KNOWLEDGE_BASE.FAQ.IMPORT_DIALOG.UPDATED') }}:</span>

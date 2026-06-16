@@ -20,6 +20,7 @@ import WeeklyAvailability from './components/WeeklyAvailability.vue';
 import GreetingsEditor from 'shared/components/GreetingsEditor.vue';
 import ConfigurationPage from './settingsPage/ConfigurationPage.vue';
 import CustomerSatisfactionPage from './settingsPage/CustomerSatisfactionPage.vue';
+import ReengagementTemplatePage from './settingsPage/ReengagementTemplatePage.vue';
 import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
 import WhatsappTemplatesPage from './settingsPage/WhatsappTemplatesPage.vue';
 import WidgetBuilder from './WidgetBuilder.vue';
@@ -38,6 +39,7 @@ export default {
     CollaboratorsPage,
     ConfigurationPage,
     CustomerSatisfactionPage,
+    ReengagementTemplatePage,
     FacebookReauthorize,
     GreetingsEditor,
     PreChatFormSettings,
@@ -203,6 +205,10 @@ export default {
           {
             key: 'whatsapp-templates',
             name: this.$t('INBOX_MGMT.TABS.WHATSAPP_TEMPLATES'),
+          },
+          {
+            key: 'reengagement-template',
+            name: this.$t('INBOX_MGMT.TABS.REENGAGEMENT_TEMPLATE'),
           },
         ];
       }
@@ -1008,6 +1014,9 @@ export default {
       </div>
       <div v-if="selectedTabKey === 'whatsapp-templates'">
         <WhatsappTemplatesPage :inbox="inbox" />
+      </div>
+      <div v-if="selectedTabKey === 'reengagement-template'">
+        <ReengagementTemplatePage :inbox="inbox" />
       </div>
     </section>
   </div>

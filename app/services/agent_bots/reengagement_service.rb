@@ -13,9 +13,9 @@ class AgentBots::ReengagementService
     return cancel(:cancelled_reply)  if should_stop_on_resolved?
     return cancel(:cancelled_reply)  if should_stop_on_agent_assigned?
     return cancel(:cancelled_reply)  if client_replied_since_trigger? && @reengagement.stop_on_any_reply?
-    return cancel_keyword(matched_keyword) if (matched_keyword = detect_stop_keyword)
+    return cancel_keyword(matched_keyword) if detect_stop_keyword
 
-    fire_webhook
+    dispatch_message
     completed = @reengagement.advance!
 
     Rails.logger.info(
@@ -29,7 +29,7 @@ class AgentBots::ReengagementService
   # ─── Stop condition checks ───────────────────────────────────────────
 
   def active_sequence?
-    ConversationFollowUp.where(conversation_id: @conversation.id, status: 'active').exists?
+    ConversationFollowUp.exists?(conversation_id: @conversation.id, status: 'active')
   end
 
   def should_stop_on_resolved?
@@ -43,8 +43,7 @@ class AgentBots::ReengagementService
   def client_replied_since_trigger?
     @conversation.messages
                  .where(message_type: :incoming)
-                 .where('created_at > ?', @reengagement.trigger_started_at)
-                 .exists?
+                 .exists?(['created_at > ?', @reengagement.trigger_started_at])
   end
 
   def detect_stop_keyword
@@ -57,7 +56,7 @@ class AgentBots::ReengagementService
                                  .order(created_at: :desc)
                                  .first
 
-    return nil unless last_incoming&.content.present?
+    return nil if last_incoming&.content.blank?
 
     text = case_insensitive ? last_incoming.content.downcase : last_incoming.content
 
@@ -71,8 +70,8 @@ class AgentBots::ReengagementService
 
   def suppress_for_sequence
     sequence_id = ConversationFollowUp
-                    .where(conversation_id: @conversation.id, status: 'active')
-                    .pick(:lead_follow_up_sequence_id)
+                  .where(conversation_id: @conversation.id, status: 'active')
+                  .pick(:lead_follow_up_sequence_id)
     @reengagement.suppress!(sequence_id: sequence_id)
   end
 
@@ -84,6 +83,68 @@ class AgentBots::ReengagementService
     @reengagement.cancel!(
       reason: 'cancelled_keyword',
       extra_meta: { 'matched_keyword' => phrase }
+    )
+  end
+
+  def dispatch_message
+    if whatsapp_channel? && !conversation_window_open? && reengagement_template_approved?
+      send_reengagement_template
+    else
+      fire_webhook
+    end
+  end
+
+  def whatsapp_channel?
+    @conversation.inbox.channel_type == 'Channel::Whatsapp'
+  end
+
+  def conversation_window_open?
+    @conversation.can_reply?
+  end
+
+  def reengagement_template_approved?
+    template_config = @conversation.inbox.reengagement_config&.dig('template')
+    return false unless template_config
+
+    template_name = template_config['name']
+    return false unless template_name
+
+    status_result = @conversation.inbox.channel.provider_service.get_template_status(template_name)
+    status_result[:success] && status_result[:template][:status] == 'APPROVED'
+  rescue StandardError => e
+    Rails.logger.error "ReengagementService: error checking template status for conversation #{@conversation.id}: #{e.message}"
+    false
+  end
+
+  def send_reengagement_template
+    config       = @conversation.inbox.reengagement_config
+    contact_name = @contact.name.presence || @contact.phone_number
+    message      = build_reengagement_message(config, contact_name)
+    message_id   = @conversation.inbox.channel.provider_service.send_template(
+      @conversation.contact_inbox.source_id,
+      build_template_info(config, contact_name),
+      message
+    )
+    message.update!(source_id: message_id) if message_id.present?
+  rescue StandardError => e
+    Rails.logger.error "ReengagementService: failed to send template for conversation #{@conversation.id}: #{e.message}"
+  end
+
+  def build_template_info(config, contact_name)
+    {
+      name: config.dig('template', 'name'),
+      lang_code: config['language'] || 'es_MX',
+      parameters: [{ type: 'body', parameters: [{ type: 'text', text: contact_name }] }]
+    }
+  end
+
+  def build_reengagement_message(config, contact_name)
+    @conversation.messages.build(
+      account: @conversation.account,
+      inbox: @conversation.inbox,
+      message_type: :outgoing,
+      content: (config['message'] || '').gsub('{{1}}', contact_name),
+      content_type: :text
     )
   end
 

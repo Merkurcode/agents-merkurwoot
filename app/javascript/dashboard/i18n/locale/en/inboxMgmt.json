@@ -684,7 +684,38 @@
       "BOT_CONFIGURATION": "AI agent Configuration",
       "ACCOUNT_HEALTH": "Account Health",
       "CSAT": "CSAT",
-      "WHATSAPP_TEMPLATES": "Templates"
+      "WHATSAPP_TEMPLATES": "Templates",
+      "REENGAGEMENT_TEMPLATE": "Re-engagement"
+    },
+    "REENGAGEMENT_TEMPLATE": {
+      "TITLE": "Re-engagement Template",
+      "DESCRIPTION": "Configure a pre-approved WhatsApp template to re-engage customers when the 24-hour conversation window is closed. Use {{1}} as a placeholder for the contact's name.",
+      "MESSAGE": {
+        "LABEL": "Message body",
+        "PLACEHOLDER": "Enter a message to re-engage the customer. Use {{1}} for contact name."
+      },
+      "LANGUAGE": {
+        "LABEL": "Language",
+        "PLACEHOLDER": "Select template language"
+      },
+      "DEFAULT_MESSAGE": "Hi {{1}}, it's been a while since our last conversation. If you have any questions or need help, we're here for you. How can we assist you today?",
+      "CREATE_BUTTON": "Create Template",
+      "UPDATE_BUTTON": "Update Template",
+      "NOTE": "Note: We will create a template and send it for WhatsApp approval. Once approved, it will be sent automatically when the conversation window is closed.",
+      "TEMPLATE_STATUS": {
+        "APPROVED": "Approved by WhatsApp",
+        "PENDING": "Pending WhatsApp approval",
+        "REJECTED": "Meta rejected the template",
+        "DEFAULT": "Needs WhatsApp approval",
+        "NOT_FOUND": "The template does not exist in the Meta platform."
+      },
+      "TEMPLATE_CREATION": {
+        "SUCCESS_MESSAGE": "WhatsApp re-engagement template created successfully and sent for approval",
+        "ERROR_MESSAGE": "Failed to create WhatsApp re-engagement template"
+      },
+      "API": {
+        "NO_CHANGES": "No changes detected"
+      }
     },
     "ACCOUNT_HEALTH": {
       "TITLE": "Manage your WhatsApp account",

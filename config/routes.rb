@@ -373,6 +373,7 @@ Rails.application.routes.draw do
             end
 
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates'
+            resource :reengagement_template, only: [:show, :create], controller: 'inbox_reengagement_templates'
             resources :message_templates, only: [:index, :create, :show, :destroy],
                       controller: 'inbox_message_templates' do
               collection do

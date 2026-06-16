@@ -394,6 +394,16 @@ export const actions = {
     return response.data;
   },
 
+  createReengagementTemplate: async (_, { inboxId, template }) => {
+    const response = await InboxesAPI.createReengagementTemplate(inboxId, template);
+    return response.data;
+  },
+
+  getReengagementTemplateStatus: async (_, { inboxId }) => {
+    const response = await InboxesAPI.getReengagementTemplateStatus(inboxId);
+    return response.data;
+  },
+
   // Message Templates actions
   getMessageTemplates: async (_, { inboxId, params = {} }) => {
     const response = await InboxesAPI.getMessageTemplates(inboxId, params);

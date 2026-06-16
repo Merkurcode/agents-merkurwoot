@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_12_190003) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_16_195754) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1289,6 +1289,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_12_190003) do
     t.string "business_name"
     t.jsonb "csat_config", default: {}, null: false
     t.bigint "survey_id"
+    t.jsonb "reengagement_config", default: {}, null: false
     t.index ["account_id"], name: "index_inboxes_on_account_id"
     t.index ["channel_id", "channel_type"], name: "index_inboxes_on_channel_id_and_channel_type"
     t.index ["portal_id"], name: "index_inboxes_on_portal_id"

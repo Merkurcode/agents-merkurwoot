@@ -53,6 +53,16 @@ class Inboxes extends CacheEnabledApiClient {
     return axios.get(`${this.url}/${inboxId}/csat_template`);
   }
 
+  createReengagementTemplate(inboxId, template) {
+    return axios.post(`${this.url}/${inboxId}/reengagement_template`, {
+      template,
+    });
+  }
+
+  getReengagementTemplateStatus(inboxId) {
+    return axios.get(`${this.url}/${inboxId}/reengagement_template`);
+  }
+
   getInbox(inboxId) {
     return axios.get(`${this.url}/${inboxId}`);
   }

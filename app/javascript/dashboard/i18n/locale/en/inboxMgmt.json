@@ -573,7 +573,7 @@
         "EMAIL": {
           "LABEL": "Email",
           "PLACEHOLDER": "Please enter your email address",
-          "SUBTITLE": "Use an address on a domain verified in Resend (e.g. replies@notification.merkur.la). Replies will arrive here via the Resend inbound webhook."
+          "SUBTITLE": "Use an address on a domain verified in Resend (e.g. replies{'@'}notification.merkur.la). Replies will arrive here via the Resend inbound webhook."
         },
         "SUBMIT_BUTTON": "Create Resend Inbox",
         "API": {

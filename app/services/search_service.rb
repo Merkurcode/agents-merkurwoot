@@ -32,18 +32,21 @@ class SearchService
 
   def filter_conversations
     @conversations = conversation_base_query
-                                    .joins('INNER JOIN contacts ON conversations.contact_id = contacts.id')
-                                    .where("cast(conversations.display_id as text) ILIKE :search OR contacts.name ILIKE :search OR contacts.email
-                            ILIKE :search OR contacts.phone_number ILIKE :search OR contacts.identifier ILIKE :search", search: "%#{search_query}%")
+                     .joins('INNER JOIN contacts ON conversations.contact_id = contacts.id')
+                     .where(conversation_search_conditions, search: "%#{search_query}%", phone: "%#{phone_search_digits}%")
 
-    if current_account.feature_enabled?('advanced_search')
-      conversations_query = apply_time_filter(conversations_query,
-                                              'conversations.last_activity_at')
-    end
+    @conversations = apply_time_filter(@conversations, 'conversations.last_activity_at') if current_account.feature_enabled?('advanced_search')
 
-    @conversations = conversations_query.order('conversations.created_at DESC')
-                                        .page(params[:page])
-                                        .per(15)
+    @conversations = @conversations.order('conversations.created_at DESC')
+                                   .page(params[:page])
+                                   .per(15)
+  end
+
+  def conversation_search_conditions
+    conditions = ['cast(conversations.display_id as text) ILIKE :search OR contacts.name ILIKE :search ' \
+                  'OR contacts.email ILIKE :search OR contacts.phone_number ILIKE :search OR contacts.identifier ILIKE :search']
+    conditions << "regexp_replace(contacts.phone_number, '[^0-9]', '', 'g') LIKE :phone" if phone_search_digits.present?
+    conditions.join(' OR ')
   end
 
   def conversation_base_query
@@ -171,21 +174,6 @@ class SearchService
     accessable_inbox_ids.include?(inbox_id)
   end
 
-  def should_skip_inbox_filtering?
-    account_user.administrator? || user_has_access_to_all_inboxes?
-    if account_user.administrator?
-      base
-    elsif account_user.supervisor?
-      # Supervisor only sees messages from conversations assigned to themselves or their subordinates
-      supervisor_assignee_ids = account_user.all_subordinate_user_ids + [current_user.id]
-      base.joins(:conversation).where(conversations: { assignee_id: supervisor_assignee_ids })
-    elsif user_has_access_to_all_inboxes?
-      base
-    else
-      base.where(inbox_id: accessable_inbox_ids)
-    end
-  end
-
   def user_has_access_to_all_inboxes?
     accessable_inbox_ids.sort == current_account.inboxes.pluck(:id).sort
   end
@@ -200,16 +188,29 @@ class SearchService
   end
 
   def filter_contacts
-    @contacts = contact_base_query.where(
-      "name ILIKE :search OR email ILIKE :search OR phone_number
-      ILIKE :search OR identifier ILIKE :search", search: "%#{search_query}%"
-    )
+    @contacts = contact_base_query.where(contact_search_conditions, search: "%#{search_query}%", phone: "%#{phone_search_digits}%")
 
-    contacts_query = apply_time_filter(contacts_query, 'last_activity_at') if current_account.feature_enabled?('advanced_search')
+    @contacts = apply_time_filter(@contacts, 'last_activity_at') if current_account.feature_enabled?('advanced_search')
 
-    @contacts = contacts_query.resolved_contacts(
+    @contacts = @contacts.resolved_contacts(
       use_crm_v2: current_account.feature_enabled?('crm_v2')
     ).order_on_last_activity_at('desc').page(params[:page]).per(15)
+  end
+
+  def contact_search_conditions
+    conditions = ['name ILIKE :search OR email ILIKE :search OR phone_number ILIKE :search OR identifier ILIKE :search']
+    conditions << "regexp_replace(phone_number, '[^0-9]', '', 'g') LIKE :phone" if phone_search_digits.present?
+    conditions.join(' OR ')
+  end
+
+  # Returns the significant digits of a phone-like query so that searches match
+  # regardless of formatting (spaces, dashes, "+") and of the Mexican "1" that
+  # WhatsApp may or may not include after the +52 country code.
+  def phone_search_digits
+    return @phone_search_digits if defined?(@phone_search_digits)
+
+    digits = search_query.gsub(/\D/, '')
+    @phone_search_digits = digits.length >= 7 ? digits.last(10) : nil
   end
 
   def contact_base_query

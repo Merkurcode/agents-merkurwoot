@@ -40,7 +40,7 @@ class Whatsapp::HealthService
   def health_fields
     %w[
       quality_rating
-      messaging_limit_tier
+      whatsapp_business_manager_messaging_limit
       code_verification_status
       account_mode
       id
@@ -72,7 +72,7 @@ class Whatsapp::HealthService
       verified_name: response['verified_name'],
       name_status: response['name_status'],
       quality_rating: response['quality_rating'],
-      messaging_limit_tier: response['messaging_limit_tier'],
+      messaging_limit_tier: response['whatsapp_business_manager_messaging_limit'],
       account_mode: response['account_mode'],
       code_verification_status: response['code_verification_status'],
       throughput: response['throughput'],

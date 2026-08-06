@@ -140,7 +140,7 @@ class Api::V1::Accounts::LeadFollowUpSequencesController < Api::V1::Accounts::Ba
     contacts = apply_custom_attr_filters_with_logic(contacts, source_config['custom_attribute_filters'])
 
     count_limit = PREVIEW_CONTACTS_CAP + 1
-    raw_count = contacts.limit(count_limit).count
+    raw_count = contacts.limit(count_limit).count(:id)
     capped = raw_count >= count_limit
     total_count = capped ? PREVIEW_CONTACTS_CAP : raw_count
 

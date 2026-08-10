@@ -1,4 +1,5 @@
 Rails.application.configure do
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # In the development environment your application's code is reloaded on
@@ -62,7 +63,7 @@ Rails.application.configure do
 
   # Disable host check during development
   config.hosts = nil
-  
+
   # GitHub Codespaces configuration
   if ENV['CODESPACES']
     # Allow web console access from any IP
@@ -72,12 +73,13 @@ Rails.application.configure do
     config.action_controller.forgery_protection_origin_check = false
   end
 
-  # customize using the environment variables
-  config.log_level = ENV.fetch('LOG_LEVEL', 'debug').to_sym
-
-  # Use a different logger for distributed setups.
-  # require 'syslog/logger'
-  config.logger = ActiveSupport::Logger.new(Rails.root.join('log', "#{Rails.env}.log"), 1, ENV.fetch('LOG_SIZE', '1024').to_i.megabytes)
+  if ENV['DATADOG_LOGGING']
+    config.logger = ActiveSupport::Logger.new($stdout)
+    config.log_level = :info
+  else
+    config.log_level = ENV.fetch('LOG_LEVEL', 'debug').to_sym
+    config.logger = ActiveSupport::Logger.new(Rails.root.join('log', "#{Rails.env}.log"), 1, ENV.fetch('LOG_SIZE', '1024').to_i.megabytes)
+  end
 
   # Bullet configuration to fix the N+1 queries
   config.after_initialize do

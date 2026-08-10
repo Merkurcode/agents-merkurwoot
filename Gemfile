@@ -215,6 +215,8 @@ gem 'opentelemetry-exporter-otlp'
 
 gem 'shopify_api'
 
+gem 'oj'
+
 ### Gems required only in specific deployment environments ###
 ##############################################################
 

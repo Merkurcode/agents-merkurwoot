@@ -25,8 +25,18 @@ Sidekiq.configure_server do |config|
   end
 
   # skip the default start stop logging
-  if Rails.env.production?
-    config.logger.formatter = Sidekiq::Logger::Formatters::JSON.new
+  if Rails.env.production? || ENV['DATADOG_LOGGING']
+    config.logger.formatter = proc do |severity, timestamp, _progname, message|
+      Oj.dump({
+        timestamp: timestamp.utc.iso8601,
+        service: "crm_rails",
+        ddsource: "ruby",
+        component: "sidekiq",
+        level: severity,
+        message: message.is_a?(String) ? message : message.inspect,
+        env: Rails.env
+      }, mode: :compat) + "\n"
+    end
     config[:skip_default_job_logging] = true
     config.logger.level = Logger.const_get(ENV.fetch('LOG_LEVEL', 'info').upcase.to_s)
   end

@@ -27,8 +27,12 @@ json.meta do
 end
 
 json.id conversation.display_id
-last_message = conversation.messages.where(account_id: conversation.account_id)
-                           .includes([{ attachments: [{ file_attachment: [:blob] }] }]).last
+last_message = if local_assigns.key?(:preloaded_last_messages)
+                 preloaded_last_messages[conversation.id]
+               else
+                 conversation.messages.where(account_id: conversation.account_id)
+                             .includes([{ attachments: [{ file_attachment: [:blob] }] }]).last
+               end
 json.messages last_message.blank? ? [] : [last_message.push_event_data]
 
 json.account_id conversation.account_id
@@ -50,7 +54,12 @@ json.updated_at conversation.updated_at.to_f
 json.timestamp conversation.last_activity_at.to_i
 json.first_reply_created_at conversation.first_reply_created_at.to_i
 json.unread_count conversation.unread_incoming_messages.count
-json.last_non_activity_message conversation.messages.where(account_id: conversation.account_id).non_activity_messages.first.try(:push_event_data)
+last_non_activity_message = if local_assigns.key?(:preloaded_last_non_activity_messages)
+                              preloaded_last_non_activity_messages[conversation.id]
+                            else
+                              conversation.messages.where(account_id: conversation.account_id).non_activity_messages.first
+                            end
+json.last_non_activity_message last_non_activity_message.try(:push_event_data)
 json.last_activity_at conversation.last_activity_at.to_i
 json.priority conversation.priority
 json.waiting_since conversation.waiting_since.to_i.to_i
